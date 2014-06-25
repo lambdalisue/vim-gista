@@ -1,0 +1,217 @@
+"******************************************************************************
+" Gista command options
+"
+" Author:   Alisue <lambdalisue@hashnote.net>
+" URL:      http://hashnote.net/
+" License:  MIT license
+" (C) 2014, Alisue, hashnote.net
+"******************************************************************************
+let s:save_cpo = &cpo
+set cpo&vim
+
+
+function! s:find_gistid(lnum, ...) " {{{
+  if exists('b:gistinfo')
+    return b:gistinfo.gistid
+  endif
+  let gistid_pattern = 'GistID:\s*\zs\w\+\ze'
+  let content = join(getline(a:lnum, get(a:000, 0, a:lnum)), "\n")
+  let gistid = matchstr(content, gistid_pattern)
+  return gistid
+endfunction " }}}
+function! s:get_parser() " {{{
+  if !exists('s:parser') || 1
+    let s:parser = gista#modules#option#new()
+    call s:parser.add_argument(
+          \ '--list', '-l', 
+          \ 'List gists and show in gist list window', {
+          \   'conflicts': 'command',
+          \})
+    call s:parser.add_argument(
+          \ '--page',
+          \ 'Specify a page index of gist list', {
+          \   'kind': s:parser.VALUE,
+          \   'subordinations_of': 'list',
+          \})
+    call s:parser.add_argument(
+          \ '--nocache',
+          \ 'Get gist list without using cache', {
+          \   'kind': s:parser.SWITCH,
+          \   'subordinations_of': 'list',
+          \})
+    call s:parser.add_argument(
+          \ '--open', '-o',
+          \ 'Open a specified gist in a gist buffer', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'command',
+          \   'requires': 'gistid',
+          \})
+    call s:parser.add_argument(
+          \ '--post', 
+          \ 'Post a buffer to create/modify a gist', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'command',
+          \})
+    call s:parser.add_argument(
+          \ '--description', '-d', 
+          \ 'A description of the posting gist', {
+          \   'kind': s:parser.VALUE,
+          \   'subordinations_of': 'post',
+          \})
+    call s:parser.add_argument(
+          \ '--multiple', '-m', 
+          \ 'Post a gist with all visible buffers', {
+          \   'kind': s:parser.SWITCH,
+          \   'subordinations_of': 'post',
+          \})
+    call s:parser.add_argument(
+          \ '--anonymous', '-a', 
+          \ 'Post a gist as an anonymous gist', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'publish_status',
+          \   'subordinations_of': 'post',
+          \})
+    call s:parser.add_argument(
+          \ '--private', '-p', 
+          \ 'Post a gist as a private gist', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'publish_status',
+          \   'subordinations_of': 'post',
+          \})
+    call s:parser.add_argument(
+          \ '--public', '-P', 
+          \ 'Post a gist as a public gist', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'publish_status',
+          \   'subordinations_of': 'post',
+          \})
+    call s:parser.add_argument(
+          \ '--gistid', 
+          \ 'Specify a gist ID', {
+          \   'kind': s:parser.VALUE,
+          \   'subordinations_of': [
+          \     'open', 'rename', 'remove', 'delete',
+          \     'star', 'unstar', 'is-starred', 'fork',
+          \     'disconnect',
+          \   ],
+          \})
+    call s:parser.add_argument(
+          \ '--filename', 
+          \ 'Specify a filename', {
+          \   'kind': s:parser.VALUE,
+          \   'subordinations_of': [
+          \     'open', 'rename', 'remove', 'disconnect',
+          \   ],
+          \})
+    call s:parser.add_argument(
+          \ '--rename', 
+          \ 'Rename a filename of a file in the gist', {
+          \   'conflicts': 'command',
+          \   'requires': ['gistid', 'filename'],
+          \})
+    call s:parser.add_argument(
+          \ '--remove', 
+          \ 'Remove a file from the gist', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'command',
+          \   'requires': ['gistid', 'filename'],
+          \})
+    call s:parser.add_argument(
+          \ '--delete', 
+          \ 'Delete the gist', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'command',
+          \   'requires': 'gistid',
+          \})
+    call s:parser.add_argument(
+          \ '--star', 
+          \ 'Star the gist', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'command',
+          \   'requires': 'gistid',
+          \})
+    call s:parser.add_argument(
+          \ '--unstar', 
+          \ 'Unstar the gist', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'command',
+          \   'requires': 'gistid',
+          \})
+    call s:parser.add_argument(
+          \ '--is-starred', 
+          \ 'Display if the gist is starred', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'command',
+          \   'requires': 'gistid',
+          \})
+    call s:parser.add_argument(
+          \ '--fork', 
+          \ 'Fork the gist', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'command',
+          \   'requires': 'gistid',
+          \})
+    call s:parser.add_argument(
+          \ '--browse', 
+          \ 'Browse the gist', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'command',
+          \   'requires': 'gistid',
+          \})
+    call s:parser.add_argument(
+          \ '--disconnect', 
+          \ 'Disconnect a buffer from the gist', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'command',
+          \   'requires': 'gistid',
+          \})
+    function! s:parser._pre_process(options) abort " {{{
+      let options = a:options
+      " gistid
+      if self.has_subordinated('gistid', options)
+        let gistid = s:find_gistid(
+              \   a:options.__range__[0],
+              \   a:options.__range__[1],
+              \)
+        if !empty(gistid)
+          let options['gistid'] = gistid
+        endif
+      endif
+      " filename
+      if exists('b:gistinfo') && self.has_subordinated('filename', options)
+        let options['filename'] = b:gistinfo.filename
+      endif
+      " post (if no conflict options are specified)
+      if !self.has_conflicts('post', options)
+        let options['post'] = self.TRUE
+      endif
+      return options
+    endfunction " }}}
+    function! s:parser._post_process(options) abort " {{{
+      let options = a:options
+      " private => public
+      if has_key(options, 'private')
+        let value = options.private
+        unlet options['private']
+        let options['public'] = !value
+      endif
+      return options
+    endfunction " }}}
+  endif
+  return s:parser
+endfunction " }}}
+
+
+function! gista#option#parse(...) abort " {{{
+  let parser = s:get_parser()
+  return call(parser.parse, a:000, parser)
+endfunction " }}}
+
+
+command! -nargs=? -range=% -bang GistaDebugOptions
+      \ :echo gista#option#parse(<q-bang>, [<line1>, <line2>], <f-args>)
+
+
+let &cpo = s:save_cpo
+unlet s:save_cpo
+"vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
