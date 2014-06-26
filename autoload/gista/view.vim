@@ -859,6 +859,7 @@ function! s:disconnect_gist_buffer(settings) abort " {{{
   endif
   setlocal buftype&
   autocmd! BufWriteCmd <buffer>
+  setlocal modified
   unlet! b:gistinfo
   if settings.provide_filename
     let fname = s:get_usable_buffer_name(fnameescape(expand('%:t')))

@@ -549,7 +549,7 @@ function! gista#raw#delete(gistid, ...) abort " {{{
     for suffix in suffixes
       let cache = s:get_gists_cache(username . suffix)
       for [kind, gists] in items(cache.cached)
-        call filter(gists,
+        let gists = filter(copy(gists),
               \ printf('v:val.id !=# "%s"', a:gistid)
               \)
         let cache.cached[kind] = gists
