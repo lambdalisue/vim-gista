@@ -37,9 +37,24 @@ function! s:get_gist(gistid) abort " {{{
   let gists = s:get_gists()
   if !has_key(gists, a:gistid)
     let res = gista#raw#get(a:gistid)
-    if res.status != 200
+    if res.status == 404
       redraw
-      echohl WarningMsg
+      echohl GistaWarning
+      echo  '404 Gist not found:'
+      echohl None
+      echo  'It seems the gist (' . a:gistid . ') is deleted.'
+      echohl GistaQuestion
+      let a = gista#util#input_yesno('Do you want to delete the gist from cache?')
+      echohl None
+      if a
+        call gista#raw#remove_gist_from_cache(
+              \ a:gistid, gista#raw#get_authenticated_user())
+        call s:update_list({})
+      endif
+      return {}
+    elseif res.status != 200
+      redraw
+      echohl GistaWarning
       echo res.status . ' ' . res.statusText . '. '
       echohl None
       if has_key(res.content, 'message')
@@ -154,6 +169,7 @@ function! s:update_list_buffer(settings) abort " {{{
         \ 'anonymous': 0,
         \}, empty(a:settings) ? b:settings : a:settings)
   " Download gist list
+  redrawstatus
   let res = gista#raw#gets(lookup, copy(settings))
   if empty(res)
     " Authorization has failed or canceled
@@ -162,7 +178,7 @@ function! s:update_list_buffer(settings) abort " {{{
   elseif res.status != 200
     bw!
     redraw
-    echohl WarningMsg
+    echohl GistaWarning
     echo res.status . ' ' . res.statusText . '. '
     echohl None
     if res.status == 404
@@ -172,7 +188,7 @@ function! s:update_list_buffer(settings) abort " {{{
   elseif empty(res.content)
     bw!
     redraw
-    echohl WarningMsg
+    echohl GistaWarning
     echo 'No gists matched with "' . lookup .'" are found. '
     echohl None
     return
@@ -232,7 +248,7 @@ function! s:action_list_buffer(action) abort " {{{
   elseif a:action == 'open'
     if empty(link.gist.files)
       redraw
-      echohl WarningMsg
+      echohl GistaWarning
       echo  'Gist does not contain files:'
       echohl None
       echo  'No files are contained in the gist. Cannot be opened.'
@@ -253,7 +269,7 @@ function! s:action_list_buffer(action) abort " {{{
   elseif a:action == 'rename'
     if empty(link.filename)
       redraw
-      echohl WarningMsg
+      echohl GistaWarning
       echo  'Invalid action:'
       echohl None
       echo  'You have to execute "rename" action on the filename'
@@ -263,7 +279,7 @@ function! s:action_list_buffer(action) abort " {{{
   elseif a:action == 'remove'
     if empty(link.filename)
       redraw
-      echohl WarningMsg
+      echohl GistaWarning
       echo  'Invalid action:'
       echohl None
       echo  'You have to execute "remove" action on the filename. '
@@ -274,7 +290,7 @@ function! s:action_list_buffer(action) abort " {{{
   elseif a:action == 'delete'
     if !empty(link.filename)
       redraw
-      echohl WarningMsg
+      echohl GistaWarning
       echo  'Invalid action:'
       echohl None
       echo  'You have to execute "delete" action on the gist description. '
@@ -327,7 +343,7 @@ function! s:open_gist(gistid, filenames, settings) abort " {{{
     if winnum == -1
       if !has_key(gist.files, filename)
         redraw
-        echohl WarningMsg
+        echohl GistaWarning
         echo  'File entry is not found:'
         echohl None
         echo  'An entry of "' . filename . '" is not found in the gist.'
@@ -378,6 +394,7 @@ function! s:connect_gist_buffer(gistid, filename) abort " {{{
           \ call s:ac_write_gist_buffer(expand("<amatch>"))
   else
     " non user gist, nomodifiable
+    setlocal buftype=nowrite
     setlocal nomodifiable
     autocmd! BufWriteCmd <buffer>
   endif
@@ -394,7 +411,7 @@ function! s:ac_write_gist_buffer(filename) abort " {{{
       " do not save the gist on the web
       return
     elseif g:gista#update_on_write == 2 && !v:cmdbang
-      echohl Comment
+      echohl GistaInfo
       echo  'Type ":w!" to update the gist or set "let g:gista#update_on_write'
       echon ' = 1" to update the gist everytime when the file is saved.'
       echohl None
@@ -419,26 +436,30 @@ function! s:post_gist(bufnums, filenames, contents, settings) abort " {{{
 
   if settings.interactive_description && empty(settings.description)
     redraw
-    echohl Title
+    echohl GistaTitle
     echo  'Description:'
     echohl None
     echo  'Please write a description of the gist.'
     echo  '(You can suppress this message with setting '
     echon '"let g:gista#interactive_description = 0" in your vimrc.)'
+    echohl GistaQuestion
     let settings.description = input('Description: ')
+    echohl None
   endif
   if settings.interactive_publish_status && settings.public == -1
     redraw
-    echohl Title
+    echohl GistaTitle
     echo  'Publish status:'
     echohl None
     echo  'Please specify a publish status of the gist. '
     echon 'If you want to post a gist as a private gist, type "no".'
     echo  '(You can suppress this message with setting '
     echon '"let g:gista#interactive_publish_status = 0" in your vimrc.)'
+    echohl GistaQuestion
     let settings.public = gista#util#input_yesno(
           \ 'Post a gist as a public gist?',
           \ g:gista#post_public ? 'yes' : 'no'))
+    echohl None
   endif
 
   " upload gist
@@ -462,7 +483,7 @@ function! s:post_gist(bufnums, filenames, contents, settings) abort " {{{
     return gist
   else
     redraw
-    echohl ErrorMsg
+    echohl GistaError
     echo  res.status . ' ' . res.statusText
     echohl None
     echo  'Failed to post the gist'
@@ -490,23 +511,27 @@ function! s:save_gist(gistid, filenames, contents, settings) abort " {{{
   if empty(settings.description)
     if settings.interactive_description && empty(partial.description)
       redraw
-      echohl Title
+      echohl GistaTitle
       echo  'Description (missing):'
       echohl None
       echo  'It seems this gist does not have a description. '
       echon  'Please provide a description of the gist.'
       echo  '(You can suppress this message with setting '
       echon '"let g:gista#interactive_description = 0" in your vimrc.)'
+      echohl GistaQuestion
       let partial.description = input('Description: ')
+      echohl None
     elseif settings.interactive_description == 2
       redraw
-      echohl Title
+      echohl GistaTitle
       echo  'Description:'
       echohl None
       echo  'Please modify a description of the gist (Hit return to cancel).'
       echo  '(You can suppress this message with setting '
       echon '"let g:gista#interactive_description = 0 or 1" in your vimrc.)'
+      echohl GistaQuestion
       let partial.description = input('Description: ', partial.description)
+      echohl None
     endif
   else
     let partial.description = settings.description
@@ -530,7 +555,7 @@ function! s:save_gist(gistid, filenames, contents, settings) abort " {{{
     redraw | echo 'Gist (' . a:gistid . ') is saved: ' . gist.html_url
   else
     redraw
-    echohl ErrorMsg
+    echohl GistaError
     echo  res.status . ' ' . res.statusText
     echohl None
     echo  'Failed to post the gist: ' . gist.html_url
@@ -549,13 +574,13 @@ function! s:rename_gist(gistid, filename, settings) abort " {{{
     let new_filename = a:settings.new_filename
   else
     redraw
-    echohl Title
+    echohl GistaTitle
     echo  'Rename:'
     echohl None
     echo  'Please input a new filename (Empty to cancel).'
     let new_filename = input(a:filename . ' -> ', a:filename)
     if empty(new_filename)
-      echohl WarningMsg
+      echohl GistaWarning
       echo 'Canceled'
       echohl None
       return
@@ -584,7 +609,7 @@ function! s:rename_gist(gistid, filename, settings) abort " {{{
     echon gist.html_url
   else
     redraw
-    echohl ErrorMsg
+    echohl GistaError
     echo  res.status . ' ' . res.statusText
     echohl None
     echo  'Renaming "' . a:filename . '" has failed:'
@@ -600,7 +625,7 @@ function! s:remove_gist(gistid, filename, settings) abort " {{{
   endif
 
   redraw
-  echohl Title
+  echohl GistaTitle
   echo  'Remove:'
   echohl None
   echo  'Removing "' . a:filename . '" from the gist. '
@@ -609,7 +634,7 @@ function! s:remove_gist(gistid, filename, settings) abort " {{{
   let response = gista#util#input_yesno('Are you sure to remove the file')
   if !response
     redraw
-    echohl WarningMsg
+    echohl GistaWarning
     echo 'Canceled'
     echohl None
     return
@@ -644,7 +669,7 @@ function! s:remove_gist(gistid, filename, settings) abort " {{{
     redraw | echo "Removed " . a:filename . " from the gist: " . gist.html_url
   else
     redraw
-    echohl ErrorMsg
+    echohl GistaError
     echo  res.status . ' ' . res.statusText
     echohl None
     echo  'Failed to remove a file from the gist: ' . gist.html_url
@@ -661,18 +686,18 @@ function! s:delete_gist(gistid, settings) abort " {{{
   endif
 
   redraw
-  echohl Title
+  echohl GistaTitle
   echo  'Delete:'
   echohl None
   echo  'Deleting a gist (' . a:gistid . '). '
   echon 'If you really want to delete the gist, type "DELETE".'
-  echohl WarningMsg
+  echohl GistaWarning
   echo  'This operation cannot be undone even in Gist web interface.'
   echohl None
   let response = input('type "DELETE" to delete the gist: ')
   if response !=# 'DELETE'
     redraw
-    echohl WarningMsg
+    echohl GistaWarning
     echo 'Canceled'
     echohl None
     return
@@ -697,7 +722,7 @@ function! s:delete_gist(gistid, settings) abort " {{{
     redraw | echo "Deleted the gist (" . a:gistid . ")"
   else
     redraw
-    echohl ErrorMsg
+    echohl GistaError
     echo  res.status . ' ' . res.statusText
     echohl None
     echo  'Failed to delete the gist: ' . gist.html_url
@@ -720,7 +745,7 @@ function! s:star_gist(gistid, settings) abort " {{{
     echo printf('Gist (%s) is starred.', a:gistid)
   else
     redraw
-    echohl ErrorMsg
+    echohl GistaError
     echo  res.status . ' ' . res.statusText
     echohl None
     echo  'Failed to star the gist: ' . gist.html_url
@@ -743,7 +768,7 @@ function! s:unstar_gist(gistid, settings) abort " {{{
     echo printf('Gist (%s) is unstarred.', a:gistid)
   else
     redraw
-    echohl ErrorMsg
+    echohl GistaError
     echo  res.status . ' ' . res.statusText
     echohl None
     echo  'Failed to unstar the gist: ' . gist.html_url
@@ -768,7 +793,7 @@ function! s:is_starred_gist(gistid, settings) abort " {{{
     echo printf('Gist (%s) is not starred.', a:gistid)
   else
     redraw
-    echohl ErrorMsg
+    echohl GistaError
     echo  res.status . ' ' . res.statusText
     echohl None
     echo  'Failed to check if the gist is starred.'
@@ -795,7 +820,7 @@ function! s:fork_gist(gistid, settings) abort " {{{
     endif
   else
     redraw
-    echohl ErrorMsg
+    echohl GistaError
     echo  res.status . ' ' . res.statusText
     echohl None
     echo  'Failed to fork the gist: ' . gist.html_url
@@ -823,7 +848,7 @@ function! s:disconnect_gist_buffer(settings) abort " {{{
         \}, a:settings)
   if empty(get(b:, 'gistinfo', {}))
     redraw
-    echohl ErrorMsg
+    echohl GistaError
     echo  'No gist is connected:'
     echohl None
     echo  'It seems that no gist is connected to this buffer.'
@@ -831,7 +856,7 @@ function! s:disconnect_gist_buffer(settings) abort " {{{
   endif
   if settings.confirm
     redraw
-    echohl Title
+    echohl GistaTitle
     echo  'Disconnect the gist:'
     echohl None
     echo  'If you disconnec the gist from the buffer, you need to re-open the '
@@ -839,7 +864,7 @@ function! s:disconnect_gist_buffer(settings) abort " {{{
     let a = gista#util#input_yesno('Are you sure to disconnect?')
     if !a
       redraw
-      echohl WarningMsg
+      echohl GistaWarning
       echo  'Canceled'
       echohl None
       return
@@ -869,14 +894,16 @@ endfunction " }}}
 function! gista#view#open(gistid, filenames, settings) abort " {{{
   if type(a:filenames) == 3 && empty(a:filenames)
     redraw
-    echohl Title
+    echohl GistaTitle
     echo  'Filenames is required:'
     echohl None
     echo  'Please specify filenamess with a semi-colon (;) separated string '
     echon '(e.g. foo.txt;bar.vim;hoge.html). '
     echo  'If you want to open all files in the gist, leave the field empty '
     echon 'and hit return.'
+    echohl GistaQuestion
     let _filenames = input('A semi-colon separated filenames: ')
+    echohl None
     if !empty(_filenames)
       let filenames = split(_filenames, ";")
     else
@@ -927,7 +954,7 @@ endfunction " }}}
 function! gista#view#save_buffer(line1, line2, settings) abort " {{{
   if empty(get(b:, 'gistinfo', {}))
     redraw
-    echohl ErrorMsg
+    echohl GistaError
     echo  'No gist is connected:'
     echohl None
     echo  'It seems that no gist is connected to this buffer.'

@@ -70,16 +70,18 @@ endfunction " }}}
 function! s:authorize(username, settings) abort " {{{
   let settings = extend({}, a:settings)
   redraw
-  echohl Title
+  echohl GistaTitle
   echo  'Authorization:'
   echohl None
   echo  'A GitHub password of "' . a:username . '" is required. '
   echon 'The password is used only for obtaining an access token from GitHub '
   echon 'API and never be stored.'
+  echohl GistaQuestion
   let password = inputsecret('GitHub password for ' . a:username . ': ')
+  echohl None
   if empty(password)
     redraw
-    echohl WarningMsg
+    echohl GistaWarning
     echon 'Canceled.'
     echohl None
     return
@@ -103,15 +105,17 @@ function! s:authorize(username, settings) abort " {{{
   let h = filter(res.header, 'stridx(v:val, "X-GitHub-OTP:") == 0')
   if len(h)
     redraw
-    echohl Title
+    echohl GistaTitle
     echo  'Two-factor authentication:'
     echohl None
     echo  'It seems that "' . a:username . '" enabled a two-factor authentication. '
     echon 'Please input a six digits two-factor authentication code.'
+    echohl GistaQuestion
     let otp = input('Two-factor authentication code: ')
+    echohl None
     if len(otp) == 0
       redraw
-      echohl WarningMsg
+      echohl GistaWarning
       echo 'Canceled.'
       echohl None
       return
@@ -125,7 +129,7 @@ function! s:authorize(username, settings) abort " {{{
     return [a:username, res.content.token]
   else
     redraw
-    echohl WarningMsg
+    echohl GistaWarning
     echo  'Authorization has failed:'
     echohl None
     echo  res.status . ' ' . res.statusText . '. '
@@ -147,7 +151,7 @@ function! s:authorize2(token, settings) abort " {{{
     return [res.content.login, a:token]
   else
     redraw
-    echohl WarningMsg
+    echohl GistaWarning
     echo  'Authorization has faield:'
     echohl None
     echo  res.status . ' ' . res.statusText . '. '
@@ -199,7 +203,7 @@ function! gista#raw#login(...) abort " {{{
   endif
   if empty(username)
     redraw
-    echohl Title
+    echohl GistaTitle
     echo  'GitHub Login:'
     echohl None
     echo  'Please input a Personal Access Token (PAT) or GitHub username. '
@@ -208,7 +212,7 @@ function! gista#raw#login(...) abort " {{{
     let username = input('Personal Access Token or Username: ')
     if len(username) == 0
       redraw
-      echohl WarningMsg
+      echohl GistaWarning
       echo 'Canceled.'
       echohl None
       return []
@@ -237,7 +241,7 @@ function! gista#raw#login(...) abort " {{{
     if !empty(token)
       let token_filename = s:get_tokens().filename
       redraw
-      echohl Title
+      echohl GistaTitle
       echo  'Logged into GitHub:'
       echohl None
       echo  'A login information of "' . username . '" is stored in a "'
@@ -266,7 +270,7 @@ function! gista#raw#logout(...) abort " {{{
     let token_filename = s:get_tokens().filename
     if permenently
       call s:get_tokens().remove(save_username)
-      echohl Title
+      echohl GistaTitle
       echo  'Permanently logged out from GitHub:'
       echohl None
       echo  printf('A login information of "%s" is removed from a "%s". ',
@@ -275,7 +279,7 @@ function! gista#raw#logout(...) abort " {{{
             \)
       echon 'Run gista#raw#login() to login again.'
     else
-      echohl Title
+      echohl GistaTitle
       echo  'Temporary logged out from GitHub:'
       echohl None
       echo  printf('A login information of "%s" have not removed from a "%s". ',
@@ -334,14 +338,14 @@ function! gista#raw#gets(lookup, ...) abort " {{{
   endif
   if settings.recursive && settings.page != 1
     redraw
-    echohl WarningMsg
+    echohl GistaWarning
     echo  'Conflicted options'
     echohl None
     echo  '"recursive" mode cannot be used when "page" is specified.'
     return {}
   elseif settings.anonymous && a:lookup == 'starred'
     redraw
-    echohl WarningMsg
+    echohl GistaWarning
     echo  'Conflicted options'
     echohl None
     echo  '"anonymous" user does not have any "starred" gists.'
@@ -395,16 +399,16 @@ function! gista#raw#gets(lookup, ...) abort " {{{
         \])
   let request_settings['default_content'] = '[]'
   let loaded_gists = []
-  redraw
   if settings.nocache
     let cached_gists = []
     let params = {'page': params.page}
-    echo 'Requesting gists (No cache used) ...'
+    redraw | echo 'Requesting gists (No cache used) ...'
   elseif !empty(get(params, 'since', ''))
-    echo 'Requesting gists updated since' params.since '...'
+    redraw | echo 'Requesting gists updated since' params.since '...'
   else
-    echo 'Requesting gists ...'
+    redraw | echo 'Requesting gists ...'
   endif
+
   while terminal == -1 || params.page <= terminal
     let res = gista#vital#get(url, params, header, request_settings)
     if res.status != 200
@@ -433,16 +437,18 @@ function! gista#raw#gets(lookup, ...) abort " {{{
       break
     endif
 
-    redraw
     if settings.nocache
-      echo 'Requesting gists (No cache used) ...'
+      let status = 'Requesting gists (No cache used) ...'
     elseif !empty(get(params, 'since', ''))
-      echo 'Requesting gists updated since' params.since '...'
+      let status = 'Requesting gists updated since' params.since '...'
     else
-      echo 'Requesting gists ...'
+      let status = 'Requesting gists ...'
     endif
-    echon params.page . '/' . terminal . ' pages has been loaded (Ctrl-C to cancel)'
-
+    let status = printf(
+          \ '%s %d/%d pages has been loaded (Ctrl-C to cacel)',
+          \ status, params.page, terminal
+          \)
+    redraw | echo status
     let params.page += 1
   endwhile
 
@@ -542,21 +548,7 @@ function! gista#raw#delete(gistid, ...) abort " {{{
   let res = gista#vital#delete(s:get_api_url('gists', a:gistid), header, request_settings)
   if settings.delete_from_cache && res.status == 204
     " remove deleted gist entry from the cache
-    redraw
-    echo  'Deleting the gist from caches ...'
-    let suffixes = ['.all', '.starred', '.public']
-    let username = s:get_authenticated_user()
-    for suffix in suffixes
-      let cache = s:get_gists_cache(username . suffix)
-      for [kind, gists] in items(cache.cached)
-        let gists = filter(copy(gists),
-              \ printf('v:val.id !=# "%s"', a:gistid)
-              \)
-        let cache.cached[kind] = gists
-      endfor
-      " save cache
-      call cache.save()
-    endfor
+    call gista#raw#remove_gist_from_cache(a:gistid, '')
   endif
   return res
 endfunction " }}}
@@ -627,8 +619,26 @@ function! gista#raw#forks(gistid, ...) abort " {{{
 endfunction " }}}
 
 " Cache utils
-function! gista#raw#get_gists_cache(username) " {{{
+function! gista#raw#get_gists_cache(username) abort " {{{
   return s:get_gists_cache(a:username)
+endfunction " }}}
+function! gista#raw#remove_gist_from_cache(gistid, username) abort " {{{
+  " remove deleted gist entry from the cache
+  redraw
+  echo  'Deleting the gist from caches ...'
+  let suffixes = ['.all', '.starred', '.public']
+  let username = empty(a:username) ? s:get_authenticated_user() : a:username
+  for suffix in suffixes
+    let cache = s:get_gists_cache(username . suffix)
+    for [kind, gists] in items(cache.cached)
+      let gists = filter(copy(gists),
+            \ printf('v:val.id !=# "%s"', a:gistid)
+            \)
+      let cache.cached[kind] = gists
+    endfor
+    " save cache
+    call cache.save()
+  endfor
 endfunction " }}}
 
 

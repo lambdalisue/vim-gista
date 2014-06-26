@@ -34,6 +34,7 @@ function! gista#util#call_on_buffer(expr, funcref, ...) abort " {{{
     call call(a:funcref, a:000)
     execute cwinnr . 'wincmd w'
   endif
+  let &lazyredraw = save_lazyredraw
   return 1
 endfunction " }}}
 function! gista#util#provide_filename(filename, filetype, ...) " {{{
