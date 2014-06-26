@@ -91,6 +91,7 @@ function! s:open_list(lookup, settings) abort " {{{
       setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
       setlocal nolist nowrap nospell nofoldenable textwidth=0 undolevels=-1
       setlocal colorcolumn=0
+      setlocal cursorline
 
       if g:gista#enable_default_keymaps
         nmap <buffer> <C-l>      <Plug>(gista-action-update)
@@ -640,7 +641,7 @@ function! s:remove_gist(gistid, filename, settings) abort " {{{
       call s:disconnect_gist_buffer({'confirm': 0})
     else
       call gista#util#call_on_buffer(
-            \ gist.files[a:filename].bufnum,
+            \ get(gist.files[a:filename], 'bufnum', -1),
             \ function("<SID>disconnect_gist_buffer"),
             \ {'confirm': 0},
             \)
@@ -696,7 +697,7 @@ function! s:delete_gist(gistid, settings) abort " {{{
     let F = function("<SID>disconnect_gist_buffer")
     for filename in keys(gist.files)
       call gista#util#call_on_buffer(
-            \ gist.files[filename].bufnum,
+            \ get(gist.files[filename], 'bufnum', -1),
             \ F, {'confirm': 0},
             \)
     endfor
