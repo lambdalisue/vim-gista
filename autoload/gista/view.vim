@@ -62,7 +62,12 @@ function! s:format_gist_title(gist) abort " {{{
   let gistid = a:gist.id
   let publish_state = a:gist.public ? public_mark : private_mark
   let description = empty(a:gist.description) ? 'No description' : a:gist.description
-  return printf("%s %s [%s]", description,publish_state,  gistid)
+  return printf("[%s] %s %s @%s",
+        \ gistid,
+        \ description,
+        \ publish_state,
+        \ a:gist.updated_at,
+        \)
 endfunction " }}}
 function! s:format_gist_file(gist, filename) abort " {{{
   return printf("- %s", a:filename)
@@ -89,11 +94,9 @@ function! s:open_list(lookup, settings) abort " {{{
       " initialize list window
       let &l:filetype = s:consts.LISTWIN_FILETYPE
       setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
-      setlocal nolist nowrap nospell nofoldenable textwidth=0 undolevels=-1
-      setlocal colorcolumn=0
-      setlocal cursorline
 
       if g:gista#enable_default_keymaps
+        nmap <buffer> <F1>       :<C-u>help vim-gista-list-mappings<CR>
         nmap <buffer> <C-l>      <Plug>(gista-action-update)
         nmap <buffer> <C-l><C-l> <Plug>(gista-action-update-nocache)
         nmap <buffer> <CR>       <Plug>(gista-action-open)
@@ -179,6 +182,10 @@ function! s:update_list_buffer(settings) abort " {{{
   let gists = copy(res.content)
   let lines = []
   let links = []
+  call add(lines, '" Press <F1> to see the help')
+  call add(lines, '')
+  call add(links, {})
+  call add(links, {})
   for gist in gists
     call add(lines, s:format_gist_title(gist))
     call add(links, {'gist': gist, 'filename': ''})
@@ -392,7 +399,7 @@ function! s:ac_write_gist_buffer(filename) abort " {{{
       echon ' = 1" to update the gist everytime when the file is saved.'
       echohl None
     else
-      return gista#view#save_buffer({})
+      return gista#view#save_buffer(1, '$', {})
     endif
   else
     " new filename is given, save the content with a new filename
@@ -469,16 +476,15 @@ function! s:save_gist(gistid, filenames, contents, settings) abort " {{{
   if empty(gist)
     return
   endif
+  " it seems like Gist API does not provide a way to change the visibility
+  " https://developer.github.com/v3/gists/#edit-a-gist
   let partial = gista#vital#pick(gist, [
         \ 'description',
-        \ 'public',
         \ 'files',
         \])
   let settings = extend({
         \ 'interactive_description': g:gista#interactive_description,
-        \ 'interactive_publish_status': g:gista#interactive_publish_status,
         \ 'description': '',
-        \ 'public': -1,
         \}, a:settings)
 
   if empty(settings.description)
@@ -504,24 +510,6 @@ function! s:save_gist(gistid, filenames, contents, settings) abort " {{{
     endif
   else
     let partial.description = settings.description
-  endif
-
-  if settings.public == -1
-    if settings.interactive_publish_status == 2
-      redraw
-      echohl Title
-      echo  'Publish status:'
-      echohl None
-      echo  'Please modify a publish status of the gist. '
-      echon 'If you want to post a gist as a private gist, type "no".'
-      echo  '(You can suppress this message with setting '
-      echon '"let g:gista#interactive_publish_status = 0" in your vimrc.)'
-      let settings.public = gista#util#input_yesno(
-            \ 'Post a gist as a public gist?',
-            \ partial.public ? 'yes' : 'no'))
-    endif
-  else
-    let partial.public = settings.public
   endif
 
   " update gist contents
@@ -557,8 +545,8 @@ function! s:rename_gist(gistid, filename, settings) abort " {{{
     return
   endif
 
-  if has_key(settings, 'new_filename')
-    let new_filename = settings.new_filename
+  if has_key(a:settings, 'new_filename')
+    let new_filename = a:settings.new_filename
   else
     redraw
     echohl Title

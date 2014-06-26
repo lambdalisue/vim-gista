@@ -90,7 +90,7 @@ function! s:get_parser() " {{{
           \ 'Specify a gist ID', {
           \   'kind': s:parser.VALUE,
           \   'subordinations_of': [
-          \     'open', 'rename', 'remove', 'delete',
+          \     'open', 'post', 'rename', 'remove', 'delete',
           \     'star', 'unstar', 'is-starred', 'fork',
           \     'disconnect',
           \   ],
@@ -167,7 +167,7 @@ function! s:get_parser() " {{{
           \})
     function! s:parser._pre_process(options) abort " {{{
       let options = a:options
-      " gistid
+      " gistid (GistPost does not require gistid but use)
       if self.has_subordinated('gistid', options)
         let gistid = s:find_gistid(
               \   a:options.__range__[0],

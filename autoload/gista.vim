@@ -26,11 +26,11 @@ function! s:GistaList(options) abort " {{{
         \])
   return gista#view#list(lookup, options)
 endfunction " }}}
-function! s:GistaOpen(options) abort " {{{
-  let gistid = a:options.gistid
-  let filename = split(a:options.filename, ';')
-  return gista#view#open(gistid, filename, {})
-endfunction " }}}
+function! s:GistaOpen(options) abort " {{{      
+  let gistid = a:options.gistid                 
+  let filename = split(a:options.filename, ';') 
+  return gista#view#open(gistid, filename, {})  
+endfunction " }}}                               
 function! s:GistaPost(options) abort " {{{
   let gistid = get(a:options, 'gistid', '')
   let options = extend({
@@ -51,6 +51,21 @@ function! s:GistaPost(options) abort " {{{
             \ options)
     endif
   else
+    if has_key(a:options, 'public')
+      redraw
+      echohl GistaWarning
+      echo  'Visibility modification is not supported:'
+      echohl None
+      echo  'It seems you have specified visibility to existing gist.'
+      echo  'Gist API does not provide a way to modify the visibility thus '
+      echon 'vim-gista cannot change the visibility (public or private) in '
+      echon 'its interface.'
+      echo  'Thus if you have specified different visibility, it will be '
+      echon 'ignored.'
+      echohl GistaQuestion
+      call input('Hit enter to continue')
+      echohl None
+    endif
     return gista#view#save_buffer(
           \ a:options.__range__[0],
           \ a:options.__range__[1],

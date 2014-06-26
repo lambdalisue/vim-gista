@@ -175,6 +175,7 @@ If you prefer a long option, use '--list' like
 After all gists are downloaded, a buffer called 'gista:list' will be opened.
 You can manipulate your gist in this window. The default key mappings are
 
+						*vim-gista-list-mappings*
 <C-l>	    <Plug>(gista-action-update)          Update list
 <C-l><C-l>  <Plug>(gista-action-update-nocache)  Update list without using a
 						 cache
