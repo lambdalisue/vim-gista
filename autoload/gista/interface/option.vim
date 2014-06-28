@@ -21,7 +21,7 @@ function! s:find_gistid(lnum, ...) " {{{
 endfunction " }}}
 function! s:get_parser() " {{{
   if !exists('s:parser') || 1
-    let s:parser = gista#modules#option#new()
+    let s:parser = gista#utils#option#new()
     call s:parser.add_argument(
           \ '--list', '-l', 
           \ 'List gists and show in gist list window', {
@@ -202,14 +202,14 @@ function! s:get_parser() " {{{
 endfunction " }}}
 
 
-function! gista#option#parse(...) abort " {{{
+function! gista#interface#option#parse(...) abort " {{{
   let parser = s:get_parser()
   return call(parser.parse, a:000, parser)
 endfunction " }}}
 
 
 command! -nargs=? -range=% -bang GistaDebugOptions
-      \ :echo gista#option#parse(<q-bang>, [<line1>, <line2>], <f-args>)
+      \ :echo gista#interface#option#parse(<q-bang>, [<line1>, <line2>], <f-args>)
 
 
 let &cpo = s:save_cpo

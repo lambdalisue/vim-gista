@@ -10,7 +10,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
-let s:directory = get(g:, 'gista#modules#cache#directory', '')
+let s:directory = get(g:, 'gista#utils#cache#directory', '')
 let s:directory = empty(s:directory) ? g:gista#directory . "cache/" : s:directory
 let s:prototype = {}
 
@@ -55,21 +55,21 @@ function! s:prototype.clear(...) abort dict " {{{
 endfunction " }}}
 function! s:prototype.save() abort dict " {{{
   let created = !filereadable(self.filename)
-  call writefile([gista#vital#json_encode(self.cached)], self.filename)
-  if created && !gista#vital#is_windows()
-    call gista#vital#system('chmod 600 ' . self.filename)
+  call writefile([gista#utils#vital#json_encode(self.cached)], self.filename)
+  if created && !gista#utils#vital#is_windows()
+    call gista#utils#vital#system('chmod 600 ' . self.filename)
   endif
   let self.last_updated = strftime("%FT%T%z")
 endfunction " }}}
 function! s:prototype.load() abort dict " {{{
   if filereadable(self.filename)
     let content = join(readfile(self.filename), '')
-    let self.cached = gista#vital#json_decode(content)
+    let self.cached = gista#utils#vital#json_decode(content)
     let self.last_updated = strftime("%FT%T%z", getftime(self.filename))
   endif
 endfunction " }}}
 
-function! gista#modules#cache#new(name, directory, ...) abort " {{{
+function! gista#utils#cache#new(name, directory, ...) abort " {{{
   let settings = extend({
         \ 'autoload': 1,
         \ 'default': '',

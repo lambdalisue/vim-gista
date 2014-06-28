@@ -9,7 +9,7 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! gista#util#call_on_buffer(expr, funcref, ...) abort " {{{
+function! gista#utils#call_on_buffer(expr, funcref, ...) abort " {{{
   let cbufnr = bufnr('%')
   let save_lazyredraw = &lazyredraw
   let &lazyredraw = 1
@@ -37,7 +37,7 @@ function! gista#util#call_on_buffer(expr, funcref, ...) abort " {{{
   let &lazyredraw = save_lazyredraw
   return 1
 endfunction " }}}
-function! gista#util#provide_filename(filename, filetype, ...) " {{{
+function! gista#utils#provide_filename(filename, filetype, ...) " {{{
   let magicnum = get(a:000, 0, 0)
   let filename = fnamemodify(a:filename, ':t')
   let default_filename = g:gista#gist_default_filename
@@ -52,14 +52,14 @@ function! gista#util#provide_filename(filename, filetype, ...) " {{{
   endif
   return filename
 endfunction " }}}
-function! gista#util#guess_extension(filetype) " {{{
+function! gista#utils#guess_extension(filetype) " {{{
   if len(a:filetype) == 0
     return ''
   elseif has_key(s:consts.EXTMAP, a:filetype)
     return s:consts.EXTMAP[a:filetype]
   return '.' + a:filetype
 endfunction " }}}
-function! gista#util#input_yesno(message, ...) "{{{
+function! gista#utils#input_yesno(message, ...) "{{{
   " forked from Shougo/unite.vim
   " AUTHOR: Shougo Matsushita <Shougo.Matsu@gmail.com>
   " License: MIT license  {{{
@@ -97,16 +97,16 @@ function! gista#util#input_yesno(message, ...) "{{{
   redraw
   return yesno =~? 'y\%[es]'
 endfunction " }}}
-function! gista#util#set_clipboard(content) abort " {{{
+function! gista#utils#set_clipboard(content) abort " {{{
   if exists('g:gista#clip_command')
-    call gista#vital#system(g:gista#clip_command, content)
+    call gista#utils#vital#system(g:gista#clip_command, content)
   elseif has('unix') && !has('xterm_clipboard')
     let @" = content
   else
     let @+ = content
   endif
 endfunction " }}}
-function! gista#util#browse(url) abort " {{{
+function! gista#utils#browse(url) abort " {{{
   try
     call openbrowser#open(a:url)
   catch /E117.*/

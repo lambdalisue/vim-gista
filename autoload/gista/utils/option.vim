@@ -318,7 +318,7 @@ function! s:prototype._post_process(options) abort " {{{
 endfunction " }}}
 
 
-function! gista#modules#option#new(...) " {{{
+function! gista#utils#option#new(...) " {{{
   let s:argument_parser = extend(
         \ deepcopy(s:prototype),
         \ get(a:000, 0, {})

@@ -50,7 +50,7 @@ function! s:source.gather_candidates(args, context) abort
     endwhile
   endif
 
-  let res = gista#raw#gets(lookup, settings)
+  let res = gista#gist#raw#gets(lookup, settings)
   let candidates = []
   if res.status == 200
     let gists = res.content

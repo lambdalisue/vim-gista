@@ -190,9 +190,13 @@ D	    <Plug>(gista-action-smart-delete)    Remove the selected file of
 						 selected gist. Determined
 						 from the cursor position.
 F	    <Plug>(gista-action-fork)            Fork the selected gist
-<CR>	    <Plug>(gista-action-open)		 Open the selected file or the
+e	    <Plug>(gista-action-open)		 Open the selected file or the
 						 files of the gist
-<S-CR>	    <Plug>(gista-action-browser)         Open the selected file or the
+s	    <Plug>(gista-action-split)		 Open the selected file or the
+						 files of the gist (split)
+v	    <Plug>(gista-action-vsplit)		 Open the selected file or the
+						 files of the gist (vsplit)
+b	    <Plug>(gista-action-browser)         Open the selected file or the
 						 gist in a browser
 
 If you don't want to let vim-gista to define these mappings, set

@@ -21,15 +21,15 @@ function! s:GistaList(options) abort " {{{
         \ 'nocache': 0,
         \ 'page': -1,
         \}, a:options)
-  let options = gista#vital#pick(options, [
+  let options = gista#utils#vital#pick(options, [
         \ 'nocache', 'page',
         \])
-  return gista#view#list(lookup, options)
+  return gista#interface#list(lookup, options)
 endfunction " }}}
 function! s:GistaOpen(options) abort " {{{      
   let gistid = a:options.gistid                 
   let filename = split(a:options.filename, ';') 
-  return gista#view#open(gistid, filename, {})  
+  return gista#interface#open(gistid, filename, {})  
 endfunction " }}}                               
 function! s:GistaPost(options) abort " {{{
   let gistid = get(a:options, 'gistid', '')
@@ -38,14 +38,14 @@ function! s:GistaPost(options) abort " {{{
         \ 'description': '',
         \ 'public': !g:gista#post_private,
         \}, a:options)
-  let options = gista#vital#pick(options, [
+  let options = gista#utils#vital#pick(options, [
         \ 'anonymous', 'description', 'public',
         \])
   if empty(gistid)
     if get(a:options, 'multiple')
-      return gista#view#post_all_buffers(options)
+      return gista#interface#post_all_buffers(options)
     else
-      return gista#view#post_buffer(
+      return gista#interface#post_buffer(
             \ a:options.__range__[0],
             \ a:options.__range__[1],
             \ options)
@@ -66,7 +66,7 @@ function! s:GistaPost(options) abort " {{{
       call input('Hit enter to continue')
       echohl None
     endif
-    return gista#view#save_buffer(
+    return gista#interface#save_buffer(
           \ a:options.__range__[0],
           \ a:options.__range__[1],
           \ options)
@@ -82,42 +82,42 @@ function! s:GistaRename(options) abort " {{{
   else
     let options = a:options
   endif
-  return gista#view#rename(gistid, filename, options)
+  return gista#interface#rename(gistid, filename, options)
 endfunction " }}}
 function! s:GistaRemove(options) abort " {{{
   let gistid = a:options.gistid
   let filename = a:options.filename
-  return gista#view#remove(gistid, filename, a:options)
+  return gista#interface#remove(gistid, filename, a:options)
 endfunction " }}}
 function! s:GistaDelete(options) abort " {{{
   let gistid = a:options.gistid
-  return gista#view#delete(gistid, a:options)
+  return gista#interface#delete(gistid, a:options)
 endfunction " }}}
 function! s:GistaStar(options) abort " {{{
   let gistid = a:options.gistid
-  return gista#view#star(gistid, a:options)
+  return gista#interface#star(gistid, a:options)
 endfunction " }}}
 function! s:GistaUnstar(options) abort " {{{
   let gistid = a:options.gistid
-  return gista#view#unstar(gistid, a:options)
+  return gista#interface#unstar(gistid, a:options)
 endfunction " }}}
 function! s:GistaIsStarred(options) abort " {{{
   let gistid = a:options.gistid
-  return gista#view#is_starred(gistid, a:options)
+  return gista#interface#is_starred(gistid, a:options)
 endfunction " }}}
 function! s:GistaFork(options) abort " {{{
   let gistid = a:options.gistid
-  return gista#view#is_starred(gistid, a:options)
+  return gista#interface#is_starred(gistid, a:options)
 endfunction " }}}
 function! s:GistaBrowse(options) abort " {{{
   let gistid = a:options.gistid
   let filename = get(a:options, 'filename', '')
-  return gista#view#browse(gistid, filename, a:options)
+  return gista#interface#browse(gistid, filename, a:options)
 endfunction " }}}
 function! s:GistaDisconnect(options) abort " {{{
   let gistid = a:options.gistid
   let filename = get(a:options, 'filename', '')
-  return gista#view#disconnect(gistid, split(filename, ";"), a:options)
+  return gista#interface#disconnect(gistid, split(filename, ";"), a:options)
 endfunction " }}}
 
 function! gista#Gista(options) abort " {{{
@@ -153,17 +153,22 @@ function! gista#Gista(options) abort " {{{
 endfunction " }}}
 
 
+let s:default_opener = {
+      \ 'open': 'edit',
+      \ 'split': 'rightbelow split',
+      \ 'vsplit': 'rightbelow vsplit',
+      \}
 let s:settings = {
+      \ 'github_user': -1,
+      \ 'gist_api_url': -1,
       \ 'directory': printf('"%s"', fnamemodify(expand('~/.gista/'), ':p')),
       \ 'gist_default_filename': '"gist-file"',
-      \ 'gist_api_url': printf('"%s"', get(g:, 'gist_api_url', 'https://gist.github.com')),
       \ 'tokens_directory': -1,
-      \ 'gists_cache_directory': -1,
+      \ 'gist_entries_cache_directory': -1,
       \ 'private_mark': '"<private>"',
       \ 'public_mark': '""',
       \ 'list_opener': '"topleft 20 split +set\\ winfixheight"',
-      \ 'gist_opener': '"rightbelow vsplit"',
-      \ 'gist_opener_in_action': -1,
+      \ 'gist_default_open_method': '"open"',
       \ 'close_list_after_open': 0,
       \ 'auto_connect_after_post': 1,
       \ 'update_on_write': 2,
@@ -179,18 +184,42 @@ function! s:init() " {{{
       execute 'let g:gista#' . key . ' = ' . value
     endif
   endfor
+  let g:gista#gist_opener = extend(s:default_opener,
+        \ get(g:, 'gista#gist_opener', {}))
+  let g:gista#gist_opener_in_action = extend(g:gista#gist_opener,
+        \ get(g:, 'gista#gist_opener_in_action', {}))
   " define default values
   if type(g:gista#tokens_directory) == 0
     unlet g:gista#tokens_directory
     let g:gista#tokens_directory = g:gista#directory . 'tokens/'
   endif
-  if type(g:gista#gists_cache_directory) == 0
-    unlet g:gista#gists_cache_directory
-    let g:gista#gists_cache_directory = g:gista#directory . 'gists/'
+  if type(g:gista#gist_entries_cache_directory) == 0
+    unlet g:gista#gist_entries_cache_directory
+    let g:gista#gist_entries_cache_directory = g:gista#directory . 'gists/'
   endif
-  if type(g:gista#gist_opener_in_action) == 0
-    unlet g:gista#gist_opener_in_action
-    let g:gista#gist_opener_in_action = g:gista#gist_opener
+  if type(g:gista#github_user) == 0
+    unlet g:gista#github_user
+    let g:gista#github_user = get(g:, 'github_user', '')
+    if empty(g:gista#github_user)
+      let g:gista#github_user = 
+            \ gista#utils#vital#system('git config --get github.user')
+      let g:gista#github_user = substitute(g:gista#github_user, "\n", '', '')
+      if empty(g:gista#github_user)
+        let g:gista#github_user = $GITHUB_USER
+      endif
+    endif
+  endif
+  if type(g:gista#gist_api_url) == 0
+    unlet g:gista#gist_api_url
+    let g:gista#gist_api_url = get(g:, 'gist_api_url', '')
+    if empty(g:gista#gist_api_url)
+      let g:gista#gist_api_url = 
+            \ gista#utils#vital#system('git config --get github.apiurl')
+      let g:gista#gist_api_url = substitute(g:gista#gist_api_url, "\n", '', '')
+      if empty(g:gista#gist_api_url)
+        let g:gista#gist_api_url = 'https://api.github.com/'
+      endif
+    endif
   endif
 endfunction
 call s:init()

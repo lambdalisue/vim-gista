@@ -8,21 +8,21 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! gista#statusline#gistid() abort
+function! gista#statusline#components#gistid() abort
   if exists('b:gistinfo')
     return b:gistinfo.gistid
   endif
   return ''
 endfunction
 
-function! gista#statusline#filename() abort
+function! gista#statusline#components#filename() abort
   if exists('b:gistinfo')
     return b:gistinfo.filename
   endif
   return ''
 endfunction
 
-function! gista#statusline#gistinfo() abort
+function! gista#statusline#components#gistinfo() abort
   if exists('b:gistinfo')
     return printf("%s:%s", b:gistinfo.gistid, b:gistinfo.filename)
   endif

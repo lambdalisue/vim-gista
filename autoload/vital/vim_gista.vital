@@ -1,11 +1,10 @@
 vim_gista
-3f8ab0e
+3fd184b
 
 Data.List
 Data.Dict
 Data.Base64
+Web.HTTP
 Web.JSON
-Web.HTML
-OptionParser
-Process
 System.Filepath
+Process
