@@ -9,6 +9,28 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+function! gista#utils#translate_datetime(datetime) abort " {{{
+  " Create DateTime object from GitHub API datetime format
+  let datetime_obj = gista#utils#vital#from_format(a:datetime, "%FT%T%z")
+  " return formatted string
+  return datetime_obj.format("%Y/%m/%d %H:%M:%S")
+endfunction " }}}
+function! gista#utils#trancate(str, length) abort " {{{
+  if len(a:str) > a:length
+    return a:str[0:a:length-5] . ' ...'
+  endif
+  return a:str
+endfunction " }}}
+function! gista#utils#get_bufwidth() abort " {{{
+  if &l:number
+    let gwidth = &l:numberwidth
+  else
+    let gwidth = 0
+  endif
+  let fwidth = &l:foldcolumn
+  let wwidth = winwidth(0)
+  return wwidth - gwidth - fwidth
+endfunction " }}}
 function! gista#utils#call_on_buffer(expr, funcref, ...) abort " {{{
   let cbufnr = bufnr('%')
   let save_lazyredraw = &lazyredraw

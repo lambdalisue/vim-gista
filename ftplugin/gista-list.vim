@@ -6,6 +6,8 @@
 " (C) 2014, Alisue, hashnote.net
 "******************************************************************************
 setlocal nolist nowrap nospell nofoldenable textwidth=0 undolevels=-1
+setlocal nonumber
+setlocal foldcolumn=0
 setlocal cursorline
 if v:version >= 703
   setlocal colorcolumn=0

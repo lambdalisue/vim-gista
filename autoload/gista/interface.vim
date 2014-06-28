@@ -45,10 +45,23 @@ function! s:set_bridge(gistid, filename, bufnum) abort " {{{
   let bridges[a:gistid][a:filename] = a:bufnum
 endfunction " }}}
 function! s:format_gist(gist) abort " {{{
-  return a:gist.id . " " . a:gist.description
+  let gistid = printf("[%-20S]", a:gist.id)
+  let update = printf("%s",
+        \ gista#utils#translate_datetime(a:gist.updated_at))
+  let private = a:gist.public ? "" : "<private>"
+  let description = empty(a:gist.description) ?
+        \ '<<No description>>' :
+        \ a:gist.description
+  let bwidth = gista#utils#get_bufwidth()
+  let width = bwidth - len(private) - len(gistid) - len(update) - 3
+  return printf(printf("%%-%dS %%s %%s %%s", width),
+        \ gista#utils#trancate(description, width),
+        \ private,
+        \ gistid,
+        \ update)
 endfunction " }}}
 function! s:format_gist_file(gist, filename) abort " {{{
-  return "    " . a:filename
+  return '- ' . a:filename
 endfunction " }}}
 function! s:connect(gistid, filename) abort " {{{
   let gist = gista#gist#api#get(a:gistid)
@@ -188,7 +201,7 @@ function! gista#interface#list(lookup, ...) abort " {{{
         \ empty(b#settings) ||
         \ settings.nocache ||
         \ a:lookup != b#lookup ||
-        \ settings.page != b#settings.page
+        \ settings.page != get(b#settings, 'page', -1)
         \)
   let b:lookup = a:lookup
   let b:settings = settings
@@ -835,6 +848,27 @@ function! gista#interface#disconnect_action(gistid, filenames) abort " {{{
   endfor
 endfunction " }}}
 
+function! gista#interface#define_syntax() abort " {{{
+  highlight default link GistaTitle     Title
+  highlight default link GistaError     ErrorMsg
+  highlight default link GistaWarning   WarningMsg
+  highlight default link GistaInfo      Comment
+  highlight default link GistaQuestion  Question
+
+  highlight default link GistaGistID      Identifier
+  highlight default link GistaDescription Title
+  highlight default link GistaPublic      Statement
+  highlight default link GistaPrivate     Statement
+  highlight default link GistaFiles       Comment
+  highlight default link GistaComment     Comment
+
+  syntax clear
+  syntax match GistaGistID  /\[.\{20}\]/
+  syntax match GistaFiles   /^-.*/
+  syntax match GistaComment /^".*/
+  syntax match GistaPrivate /<private>/
+  syntax match GistaComment /@\d\d\d\d-\d\d-\d\d.*$/
+endfunction " }}}
 
 nnoremap <silent> <Plug>(gista-action-update)
       \ :call <SID>action('update')<CR>

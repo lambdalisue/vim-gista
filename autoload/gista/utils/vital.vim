@@ -56,6 +56,12 @@ function! s:get_process() " {{{
   endif
   return s:Process
 endfunction " }}}
+function! s:get_datetime() " {{{
+  if !exists('s:DateTime')
+    let s:DateTime = gista#utils#vital#get_vital().import('DateTime')
+  endif
+  return s:DateTime
+endfunction " }}}
 
 " Prelude
 function! gista#utils#vital#is_windows() " {{{
@@ -176,6 +182,11 @@ endfunction " }}}
 " System
 function! gista#utils#vital#system(...) " {{{
   return call(s:get_process().system, a:000)
+endfunction " }}}
+
+" DateTime
+function! gista#utils#vital#from_format(...) " {{{
+  return call(s:get_datetime().from_format, a:000)
 endfunction " }}}
 
 

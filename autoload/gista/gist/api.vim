@@ -120,7 +120,7 @@ function! gista#gist#api#list(lookup, ...) abort " {{{
         \ 'nocache': 0,
         \}, get(a:000, 0, {}))
 
-  " get cache
+  " get cache (to update the cache, get the cache even if nocache is 1)
   let username = gista#gist#raw#get_authenticated_user()
   if a:lookup == username || a:lookup == ''
     let cache = s:get_gist_entries(username . '.all')
@@ -150,8 +150,8 @@ function! gista#gist#api#list(lookup, ...) abort " {{{
       if !(empty(cached_gists) || empty(loaded_gists))
         redraw | echo "Removing duplicated gist entries ..."
         for loaded_gist in loaded_gists
-          let cached_gists = filter(
-                \ copy(cached_gists),
+          call filter(
+                \ cached_gists,
                 \ 'loaded_gist.id!=v:val.id')
         endfor
       endif

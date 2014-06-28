@@ -326,6 +326,7 @@ function! gista#gist#raw#list(lookup, ...) abort " {{{
   let terminal = -1
   let params = gista#utils#vital#pick(settings, ['page', 'since'])
   let params = filter(params, '!empty(v:val)')
+  let params.page = params.page <= 0 ? 1 : params.page
 
   let request_settings = gista#utils#vital#omit(settings, [
         \ 'page',
