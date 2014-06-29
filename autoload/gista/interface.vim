@@ -53,7 +53,7 @@ function! s:format_gist(gist) abort " {{{
         \ '<<No description>>' :
         \ a:gist.description
   let bwidth = gista#utils#get_bufwidth()
-  let width = bwidth - len(private) - len(gistid) - len(update) - 3
+  let width = bwidth - len(private) - len(gistid) - len(update) - 4
   return printf(printf("%%-%dS %%s %%s %%s", width),
         \ gista#utils#trancate(description, width),
         \ private,
@@ -111,7 +111,8 @@ function! s:action(action) abort " {{{
   endif
 
   let settings = extend({
-        \ 'opener': g:gista#gist_opener_in_action,
+        \ 'openers': g:gista#gist_openers_in_action,
+        \ 'opener': g:gista#gist_default_opener_in_action,
         \}, get(b:settings, 'action_settings', {}))
 
   let cursorline = line('.')
@@ -159,7 +160,7 @@ function! gista#interface#list(lookup, ...) abort " {{{
         \ 'opener': g:gista#list_opener,
         \}, get(a:000, 0, {}))
   let settings.action_settings = extend({
-        \ 'opener': g:gista#gist_opener_in_action,
+        \ 'opener': g:gista#gist_default_opener_in_action,
         \}, get(settings, 'action_settings', {}))
 
   let bufnum = bufnr(bufname)
@@ -171,8 +172,8 @@ function! gista#interface#list(lookup, ...) abort " {{{
       setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
       execute "setfiletype" s:consts.LISTWIN_FILETYPE
 
-      nmap <buffer> <F1>       :<C-u>help vim-gista-list-mappings<CR>
       if g:gista#enable_default_keymaps
+        nmap <buffer> <F1>       :<C-u>help vim-gista-default-mappings<CR>
         nmap <buffer> <C-l>      <Plug>(gista-action-update)
         nmap <buffer> <C-l><C-l> <Plug>(gista-action-update-nocache)
         nmap <buffer> r          <Plug>(gista-action-rename)
@@ -181,7 +182,9 @@ function! gista#interface#list(lookup, ...) abort " {{{
         nmap <buffer> -          <Plug>(gista-action-unstar)
         nmap <buffer> ?          <Plug>(gista-action-is-starred)
         nmap <buffer> F          <Plug>(gista-action-fork)
-        nmap <buffer> e          <Plug>(gista-action-open)
+        nmap <buffer> <CR>       <Plug>(gista-action-open)
+        nmap <buffer> <S-CR>     <Plug>(gista-action-browse)
+        nmap <buffer> e          <Plug>(gista-action-edit)
         nmap <buffer> s          <Plug>(gista-action-split)
         nmap <buffer> v          <Plug>(gista-action-vsplit)
         nmap <buffer> b          <Plug>(gista-action-browse)
@@ -260,8 +263,8 @@ endfunction " }}}
 
 function! gista#interface#open(gistid, filenames, ...) abort " {{{
   let settings = extend({
-        \ 'opener': g:gista#gist_opener,
-        \ 'open_method': g:gista#gist_default_open_method,
+        \ 'openers': g:gista#gist_openers,
+        \ 'opener': g:gista#gist_default_opener,
         \}, get(a:000, 0, {}))
 
   let gist = gista#gist#api#get(a:gistid, settings)
@@ -277,7 +280,11 @@ function! gista#interface#open(gistid, filenames, ...) abort " {{{
     let filenames = a:filenames
   endif
 
-  let opener = settings.opener[settings.open_method]
+  if has_key(settings.openers, settings.opener)
+    let opener = settings.openers[settings.opener]
+  else
+    let opener = settings.opener
+  endif
   for filename in filenames
     let bufname = s:get_buffer_name(a:gistid, filename)
     let bufnum = bufnr(bufname)
@@ -634,7 +641,8 @@ endfunction " }}}
 
 function! gista#interface#do_action(action, info, ...) " {{{
   let settings = extend({
-        \ 'opener': g:gista#gist_opener_in_action,
+        \ 'openers': g:gista#gist_openers_in_action,
+        \ 'opener': g:gista#gist_default_opener_in_action,
         \ 'close_list_after_open': g:gista#close_list_after_open,
         \}, get(a:000, 0, {}))
 
@@ -644,7 +652,10 @@ function! gista#interface#do_action(action, info, ...) " {{{
     let settings = deepcopy(settings)
     let settings.nocache = 1
     call gista#interface#update(settings) " }}}
-  elseif a:action ==# 'open' || a:action ==# 'split' || a:action ==# 'vsplit' " {{{
+  elseif a:action ==# 'open' ||
+        \ a:action ==# 'edit' ||
+        \ a:action ==# 'split' ||
+        \ a:action ==# 'vsplit' " {{{
     if empty(a:info.gist.files)
       redraw
       echohl GistaWarning
@@ -654,11 +665,16 @@ function! gista#interface#do_action(action, info, ...) " {{{
       return
     endif
 
+    if a:action !=# 'open'
+      " overwrite opener
+      let settings = extend(settings, {
+            \ 'opener': a:action,
+            \})
+    endif
+
     " move the focuse to the previous selected window
     execute 'wincmd p'
-    call gista#interface#open(a:info.gist.id, a:info.filename, extend({
-          \ 'open_method': a:action,
-          \}, settings))
+    call gista#interface#open(a:info.gist.id, a:info.filename, settings)
     if settings.close_list_after_open
       " close gista:list and focuse back to the opend windw
       let cwinnum = winnr()
@@ -848,34 +864,14 @@ function! gista#interface#disconnect_action(gistid, filenames) abort " {{{
   endfor
 endfunction " }}}
 
-function! gista#interface#define_syntax() abort " {{{
-  highlight default link GistaTitle     Title
-  highlight default link GistaError     ErrorMsg
-  highlight default link GistaWarning   WarningMsg
-  highlight default link GistaInfo      Comment
-  highlight default link GistaQuestion  Question
-
-  highlight default link GistaGistID      Identifier
-  highlight default link GistaDescription Title
-  highlight default link GistaPublic      Statement
-  highlight default link GistaPrivate     Statement
-  highlight default link GistaFiles       Comment
-  highlight default link GistaComment     Comment
-
-  syntax clear
-  syntax match GistaGistID  /\[.\{20}\]/
-  syntax match GistaFiles   /^-.*/
-  syntax match GistaComment /^".*/
-  syntax match GistaPrivate /<private>/
-  syntax match GistaComment /@\d\d\d\d-\d\d-\d\d.*$/
-endfunction " }}}
-
 nnoremap <silent> <Plug>(gista-action-update)
       \ :call <SID>action('update')<CR>
 nnoremap <silent> <Plug>(gista-action-update-nocache)
       \ :call <SID>action('update_nocache')<CR>
 nnoremap <silent> <Plug>(gista-action-open)
       \ :call <SID>action('open')<CR>
+nnoremap <silent> <Plug>(gista-action-edit)
+      \ :call <SID>action('edit')<CR>
 nnoremap <silent> <Plug>(gista-action-split)
       \ :call <SID>action('split')<CR>
 nnoremap <silent> <Plug>(gista-action-vsplit)

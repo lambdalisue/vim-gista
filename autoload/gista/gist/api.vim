@@ -54,7 +54,9 @@ endfunction " }}}
 " Cache
 function! gista#gist#api#remove_gist_from_cache(gistid) abort " {{{
   let cache = s:get_gists()
-  unlet! cache[a:gistid]
+  if has_key(cache, a:gistid)
+    unlet cache[a:gistid]
+  endif
 endfunction " }}}
 function! gista#gist#api#remove_gist_entry_from_cache(gistid, ...) abort " {{{
   let suffixes = ['.all', '.starred', '.public']
@@ -98,6 +100,7 @@ function! gista#gist#api#get(gistid, ...) abort " {{{
     if a
       call gista#gist#api#remove_gist_from_cache(a:gistid)
       call gista#gist#api#remove_gist_entry_from_cache(a:gistid)
+      redraw | echo printf('%s is removed from the cache.', a:gistid)
     endif
     return {}
   elseif res.status != 200

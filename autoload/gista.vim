@@ -43,9 +43,9 @@ function! s:GistaPost(options) abort " {{{
         \])
   if empty(gistid)
     if get(a:options, 'multiple')
-      return gista#interface#post_all_buffers(options)
+      return gista#interface#post_buffers(options)
     else
-      return gista#interface#post_buffer(
+      return gista#interface#post(
             \ a:options.__range__[0],
             \ a:options.__range__[1],
             \ options)
@@ -66,7 +66,7 @@ function! s:GistaPost(options) abort " {{{
       call input('Hit enter to continue')
       echohl None
     endif
-    return gista#interface#save_buffer(
+    return gista#interface#save(
           \ a:options.__range__[0],
           \ a:options.__range__[1],
           \ options)
@@ -82,43 +82,44 @@ function! s:GistaRename(options) abort " {{{
   else
     let options = a:options
   endif
-  return gista#interface#rename(gistid, filename, options)
+  return gista#interface#rename_action(gistid, filename, options)
 endfunction " }}}
 function! s:GistaRemove(options) abort " {{{
   let gistid = a:options.gistid
   let filename = a:options.filename
-  return gista#interface#remove(gistid, filename, a:options)
+  return gista#interface#remove_action(gistid, filename, a:options)
 endfunction " }}}
 function! s:GistaDelete(options) abort " {{{
   let gistid = a:options.gistid
-  return gista#interface#delete(gistid, a:options)
+  return gista#interface#delete_action(gistid, a:options)
 endfunction " }}}
 function! s:GistaStar(options) abort " {{{
   let gistid = a:options.gistid
-  return gista#interface#star(gistid, a:options)
+  return gista#interface#star_action(gistid, a:options)
 endfunction " }}}
 function! s:GistaUnstar(options) abort " {{{
   let gistid = a:options.gistid
-  return gista#interface#unstar(gistid, a:options)
+  return gista#interface#unstar_action(gistid, a:options)
 endfunction " }}}
 function! s:GistaIsStarred(options) abort " {{{
   let gistid = a:options.gistid
-  return gista#interface#is_starred(gistid, a:options)
+  return gista#interface#is_starred_action(gistid, a:options)
 endfunction " }}}
 function! s:GistaFork(options) abort " {{{
   let gistid = a:options.gistid
-  return gista#interface#is_starred(gistid, a:options)
+  return gista#interface#is_starred_action(gistid, a:options)
 endfunction " }}}
 function! s:GistaBrowse(options) abort " {{{
   let gistid = a:options.gistid
   let filename = get(a:options, 'filename', '')
-  return gista#interface#browse(gistid, filename, a:options)
+  return gista#interface#browse_action(gistid, filename, a:options)
 endfunction " }}}
 function! s:GistaDisconnect(options) abort " {{{
   let gistid = a:options.gistid
   let filename = get(a:options, 'filename', '')
-  return gista#interface#disconnect(gistid, split(filename, ";"), a:options)
+  return gista#interface#disconnect_action(gistid, split(filename, ";"), a:options)
 endfunction " }}}
+
 
 function! gista#Gista(options) abort " {{{
   if empty(a:options)
@@ -151,10 +152,32 @@ function! gista#Gista(options) abort " {{{
     return s:GistaDisconnect(a:options)
   endif
 endfunction " }}}
+function! gista#define_syntax() abort " {{{
+  highlight default link GistaTitle     Title
+  highlight default link GistaError     ErrorMsg
+  highlight default link GistaWarning   WarningMsg
+  highlight default link GistaInfo      Comment
+  highlight default link GistaQuestion  Question
+
+  highlight default link GistaGistID      Identifier
+  highlight default link GistaDescription Title
+  highlight default link GistaPublic      Statement
+  highlight default link GistaPrivate     Statement
+  highlight default link GistaFiles       Comment
+  highlight default link GistaComment     Comment
+
+  syntax clear
+  syntax match GistaGistID  /\[.\{20}\]/
+  syntax match GistaFiles   /^-.*/
+  syntax match GistaComment /^".*/
+  syntax match GistaPrivate /<private>/
+  syntax match GistaComment /@\d\d\d\d-\d\d-\d\d.*$/
+endfunction " }}}
 
 
-let s:default_opener = {
-      \ 'open': 'edit',
+" Variables {{{
+let s:default_openers = {
+      \ 'edit': 'edit',
       \ 'split': 'rightbelow split',
       \ 'vsplit': 'rightbelow vsplit',
       \}
@@ -168,14 +191,15 @@ let s:settings = {
       \ 'private_mark': '"<private>"',
       \ 'public_mark': '""',
       \ 'list_opener': '"topleft 20 split +set\\ winfixheight"',
-      \ 'gist_default_open_method': '"open"',
+      \ 'gist_default_opener': '"edit"',
+      \ 'gist_default_opener_in_action': '"vsplit"',
       \ 'close_list_after_open': 0,
       \ 'auto_connect_after_post': 1,
       \ 'update_on_write': 2,
       \ 'enable_default_keymaps': 1,
       \ 'post_private': 0,
       \ 'interactive_description': 1,
-      \ 'interactive_publish_status': 1,
+      \ 'interactive_visibility': 1,
       \ 'include_invisible_buffers_in_multiple': 0,
       \}
 function! s:init() " {{{
@@ -184,10 +208,10 @@ function! s:init() " {{{
       execute 'let g:gista#' . key . ' = ' . value
     endif
   endfor
-  let g:gista#gist_opener = extend(s:default_opener,
-        \ get(g:, 'gista#gist_opener', {}))
-  let g:gista#gist_opener_in_action = extend(g:gista#gist_opener,
-        \ get(g:, 'gista#gist_opener_in_action', {}))
+  let g:gista#gist_openers = extend(s:default_openers,
+        \ get(g:, 'gista#gist_openers', {}))
+  let g:gista#gist_openers_in_action = extend(g:gista#gist_openers,
+        \ get(g:, 'gista#gist_openers_in_action', {}))
   " define default values
   if type(g:gista#tokens_directory) == 0
     unlet g:gista#tokens_directory
@@ -224,7 +248,7 @@ function! s:init() " {{{
 endfunction
 call s:init()
 " }}}
-
+" }}}
 
 let &cpo = s:save_cpo
 unlet s:save_cpo

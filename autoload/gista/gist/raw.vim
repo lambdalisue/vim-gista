@@ -456,7 +456,7 @@ function! gista#gist#raw#patch(gist, filenames, contents, ...) abort " {{{
   for [filename, content] in gista#utils#vital#zip(a:filenames, a:contents)
     let partial.files[filename] = {'content': content}
   endfor
-  if has_key(settings, 'description')
+  if has_key(settings, 'description') && !empty(settings.description)
     let partial.description = settings.description
   endif
 
@@ -504,7 +504,7 @@ function! gista#gist#raw#remove(gist, filenames, ...) abort " {{{
   endif
 
   let partial = {
-        \ 'description': a:gist.id,
+        \ 'description': a:gist.description,
         \ 'files': {},
         \}
   for filename in a:filenames

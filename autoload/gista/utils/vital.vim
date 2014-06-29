@@ -176,7 +176,7 @@ function! gista#utils#vital#null() " {{{
   return s:get_json().null
 endfunction " }}}
 function! gista#utils#vital#to_boolean(value) " {{{
-  return value ? gista#utils#vital#true() : gista#utils#vital#false()
+  return a:value ? gista#utils#vital#true() : gista#utils#vital#false()
 endfunction " }}}
 
 " System

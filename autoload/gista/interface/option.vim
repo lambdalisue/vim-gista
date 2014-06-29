@@ -208,10 +208,6 @@ function! gista#interface#option#parse(...) abort " {{{
 endfunction " }}}
 
 
-command! -nargs=? -range=% -bang GistaDebugOptions
-      \ :echo gista#interface#option#parse(<q-bang>, [<line1>, <line2>], <f-args>)
-
-
 let &cpo = s:save_cpo
 unlet s:save_cpo
 "vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker

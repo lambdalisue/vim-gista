@@ -37,6 +37,8 @@ function! s:shellwords(str) abort " {{{
   return words
 endfunction " }}}
 function! s:prototype.add_argument(name, ...) abort " {{{
+  " add_argument({name} [, {description}, {settings}])
+  " add_argument({name} [, {short}, {description}, {settings}])
   " parse arguments
   let short = get(a:000, 0, '')
   let description = get(a:000, 1, '')
@@ -338,8 +340,6 @@ function! gista#utils#option#new(...) " {{{
   return s:argument_parser
 endfunction " }}}
 
-" GistID: XXXXXXXXXXXXXXXXXX
-"
 let &cpo = s:save_cpo
 unlet s:save_cpo
 "vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
