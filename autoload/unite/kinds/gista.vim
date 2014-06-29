@@ -10,9 +10,12 @@ set cpo&vim
 
 let s:kind_gist = {
       \ 'name': 'gist',
-      \ 'default_action': 'expand',
+      \ 'default_action': 'narrow',
       \ 'action_table': {
-      \   'expand': {
+      \   'narrow': {
+      \     'description' : 'narrowing candidates by gist ID',
+      \     'is_quit' : 0,
+      \     'is_start' : 1,
       \     'is_selectable': 0,
       \   },
       \   'delete': {
@@ -30,7 +33,9 @@ let s:kind_gist = {
       \ },
       \}
 
-function! s:kind_gist.action_table.expand.func(candidate) " {{{
+function! s:kind_gist.action_table.narrow.func(candidate) " {{{
+  let gist = a:candidate.source__gist
+  call unite#mappings#narrowing(gist.id . '#')
 endfunction " }}}
 function! s:kind_gist.action_table.delete.func(candidates) " {{{
   for candidate in a:candidates

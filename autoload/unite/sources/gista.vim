@@ -11,53 +11,47 @@ set cpo&vim
 
 
 function! s:parse_args(args) abort " {{{
-  " Unite gista:{lookup}:{options}
   let lookup = get(a:args, 0, '')
-  let settings = {
-        \ 'page': -1,
-        \ 'nocache': 0,
-        \ '!': 0
-        \}
-  let index = 1
-  while index < len(a:args)
-    let arg = a:args[index]
-    if arg ==# '!'
-      let settings['!'] = 1
-    elseif arg ==# 'nocache'
-      let settings['nocache'] = 1
-    elseif arg ==# 'page'
-      if index + 1 == len(a:args)
-        throw '"page" option requires number like "Unite gista:page:5"'
-      endif
-      let settings['page'] = a:args[index+1]
-      let index += 1
-    else
-      throw 'Unknown option "' . arg . '" is specified.'
-    endif
-  endwhile
-  return [lookup, settings]
+  let bang = stridx(lookup, '!') != -1
+  let lookup = substitute(lookup, '!', '', '')
+  let lookup = empty(lookup) ? gista#gist#raw#get_authenticated_user() : lookup
+  return [lookup, bang]
 endfunction " }}}
-function! s:get_gists(args) abort " {{{
-  let [lookup, settings] = s:parse_args(a:args)
-  let key = join(a:args, ":")
-  let key = empty(key) ? 'default' : key
+function! s:get_gists(lookup, bang) abort " {{{
   if !exists('s:gists')
     let s:gists = {}
   endif
-  if settings['!'] || settings.nocache || !has_key(s:gists, key)
-    let s:gists[key] = gista#gist#api#list(lookup, settings)
+  if a:bang || !has_key(s:gists, a:lookup)
+    let s:gists[a:lookup] = gista#gist#api#list(a:lookup)
   endif
-  return s:gists[key]
+  return s:gists[a:lookup]
 endfunction " }}}
-
 function! s:format_gist(gist) " {{{
-  let width = winwidth(0)
-  let length = len(a:gist.id)
-  let format = printf("%%-%dS %%s", width - length - 1)
-  return printf(format, a:gist.description, a:gist.id)
+  let files = printf("%2d)", len(a:gist.files))
+  let gistid = printf("[%-20S]", a:gist.id)
+  let update = printf("%s",
+        \ gista#utils#translate_datetime(a:gist.updated_at))
+  let private = a:gist.public ? "" : "<private>"
+  let description = empty(a:gist.description) ?
+        \ '<<No description>>' :
+        \ a:gist.description
+  let bwidth = gista#utils#get_bufwidth()
+  let width = bwidth - len(files . private . gistid . update) - 4
+  return printf(printf("%%s %%-%dS %%s %%s %%s", width),
+        \ files,
+        \ gista#utils#trancate(description, width),
+        \ private,
+        \ gistid,
+        \ update)
 endfunction " }}}
 function! s:format_gist_file(gist, filename) " {{{
-  return "    " . a:filename
+  let gistid = printf("%s", a:gist.id)
+  let bwidth = gista#utils#get_bufwidth()
+  let width = bwidth - len(gistid) - 1
+  return printf(printf("%%s#%%-%dS", width),
+        \ gistid,
+        \ gista#utils#trancate(a:filename, width),
+        \)
 endfunction " }}}
 
 
@@ -66,26 +60,58 @@ let s:source_gist = {
       \ 'description': 'Manipulate gists',
       \}
 
-function! s:source_gist.gather_candidates(args, context) abort
-  let gists = s:get_gists(a:args)
-  let candidates = []
-  if !empty(gists)
-    for gist in gists
-      call add(candidates, {
-            \ 'word': s:format_gist(gist),
-            \ 'kind': 'gist',
-            \ 'source__gist': gist,
-            \ 'action__gist': gist,
-            \})
-    endfor
+function! s:source_gist.change_candidates(args, context) abort " {{{
+  if !has_key(a:context, 'source__cache') || a:context.is_redraw
+        \ || a:context.is_invalidate
+    " Initialize cache.
+    let a:context.source__cache = {}
   endif
-  return candidates
-endfunction
 
-
-function! unite#sources#gista#define()
+  let [lookup, bang] = s:parse_args(a:args)
+  let gists = s:get_gists(lookup, bang)
+  let input = a:context.input
+  if input =~# '^.\{,20}#'
+    let gistid = matchstr(input, '^\zs\(.\{,20}\)\ze#')
+    if !has_key(a:context.source__cache, gistid)
+      let gist = get(filter(copy(gists), 
+            \ printf('v:val.id=="%s"', gistid)), 0, {})
+      let candidates = []
+      if !empty(gist)
+        for filename in keys(gist.files)
+          call add(candidates, {
+                \ 'word': s:format_gist_file(gist, filename),
+                \ 'kind': ['gist', 'gist_file'],
+                \ 'source__gist': gist,
+                \ 'source__filename': filename,
+                \ 'action__gist': gist,
+                \ 'action__filename': filename,
+                \})
+        endfor
+      endif
+      let a:context.source__cache[gistid] = candidates
+    endif
+    return copy(a:context.source__cache[gistid])
+  else
+    if !has_key(a:context.source__cache, lookup)
+      let candidates = []
+      if !empty(gists)
+        for gist in gists
+          call add(candidates, {
+                \ 'word': s:format_gist(gist),
+                \ 'kind': 'gist',
+                \ 'source__gist': gist,
+                \ 'action__gist': gist,
+                \})
+        endfor
+      endif
+      let a:context.source__cache[lookup] = candidates
+    endif
+    return copy(a:context.source__cache[lookup])
+  endif
+endfunction " }}}
+function! unite#sources#gista#define() " {{{
   return s:source_gist
-endfunction
+endfunction " }}}
 
 " TODO: remove the following codes in production
 call unite#define_source(s:source_gist)
