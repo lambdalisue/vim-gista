@@ -15,6 +15,7 @@ function! s:parse_args(args) abort " {{{
   let bang = stridx(lookup, '!') != -1
   let lookup = substitute(lookup, '!', '', '')
   let lookup = empty(lookup) ? gista#gist#raw#get_authenticated_user() : lookup
+  let lookup = empty(lookup) ? g:gista#github_user : lookup
   return [lookup, bang]
 endfunction " }}}
 function! s:get_gists(lookup, bang) abort " {{{
@@ -54,20 +55,20 @@ function! s:format_gist_file(gist, filename) " {{{
         \)
 endfunction " }}}
 
-
 let s:source_gist = {
       \ 'name': 'gist',
       \ 'description': 'Manipulate gists',
       \}
 
 function! s:source_gist.change_candidates(args, context) abort " {{{
+  let [lookup, bang] = s:parse_args(a:args)
   if !has_key(a:context, 'source__cache') || a:context.is_redraw
         \ || a:context.is_invalidate
     " Initialize cache.
     let a:context.source__cache = {}
+    let bang = 1
   endif
 
-  let [lookup, bang] = s:parse_args(a:args)
   let gists = s:get_gists(lookup, bang)
   let input = a:context.input
   if input =~# '^.\{,20}#'
@@ -80,7 +81,7 @@ function! s:source_gist.change_candidates(args, context) abort " {{{
         for filename in keys(gist.files)
           call add(candidates, {
                 \ 'word': s:format_gist_file(gist, filename),
-                \ 'kind': ['gist', 'gist_file'],
+                \ 'kind': 'gist_file',
                 \ 'source__gist': gist,
                 \ 'source__filename': filename,
                 \ 'action__gist': gist,
