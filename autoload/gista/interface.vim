@@ -240,9 +240,9 @@ function! gista#interface#update(...) abort " {{{
   for gist in gists
     call add(lines, s:format_gist(gist))
     call add(links, {'gist': gist, 'filename': ''})
-    for [key, value] in items(gist.files)
-      call add(lines, s:format_gist_file(gist, key))
-      call add(links, {'gist': gist, 'filename': key})
+    for filename in keys(gist.files)
+      call add(lines, s:format_gist_file(gist, filename))
+      call add(links, {'gist': gist, 'filename': filename})
     endfor
   endfor
   let b:gists = gists
@@ -349,7 +349,7 @@ endfunction " }}}
 function! gista#interface#post_buffers(...) abort " {{{
   let settings = extend({
         \ 'include_invisible_buffers_in_multiple': 
-        \     g:gista#include_invisible_buffers_in_multiple
+        \     g:gista#include_invisible_buffers_in_multiple,
         \ 'auto_connect_after_post': g:gista#auto_connect_after_post,
         \ 'update_list': 1,
         \}, get(a:000, 0, {}))
@@ -511,7 +511,7 @@ function! gista#interface#delete(...) abort " {{{
   endif
 
   " Disconnect
-  call gista#interface#disconnect_action(a:gistid, '')
+  call gista#interface#disconnect_action(gistid, '')
 
   " Update list window
   if settings.update_list
@@ -737,9 +737,6 @@ function! gista#interface#rename_action(gistid, filename, new_filename, ...) abo
   let settings = extend({
         \ 'update_list': 1,
         \}, get(a:000, 0, {}))
-
-  let gistid = a:gistid
-  let filename = a:filename
 
   let gist = gista#gist#api#rename(
         \ a:gistid, a:filename, a:new_filename, settings)

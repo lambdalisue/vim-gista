@@ -257,7 +257,7 @@ function! gista#gist#api#post(filenames, contents, ...) abort " {{{
     echohl GistaQuestion
     let settings.public = !(gista#utils#input_yesno(
           \ 'Post a gist as a private gist?',
-          \ g:gista#post_private ? 'yes' : 'no')))
+          \ g:gista#post_private ? 'yes' : 'no'))
     echohl None
   endif
   
@@ -525,7 +525,7 @@ function! gista#gist#api#is_starred(gistid, ...) abort " {{{
 
   if res.status == 204
     return 1
-  if res.status == 404
+  elseif res.status == 404
     return 0
   else
     redraw

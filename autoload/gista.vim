@@ -75,9 +75,9 @@ endfunction " }}}
 function! s:GistaRename(options) abort " {{{
   let gistid = a:options.gistid
   let filename = a:options.filename
-  if type(options.rename) == 1
+  if type(a:options.rename) == 1
     let options = extend({
-          \ 'new_filename': options.rename,
+          \ 'new_filename': a:options.rename,
           \}, a:options)
   else
     let options = a:options

@@ -142,7 +142,7 @@ function! gista#gist#raw#authorize(username, settings) abort " {{{
 endfunction " }}}
 function! gista#gist#raw#authorize2(token, settings) abort " {{{
   " Authorize with a Personal Access Token
-  let settings = extend({}, a:settings))
+  let settings = extend({}, a:settings)
 
   redraw | echo 'Confirming the personal access token ...'
   let res = gista#utils#vital#get(s:get_api_url('user'), {}, {
@@ -334,6 +334,7 @@ function! gista#gist#raw#list(lookup, ...) abort " {{{
         \])
   let request_settings['default_content'] = '[]'
   let loaded_gists = []
+  let res = {}
 
   redraw | echo 'Requesting gists ...'
   while terminal == -1 || params.page <= terminal

@@ -79,6 +79,7 @@ function! gista#utils#guess_extension(filetype) " {{{
     return ''
   elseif has_key(s:consts.EXTMAP, a:filetype)
     return s:consts.EXTMAP[a:filetype]
+  endif
   return '.' + a:filetype
 endfunction " }}}
 function! gista#utils#input_yesno(message, ...) "{{{
@@ -121,11 +122,11 @@ function! gista#utils#input_yesno(message, ...) "{{{
 endfunction " }}}
 function! gista#utils#set_clipboard(content) abort " {{{
   if exists('g:gista#clip_command')
-    call gista#utils#vital#system(g:gista#clip_command, content)
+    call gista#utils#vital#system(g:gista#clip_command, a:content)
   elseif has('unix') && !has('xterm_clipboard')
-    let @" = content
+    let @" = a:content
   else
-    let @+ = content
+    let @+ = a:content
   endif
 endfunction " }}}
 function! gista#utils#browse(url) abort " {{{

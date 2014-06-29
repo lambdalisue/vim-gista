@@ -148,7 +148,6 @@ function! s:prototype._parse_args(bang, range, ...) abort " {{{
       endif
       " do I know the option?
       if has_key(self._long_arguments, name)
-        let settings = self._long_arguments[name].settings
         if empty(narg) || narg =~# '^--\?'
           let Value = self.TRUE
         else
