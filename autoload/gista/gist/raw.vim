@@ -1,8 +1,8 @@
 "******************************************************************************
 " GitHub Raw API module
 "
-" Plugin developers should use gista#gist#api instead of gista#gist#raw. This module is
-" for low level API manipulations (gista#gist#api use this module internally).
+" Plugin developers should use gista#gist#api instead of gista#gist#raw. 
+" This module is for low level API manipulations
 "
 " Author:   Alisue <lambdalisue@hashnote.net>
 " URL:      http://hashnote.net/
@@ -174,11 +174,13 @@ function! gista#gist#raw#login(...) abort " {{{
   let authenticated_user = gista#gist#raw#get_authenticated_user()
   let is_authenticated = gista#gist#raw#is_authenticated()
   let username = get(a:000, 0, authenticated_user)
-  let settings = get(a:000, 1, {})
+  let settings = extend({
+        \ 'use_default_username': 1,
+        \}, get(a:000, 1, {}))
   if is_authenticated && username == authenticated_user
     " the user have already logged in
     return s:get_authenticated_header()
-  elseif !is_authenticated && empty(username)
+  elseif !is_authenticated && empty(username) && settings.use_default_username
     " the user have not authenticated yet so use default username
     let username = g:gista#github_user
   endif
