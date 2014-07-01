@@ -21,7 +21,7 @@ function! s:get_usable_buffer_name(name) abort " {{{
   let basename = fnamemodify(a:name, ':r')
   let extension = fnamemodify(a:name, ':e')
   let name = basename . index . extension
-  while bufnr(name) == -1
+  while bufnr(name) > -1
     let index += 1
     let name = basename . index . extension
   endwhile
