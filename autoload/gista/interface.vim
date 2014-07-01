@@ -348,7 +348,7 @@ function! gista#interface#post(line1, line2, ...) abort " {{{
 endfunction " }}}
 function! gista#interface#post_buffers(...) abort " {{{
   let settings = extend({
-        \ 'include_invisible_buffers_in_multiple': 
+        \ 'include_invisible_buffers_in_multiple':
         \     g:gista#include_invisible_buffers_in_multiple,
         \ 'auto_connect_after_post': g:gista#auto_connect_after_post,
         \ 'update_list': 1,
@@ -648,7 +648,7 @@ function! gista#interface#do_action(action, info, ...) " {{{
 
   if a:action ==# 'update' " {{{
     call gista#interface#update(settings) " }}}
-  elseif a:action ==# 'update_nocache' " {{{ 
+  elseif a:action ==# 'update_nocache' " {{{
     let settings = deepcopy(settings)
     let settings.nocache = 1
     call gista#interface#update(settings) " }}}

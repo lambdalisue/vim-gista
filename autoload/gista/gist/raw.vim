@@ -1,7 +1,7 @@
 "******************************************************************************
 " GitHub Raw API module
 "
-" Plugin developers should use gista#gist#api instead of gista#gist#raw. 
+" Plugin developers should use gista#gist#api instead of gista#gist#raw.
 " This module is for low level API manipulations
 "
 " Author:   Alisue <lambdalisue@hashnote.net>
@@ -295,7 +295,7 @@ function! gista#gist#raw#get(gistid, ...) abort " {{{
   redraw | echo 'Requesting a gist (' . a:gistid . ') ...'
   return gista#utils#vital#get(
         \ s:get_api_url('gists', a:gistid),
-        \ {}, 
+        \ {},
         \ header,
         \ request_settings)
 endfunction " }}}
@@ -363,7 +363,7 @@ function! gista#gist#raw#list(lookup, ...) abort " {{{
     call map(ct, 'extend({"files": map(v:val.files, "{}")}, v:val)')
     let loaded_gists = gista#utils#vital#concat([loaded_gists, ct])
 
-    if settings.page != -1 || terminal <= 0 
+    if settings.page != -1 || terminal <= 0
       break
     endif
 
@@ -469,7 +469,7 @@ function! gista#gist#raw#patch(gist, filenames, contents, ...) abort " {{{
 
   redraw | echo 'Patching gist (' . a:gist.id . ') ...'
   return gista#utils#vital#patch(
-        \ s:get_api_url('gists', a:gist.id), 
+        \ s:get_api_url('gists', a:gist.id),
         \ partial, header,
         \ request_settings)
 endfunction " }}}

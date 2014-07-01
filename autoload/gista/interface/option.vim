@@ -40,7 +40,7 @@ function! s:get_parser() " {{{
           \   'subordinations_of': 'logout',
           \})
     call s:parser.add_argument(
-          \ '--list', '-l', 
+          \ '--list', '-l',
           \ 'List gists and show in gist list window', {
           \   'conflicts': 'command',
           \})
@@ -64,46 +64,46 @@ function! s:get_parser() " {{{
           \   'requires': 'gistid',
           \})
     call s:parser.add_argument(
-          \ '--post', 
+          \ '--post',
           \ 'Post a buffer to create/modify a gist', {
           \   'kind': s:parser.SWITCH,
           \   'conflicts': 'command',
           \})
     call s:parser.add_argument(
-          \ '--description', '-d', 
+          \ '--description', '-d',
           \ 'A description of the posting gist', {
           \   'kind': s:parser.VALUE,
           \   'subordinations_of': 'post',
           \})
     call s:parser.add_argument(
-          \ '--multiple', '-m', 
+          \ '--multiple', '-m',
           \ 'Post a gist with all visible buffers', {
           \   'kind': s:parser.SWITCH,
           \   'subordinations_of': 'post',
           \})
     call s:parser.add_argument(
-          \ '--anonymous', '-a', 
+          \ '--anonymous', '-a',
           \ 'Post a gist as an anonymous gist', {
           \   'kind': s:parser.SWITCH,
           \   'conflicts': 'publish_status',
           \   'subordinations_of': 'post',
           \})
     call s:parser.add_argument(
-          \ '--private', '-p', 
+          \ '--private', '-p',
           \ 'Post a gist as a private gist', {
           \   'kind': s:parser.SWITCH,
           \   'conflicts': 'publish_status',
           \   'subordinations_of': 'post',
           \})
     call s:parser.add_argument(
-          \ '--public', '-P', 
+          \ '--public', '-P',
           \ 'Post a gist as a public gist', {
           \   'kind': s:parser.SWITCH,
           \   'conflicts': 'publish_status',
           \   'subordinations_of': 'post',
           \})
     call s:parser.add_argument(
-          \ '--gistid', 
+          \ '--gistid',
           \ 'Specify a gist ID', {
           \   'kind': s:parser.VALUE,
           \   'subordinations_of': [
@@ -113,7 +113,7 @@ function! s:get_parser() " {{{
           \   ],
           \})
     call s:parser.add_argument(
-          \ '--filename', 
+          \ '--filename',
           \ 'Specify a filename', {
           \   'kind': s:parser.VALUE,
           \   'subordinations_of': [
@@ -121,62 +121,62 @@ function! s:get_parser() " {{{
           \   ],
           \})
     call s:parser.add_argument(
-          \ '--rename', 
+          \ '--rename',
           \ 'Rename a filename of a file in the gist', {
           \   'conflicts': 'command',
           \   'requires': ['gistid', 'filename'],
           \})
     call s:parser.add_argument(
-          \ '--remove', 
+          \ '--remove',
           \ 'Remove a file from the gist', {
           \   'kind': s:parser.SWITCH,
           \   'conflicts': 'command',
           \   'requires': ['gistid', 'filename'],
           \})
     call s:parser.add_argument(
-          \ '--delete', 
+          \ '--delete',
           \ 'Delete the gist', {
           \   'kind': s:parser.SWITCH,
           \   'conflicts': 'command',
           \   'requires': 'gistid',
           \})
     call s:parser.add_argument(
-          \ '--star', 
+          \ '--star',
           \ 'Star the gist', {
           \   'kind': s:parser.SWITCH,
           \   'conflicts': 'command',
           \   'requires': 'gistid',
           \})
     call s:parser.add_argument(
-          \ '--unstar', 
+          \ '--unstar',
           \ 'Unstar the gist', {
           \   'kind': s:parser.SWITCH,
           \   'conflicts': 'command',
           \   'requires': 'gistid',
           \})
     call s:parser.add_argument(
-          \ '--is-starred', 
+          \ '--is-starred',
           \ 'Display if the gist is starred', {
           \   'kind': s:parser.SWITCH,
           \   'conflicts': 'command',
           \   'requires': 'gistid',
           \})
     call s:parser.add_argument(
-          \ '--fork', 
+          \ '--fork',
           \ 'Fork the gist', {
           \   'kind': s:parser.SWITCH,
           \   'conflicts': 'command',
           \   'requires': 'gistid',
           \})
     call s:parser.add_argument(
-          \ '--browse', 
+          \ '--browse',
           \ 'Browse the gist', {
           \   'kind': s:parser.SWITCH,
           \   'conflicts': 'command',
           \   'requires': 'gistid',
           \})
     call s:parser.add_argument(
-          \ '--disconnect', 
+          \ '--disconnect',
           \ 'Disconnect a buffer from the gist', {
           \   'kind': s:parser.SWITCH,
           \   'conflicts': 'command',

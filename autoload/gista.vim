@@ -42,11 +42,11 @@ function! s:GistaList(options) abort " {{{
         \])
   return gista#interface#list(lookup, options)
 endfunction " }}}
-function! s:GistaOpen(options) abort " {{{      
-  let gistid = a:options.gistid                 
-  let filename = split(a:options.filename, ';') 
-  return gista#interface#open(gistid, filename, {})  
-endfunction " }}}                               
+function! s:GistaOpen(options) abort " {{{
+  let gistid = a:options.gistid
+  let filename = split(a:options.filename, ';')
+  return gista#interface#open(gistid, filename, {})
+endfunction " }}}
 function! s:GistaPost(options) abort " {{{
   let gistid = get(a:options, 'gistid', '')
   let options = extend({
@@ -243,7 +243,7 @@ function! s:init() " {{{
     unlet g:gista#github_user
     let g:gista#github_user = get(g:, 'github_user', '')
     if empty(g:gista#github_user)
-      let g:gista#github_user = 
+      let g:gista#github_user =
             \ gista#utils#vital#system('git config --get github.user')
       let g:gista#github_user = substitute(g:gista#github_user, "\n", '', '')
       if empty(g:gista#github_user)
@@ -255,7 +255,7 @@ function! s:init() " {{{
     unlet g:gista#gist_api_url
     let g:gista#gist_api_url = get(g:, 'gist_api_url', '')
     if empty(g:gista#gist_api_url)
-      let g:gista#gist_api_url = 
+      let g:gista#gist_api_url =
             \ gista#utils#vital#system('git config --get github.apiurl')
       let g:gista#gist_api_url = substitute(g:gista#gist_api_url, "\n", '', '')
       if empty(g:gista#gist_api_url)

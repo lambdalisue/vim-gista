@@ -42,7 +42,7 @@ function! s:get_gist_entries(name) abort " {{{
   endif
   if !has_key(s:gist_entries_cache_dict, a:name)
     let s:gist_entries_cache_dict[a:name] = gista#utils#cache#new(
-          \ a:name, 
+          \ a:name,
           \ s:gist_entries_cache_directory, {
           \   'default': [],
           \})
@@ -112,13 +112,13 @@ function! gista#gist#api#get(gistid, ...) abort " {{{
       echo 'Message: "' . res.content.message . '"'
     endif
     return {}
-  endif                                                 
+  endif
   redraw | echo 'Gist (' . res.content.id . ') is loaded.'
-  return res.content                                    
-endfunction " }}}                                       
-function! gista#gist#api#list(lookup, ...) abort " {{{  
-  let settings = extend({                               
-        \ 'page': -1,                                   
+  return res.content
+endfunction " }}}
+function! gista#gist#api#list(lookup, ...) abort " {{{
+  let settings = extend({
+        \ 'page': -1,
         \ 'since': '',
         \ 'nocache': 0,
         \}, get(a:000, 0, {}))
@@ -260,7 +260,7 @@ function! gista#gist#api#post(filenames, contents, ...) abort " {{{
           \ g:gista#post_private ? 'yes' : 'no'))
     echohl None
   endif
-  
+
   let res = gista#gist#raw#post(a:filenames, a:contents, settings)
 
   if res.status == 201
@@ -318,7 +318,7 @@ function! gista#gist#api#patch(gistid, filenames, contents, ...) abort " {{{
       echohl None
     endif
   endif
-  
+
   let res = gista#gist#raw#patch(gist, a:filenames, a:contents, settings)
 
   if res.status == 200
@@ -362,7 +362,7 @@ function! gista#gist#api#rename(gistid, filename, new_filename, ...) abort " {{{
       return
     endif
   endif
-  
+
   let res = gista#gist#raw#rename(gist,
         \ [a:filename], [new_filename],
         \ settings)
@@ -408,7 +408,7 @@ function! gista#gist#api#remove(gistid, filename, ...) abort " {{{
     echohl None
     return
   endif
-  
+
   let res = gista#gist#raw#remove(gist, [a:filename], settings)
 
   if res.status == 200
@@ -454,7 +454,7 @@ function! gista#gist#api#delete(gistid, ...) abort " {{{
     echohl None
     return
   endif
-  
+
   let res = gista#gist#raw#delete(gist, settings)
 
   if res.status == 204
