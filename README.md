@@ -292,6 +292,15 @@ vim-gista have much more features, check it out with
 :help vim-gista-usage
 ```
 
+With Unite.vim
+===============================================================================
+If you are using [Unite.vim](https://github.com/Shougo/unite.vim), you can manipulate gists with it.
+The source name is 'gista' thus call the unite as follow:
+
+```vim
+:Unite gista
+```
+
 Acknowledgments
 ===============================================================================
 Without helps by members of [Lingr](http://lingr.com) vim-users.jp, this plugin cannot be built.
