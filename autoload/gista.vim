@@ -11,6 +11,22 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
+function! s:GistaLogin(options) abort " {{{
+  let username = ''
+  if type(a:options.login) == 1 " String
+    let username = a:options.login
+  endif
+  let settings = extend({
+        \ 'use_default_username': 0,
+        \}, a:options)
+  return gista#gist#raw#login(username, settings)
+endfunction " }}}
+function! s:GistaLogout(options) abort " {{{
+  let settings = extend({
+        \ 'permanently': 0,
+        \}, a:options)
+  return gista#gist#raw#logout(settings)
+endfunction " }}}
 function! s:GistaList(options) abort " {{{
   let lookup = a:options.list
   if type(lookup) == 0 " Digit
@@ -126,7 +142,11 @@ function! gista#Gista(options) abort " {{{
     " validation failed.
     return
   endif
-  if !empty(get(a:options, 'list'))
+  if !empty(get(a:options, 'login'))
+    return s:GistaLogin(a:options)
+  elseif !empty(get(a:options, 'logout'))
+    return s:GistaLogout(a:options)
+  elseif !empty(get(a:options, 'list'))
     return s:GistaList(a:options)
   elseif get(a:options, 'open')
     return s:GistaOpen(a:options)

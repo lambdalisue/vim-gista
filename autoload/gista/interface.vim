@@ -861,6 +861,10 @@ function! gista#interface#disconnect_action(gistid, filenames) abort " {{{
   endfor
 endfunction " }}}
 
+nnoremap <silent> <Plug>(gista-update)
+      \ :call gista#interface#update()<CR>
+nnoremap <silent> <Plug>(gista-update-nocache)
+      \ :call gista#interface#update({'nocache': 1})<CR>
 nnoremap <silent> <Plug>(gista-action-update)
       \ :call <SID>action('update')<CR>
 nnoremap <silent> <Plug>(gista-action-update-nocache)

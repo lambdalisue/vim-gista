@@ -23,6 +23,23 @@ function! s:get_parser() " {{{
   if !exists('s:parser') || 1
     let s:parser = gista#utils#option#new()
     call s:parser.add_argument(
+          \ '--login',
+          \ 'Login Gist API', {
+          \   'conflicts': 'command',
+          \})
+    call s:parser.add_argument(
+          \ '--logout',
+          \ 'Logout Gist API', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'command',
+          \})
+    call s:parser.add_argument(
+          \ '--permanently',
+          \ 'Logout permanently', {
+          \   'kind': s:parser.SWITCH,
+          \   'subordinations_of': 'logout',
+          \})
+    call s:parser.add_argument(
           \ '--list', '-l', 
           \ 'List gists and show in gist list window', {
           \   'conflicts': 'command',
