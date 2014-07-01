@@ -167,7 +167,7 @@ function! gista#gist#api#list(lookup, ...) abort " {{{
     if exists('cache') && settings.page == -1
       call cache.set('gists', gists)
     endif
-    redraw | echo len(loaded_gists) 'gist entries are loaded.'
+    redraw | echo len(loaded_gists) 'gist entries are updated.'
     return gists
   elseif res.status != 200
     redraw

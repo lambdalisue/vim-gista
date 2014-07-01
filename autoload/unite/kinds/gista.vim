@@ -102,7 +102,7 @@ endfunction " }}}
 function! s:kind_gist.action_table.browse.func(candidates) " {{{
   for candidate in a:candidates
     let gist = candidate.source__gist
-    let filename = get(a:candidate, 'source__filename', '')
+    let filename = get(candidate, 'source__filename', '')
     call gista#interface#browse_action(gist.id, filename)
   endfor
 endfunction " }}}

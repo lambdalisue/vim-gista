@@ -209,7 +209,7 @@ let s:settings = {
       \ 'gist_entries_cache_directory': -1,
       \ 'list_opener': '"topleft 20 split +set\\ winfixheight"',
       \ 'gist_default_opener': '"edit"',
-      \ 'gist_default_opener_in_action': '"vsplit"',
+      \ 'gist_default_opener_in_action': '"edit"',
       \ 'gist_default_filename': '"gist-file"',
       \ 'close_list_after_open': 0,
       \ 'auto_connect_after_post': 1,

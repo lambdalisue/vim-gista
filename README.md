@@ -1,6 +1,6 @@
 vim-gista
 ===============================================================================
-![vim-gista gista:list buffer screenshot](./doc/screenshot01.png)
+![vim-gista interface (screencast)](./doc/screencast-interface.gif)
 
 *vim-gista* is a plugin for manipulating [Gists](https://gist.github.com/).
 It provide the following features:
@@ -28,6 +28,7 @@ It provide the following features:
 7. Forking a gist
 
 The original concepts and strategies are taken from '[mattn/gist.vim](https://github.com/mattn/gist-vim)'; however the most of these are aggressively modified to establish vim-gista new implementations.
+
 
 
 How to install
@@ -97,8 +98,10 @@ $ git config --global github.user <your GitHub user name>
 How to use
 ==============================================================================
 
+
 Authentication
 ------------------------------------------------------------------------------
+![vim-gista authentication (screencast)](./doc/screencast-authentication.gif)
 
 If you execute any vim-gista commands, functions, or mappings, vim-gista ask you to fill your GitHub password (or your GitHub username if you have not specified it yet) at first time.
 The filled password will be used to create a new personal access token for vim-gista and the created personal access token is saved in your file system (the filled password will never be stored.)
@@ -121,6 +124,7 @@ If will delete a stored personal access token from your file system.
 
 Listing
 ------------------------------------------------------------------------------
+![vim-gista gista:list buffer screenshot](./doc/screenshot-gistlist.png)
 
 To list your public and private gist entries, run one of the following commands (short form or long form):
 
@@ -293,13 +297,16 @@ vim-gista have much more features, check it out with
 ```
 
 With Unite.vim
-===============================================================================
+-------------------------------------------------------------------------------
+![vim-gista with Unite.vim (screencast)](./doc/screencast-unite.gif)
+
 If you are using [Unite.vim](https://github.com/Shougo/unite.vim), you can manipulate gists with it.
 The source name is 'gista' thus call the unite as follow:
 
 ```vim
 :Unite gista
 ```
+
 
 Acknowledgments
 ===============================================================================

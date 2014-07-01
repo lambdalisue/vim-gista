@@ -67,7 +67,10 @@ endfunction " }}}
 " Authentication
 function! gista#gist#raw#authorize(username, settings) abort " {{{
   " Authorize GitHub API with username and password to get Access Token.
-  let settings = extend({}, a:settings)
+  " Note: it seems like Python client cannot be used for authorization
+  let settings = extend({
+        \ 'client': ['curl', 'wget'],
+        \}, a:settings)
   redraw
   echohl GistaTitle
   echo 'Authorization:'
@@ -138,11 +141,19 @@ function! gista#gist#raw#authorize(username, settings) abort " {{{
   if has_key(res.content, 'message')
     echo 'Message: "' . res.content.message . '"'
   endif
+  if res.status == 401
+    echohl GistaWarning
+    echo 'If you already have a personal access token for "vim-gista", remove and try again'
+    echohl None
+  endif
   return
 endfunction " }}}
 function! gista#gist#raw#authorize2(token, settings) abort " {{{
   " Authorize with a Personal Access Token
-  let settings = extend({}, a:settings)
+  " Note: it seems like Python client cannot be used for authorization
+  let settings = extend({
+        \ 'client': ['curl', 'wget'],
+        \}, a:settings)
 
   redraw | echo 'Confirming the personal access token ...'
   let res = gista#utils#vital#get(s:get_api_url('user'), {}, {
