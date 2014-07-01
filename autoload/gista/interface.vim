@@ -47,7 +47,7 @@ endfunction " }}}
 function! s:format_gist(gist) abort " {{{
   let gistid = printf("[%-20S]", a:gist.id)
   let update = printf("%s",
-        \ gista#utils#translate_datetime(a:gist.updated_at))
+        \ gista#utils#datetime(a:gist.updated_at).format('%Y/%m/%d %H:%M:%S'))
   let private = a:gist.public ? "" : "<private>"
   let description = empty(a:gist.description) ?
         \ '<<No description>>' :
@@ -836,11 +836,7 @@ endfunction " }}}
 function! gista#interface#browse_action(gistid, filename, ...) abort " {{{
   let settings = extend({}, get(a:000, 0, {}))
   let gist = gista#gist#api#get(a:gistid, settings)
-  let url = get(gist, 'html_url', 'https://gist.github.com/' . gist.id)
-  let filename = substitute(a:filename, '\.', '-', '')
-  if !empty(filename)
-    let url = url . '#file-' . filename
-  endif
+  let url = gista#utils#get_gist_url(gist, a:filename)
   call gista#utils#browse(url)
 endfunction " }}}
 function! gista#interface#disconnect_action(gistid, filenames) abort " {{{

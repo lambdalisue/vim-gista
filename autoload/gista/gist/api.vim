@@ -123,6 +123,9 @@ function! gista#gist#api#list(lookup, ...) abort " {{{
         \ 'nocache': 0,
         \}, get(a:000, 0, {}))
 
+  " make sure that the user is logged in
+  call gista#gist#raw#login()
+
   " get cache (to update the cache, get the cache even if nocache is 1)
   let username = gista#gist#raw#get_authenticated_user()
   if a:lookup == username || a:lookup == ''

@@ -9,11 +9,11 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! gista#utils#translate_datetime(datetime) abort " {{{
+function! gista#utils#datetime(str_datetime) abort " {{{
   " Create DateTime object from GitHub API datetime format
-  let datetime_obj = gista#utils#vital#from_format(a:datetime, "%FT%T%z")
+  let datetime_obj = gista#utils#vital#from_format(a:str_datetime, "%FT%T%z")
   " return formatted string
-  return datetime_obj.format("%Y/%m/%d %H:%M:%S")
+  return datetime_obj
 endfunction " }}}
 function! gista#utils#trancate(str, length) abort " {{{
   if len(a:str) > a:length
@@ -128,6 +128,14 @@ function! gista#utils#set_clipboard(content) abort " {{{
   else
     let @+ = a:content
   endif
+endfunction " }}}
+function! gista#utils#get_gist_url(gist, ...) abort " {{{
+  let url = get(a:gist, 'html_url', 'https://gist.github.com/' . a:gist.id)
+  let filename = substitute(get(a:000, 0, ''), '\.', '-', '')
+  if !empty(filename)
+    let url = url . '#file-' . filename
+  endif
+  return url
 endfunction " }}}
 function! gista#utils#browse(url) abort " {{{
   try

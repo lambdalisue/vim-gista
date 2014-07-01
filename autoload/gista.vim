@@ -133,7 +133,7 @@ endfunction " }}}
 function! s:GistaDisconnect(options) abort " {{{
   let gistid = a:options.gistid
   let filename = get(a:options, 'filename', '')
-  return gista#interface#disconnect_action(gistid, split(filename, ";"), a:options)
+  return gista#interface#disconnect_action(gistid, split(filename, ";"))
 endfunction " }}}
 
 
@@ -219,6 +219,8 @@ let s:settings = {
       \ 'interactive_description': 1,
       \ 'interactive_visibility': 1,
       \ 'include_invisible_buffers_in_multiple': 0,
+      \ 'unite_smart_open_threshold': 1,
+      \ 'unite_smart_open_method': '"open"',
       \}
 function! s:init() " {{{
   for [key, value] in items(s:settings)
