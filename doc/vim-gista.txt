@@ -43,7 +43,11 @@ Interface						|vim-gista-interface|
 	Options							|vim-gista-interface-options|
 	Commands						|vim-gista-interface-commands|
 	Mappings						|vim-gista-interface-mappings|
-
+Unite interface					|vim-gista-unite-interface|
+	Sources							|vim-gista-unite-interface-sources|
+	Kinds							|vim-gista-unite-interface-kinds|
+	Actions							|vim-gista-unite-interface-actions|
+	Filters							|vim-gista-unite-interface-filters|
 
 ==============================================================================
 INTRODUCTION										*vim-gista-introduction*
@@ -578,6 +582,13 @@ g:gista#include_invisible_buffer_in_multiple
 	specified.
 	The default value is 0.
 
+							*g:gista#unite_smart_open_threshold*
+g:gista#unite_smart_open_threshold
+	A threshold for the number of files in gist. If the number if higher than
+	this value, 'smart_open' action in |unite/actions/gista| will execute
+	'select' action, otherwise it execute 'open' action.
+	The default value is 1.
+
 ------------------------------------------------------------------------------
 Commands										*vim-gista-interface-commands*
 
@@ -721,5 +732,105 @@ Mappings										*vim-gista-interface-mappings*
 	buffer. It require 'tyru/open-browser.vim'.
 
 
+==============================================================================
+UNITE INTERFACE										*vim-gista-unite-interface*
+
+------------------------------------------------------------------------------
+Sources									*vim-gista-unite-interface-sources*
+
+										*unite/sources/gista*
+unite/sources/gista
+	List gist entries of a specified user. You can specify a user with
+	argument like
+>
+		:Unite gista:lambdalisue
+<
+										*unite/sources/gista_file*
+unite/sources/gista_file
+	List gist files of a particular gist. It is not listed and is used as a
+	internal unite source of |unite/sources/gista|.
+
+------------------------------------------------------------------------------
+Kinds									*vim-gista-unite-interface-kinds*
+
+										*unite/kinds/gista*
+unite/kinds/gista
+	A kind which indicate a Gist of gista. This kind inherit
+	|unite-kind-openable| and |unite-kind-uri|.
+
+										*unite/kinds/gista-file*
+unite/kinds/gista-file
+	A kind which indicate a gist file of gista. This kind inherit
+	|unite-kind-openable| and |unite-kind-uri|.
+
+------------------------------------------------------------------------------
+Actions									*vim-gista-unite-interface-actions*
+
+										*unite/actions/gista*
+unite/actions/gista
+	|unite/kinds/gista| define the following actions (the kind also have other
+	actions which defined in |unite-kinds-openable| and |unite-kinds-uri|.)
+
+	open		Open files in the gist
+	select		Open Unite interface to select files in the gist
+	delete		Delete the gist
+	star		Star the gist
+	unstar		Unstar the gist
+	fork		Fork the gist (it does not work with authenticated user's
+				gist)
+	smart_open	Do 'select' or 'open', determined from the number of files in
+				the gist. See |g:gista#unite_smart_open_threshold|
+	smart_xxxx  'xxxx' is one of the following and similar to 'smart_open' but
+				execute a corresponding action.
+
+				tabopen, choose, tabdrop, split, vsplit, left, right, above,
+				below, persist_open, tabsplit
+
+										*unite/actions/gista_file*
+unite/actions/gista_file
+	|unite/kinds/gista| define the following actions (the kind also have other
+	actions which defined in |unite-kinds-openable| and |unite-kinds-uri|.)
+
+	open		Open the file
+	rename		Rename the file
+	delete		Delete the file
+
+										*unite/actions/post_to_gist*
+unite/actions/post_to_gist
+	This action is indicated as a custom action of |unite-kind-file| and
+	|unite-kind-buffer|. You can post selected files/buffers to create a new
+	gist.
+
+------------------------------------------------------------------------------
+Filters									*vim-gista-unite-interface-filters*
+
+								*unite/filters/converter_gista_full*
+unite/filters/converter_gista_full
+	A 'gista' converter which display all informations about the gist.
+
+								*unite/filters/converter_gista_short*
+unite/filters/converter_gista_short
+	A 'gista' converter which display minimum informations about the gist.
+	a Gist ID and an updated datetime are omitted.
+
+								*unite/filters/converter_gista_without_gistid*
+unite/filters/converter_gista_without_gistid
+	A 'gista' converter which display informations about the gist, without
+	a Gist ID.
+
+								*unite/filters/converter_gista_without_datetime*
+unite/filters/converter_gista_without_datetime
+	A 'gista' converter which display informations about the gist, without
+	an updated datetime.
+
+								*unite/filters/converter_gista_without_date*
+unite/filters/converter_gista_without_datet
+	A 'gista' converter which display informations about the gist, without
+	an updated date.
+
+								*unite/filters/converter_gista_without_time*
+unite/filters/converter_gista_without_time
+	A 'gista' converter which display informations about the gist, without
+	an updated time.
 
 vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl:noet

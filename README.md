@@ -307,6 +307,11 @@ The source name is 'gista' thus call the unite as follow:
 :Unite gista
 ```
 
+There are much more implementations, see with
+
+```vim
+:help vim-gista-unite-interface
+```
 
 Acknowledgments
 ===============================================================================
