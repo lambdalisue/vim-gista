@@ -388,7 +388,9 @@ function! gista#gist#api#rename(gistid, filename, new_filename, ...) abort " {{{
   endif
 endfunction " }}}
 function! gista#gist#api#remove(gistid, filename, ...) abort " {{{
-  let settings = extend({}, get(a:000, 0, {}))
+  let settings = extend({
+        \ 'confirm': 1,
+        \}, get(a:000, 0, {}))
 
   " get gist
   let gist = s:get_gist(a:gistid)
@@ -396,20 +398,22 @@ function! gista#gist#api#remove(gistid, filename, ...) abort " {{{
     return {}
   endif
 
-  redraw
-  echohl GistaTitle
-  echo  'Remove:'
-  echohl None
-  echo  'Removing "' . a:filename . '" from the gist. '
-  echo  'This operation cannot be undone within vim-gista interface. '
-  echon 'You have to go Gist web interface to revert the file.'
-  let response = gista#utils#input_yesno('Are you sure to remove the file')
-  if !response
+  if settings.confirm
     redraw
-    echohl GistaWarning
-    echo 'Canceled'
+    echohl GistaTitle
+    echo  'Remove:'
     echohl None
-    return
+    echo  'Removing "' . a:filename . '" from the gist. '
+    echo  'This operation cannot be undone within vim-gista interface. '
+    echon 'You have to go Gist web interface to revert the file.'
+    let response = gista#utils#input_yesno('Are you sure to remove the file')
+    if !response
+      redraw
+      echohl GistaWarning
+      echo 'Canceled'
+      echohl None
+      return
+    endif
   endif
 
   let res = gista#gist#raw#remove(gist, [a:filename], settings)
@@ -432,7 +436,9 @@ function! gista#gist#api#remove(gistid, filename, ...) abort " {{{
   endif
 endfunction " }}}
 function! gista#gist#api#delete(gistid, ...) abort " {{{
-  let settings = extend({}, get(a:000, 0, {}))
+  let settings = extend({
+        \ 'confirm': 1,
+        \}, get(a:000, 0, {}))
 
   " get gist
   let gist = deepcopy(s:get_gist(a:gistid))
@@ -440,22 +446,24 @@ function! gista#gist#api#delete(gistid, ...) abort " {{{
     return {}
   endif
 
-  redraw
-  echohl GistaTitle
-  echo  'Delete:'
-  echohl None
-  echo  'Deleting a gist (' . a:gistid . '). '
-  echon 'If you really want to delete the gist, type "DELETE".'
-  echohl GistaWarning
-  echo  'This operation cannot be undone even in Gist web interface.'
-  echohl None
-  let response = input('type "DELETE" to delete the gist: ')
-  if response !=# 'DELETE'
+  if settings.confirm
     redraw
-    echohl GistaWarning
-    echo 'Canceled'
+    echohl GistaTitle
+    echo  'Delete:'
     echohl None
-    return
+    echo  'Deleting a gist (' . a:gistid . '). '
+    echon 'If you really want to delete the gist, type "DELETE".'
+    echohl GistaWarning
+    echo  'This operation cannot be undone even in Gist web interface.'
+    echohl None
+    let response = input('type "DELETE" to delete the gist: ')
+    if response !=# 'DELETE'
+      redraw
+      echohl GistaWarning
+      echo 'Canceled'
+      echohl None
+      return
+    endif
   endif
 
   let res = gista#gist#raw#delete(gist, settings)

@@ -43,10 +43,26 @@ function! s:kind.action_table.rename.func(candidate) " {{{
         \})
 endfunction " }}}
 function! s:kind.action_table.delete.func(candidates) " {{{
+  redraw
+  echohl GistaTitle
+  echo  'Remove:'
+  echohl None
+  echo  'Removing ' len(a:candidates) 'files from the gist. '
+  echo  'This operation cannot be undone within vim-gista interface. '
+  echon 'You have to go Gist web interface to revert the file.'
+  let response = gista#utils#input_yesno('Are you sure to remove the file')
+  if !response
+    redraw
+    echohl GistaWarning
+    echo 'Canceled'
+    echohl None
+    return
+  endif
   for candidate in a:candidates
     let gist = candidate.source__gist
     let filename = candidate.source__filename
     call gista#interface#remove_action(gist.id, filename, {
+          \ 'confirm': 0,
           \ 'update_list': 0,
           \})
   endfor

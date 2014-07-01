@@ -55,9 +55,27 @@ function! s:kind.action_table.select.func(candidate) " {{{
   call unite#start_temporary(['gista_file'], context)
 endfunction " }}}
 function! s:kind.action_table.delete.func(candidates) " {{{
+  redraw
+  echohl GistaTitle
+  echo  'Delete:'
+  echohl None
+  echo  'Deleting' len(a:candidates) 'gists. '
+  echon 'If you really want to delete these gists, type "DELETE".'
+  echohl GistaWarning
+  echo  'This operation cannot be undone even in Gist web interface.'
+  echohl None
+  let response = input('type "DELETE" to delete the gist: ')
+  if response !=# 'DELETE'
+    redraw
+    echohl GistaWarning
+    echo 'Canceled'
+    echohl None
+    return
+  endif
   for candidate in a:candidates
     let gist = candidate.source__gist
     call gista#interface#delete_action(gist.id, {
+          \ 'confirm': 0,
           \ 'update_list': 0,
           \})
   endfor
