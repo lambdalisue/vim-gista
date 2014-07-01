@@ -387,7 +387,7 @@ function! gista#interface#post_buffers(...) abort " {{{
     for [bufnum, filename] in gista#utils#vital#zip(pbufnums, filenames)
       call gista#utils#call_on_buffer(
             \ bufnum,
-            \ "<SID>connect",
+            \ function("<SID>connect"),
             \ gist.id, filename)
     endfor
   endif
