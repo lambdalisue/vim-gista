@@ -63,31 +63,6 @@ endfunction " }}}
 function! s:format_gist_file(gist, filename) abort " {{{
   return '- ' . a:filename
 endfunction " }}}
-function! s:connect(gistid, filename) abort " {{{
-  let gist = gista#gist#api#get(a:gistid)
-  if empty(gist)
-    return
-  endif
-  " Connect current buffer to the gist
-  call s:set_bridge(a:gistid, a:filename, bufnr('%'))
-  " Keep gistid and filename to the buffer variable
-  let b:gistinfo = {
-        \ 'gistid': a:gistid,
-        \ 'filename': a:filename
-        \}
-  " is the gist editable?
-  if gist.owner.login == gista#gist#raw#get_authenticated_user()
-    " user own the gist, modifiable
-    setlocal modifiable
-    autocmd! BufWriteCmd <buffer>
-          \ call s:ac_write_gist_buffer(expand("<amatch>"))
-  else
-    " non user gist, nomodifiable
-    setlocal buftype=nowrite
-    setlocal nomodifiable
-    autocmd! BufWriteCmd <buffer>
-  endif
-endfunction " }}}
 function! s:disconnect(...) abort " {{{
   let settings = extend({
         \ 'provide_filename': 1,
@@ -313,7 +288,7 @@ function! gista#interface#open(gistid, filenames, ...) abort " {{{
         setlocal nomodified
 
         " connect the gist
-        call s:connect(a:gistid, filename)
+        call gista#interface#connect_action(a:gistid, filename)
 
         " successfully loaded, call autocmd
         doautocmd StdinReadPost,BufRead,BufReadPost
@@ -339,7 +314,7 @@ function! gista#interface#post(line1, line2, ...) abort " {{{
 
   " Connect the buffer to the gist
   if settings.auto_connect_after_post
-    call s:connect(gist.id, filename)
+    call gista#interface#connect(gist.id, filename)
   endif
   " Update list window
   if settings.update_list
@@ -387,7 +362,7 @@ function! gista#interface#post_buffers(...) abort " {{{
     for [bufnum, filename] in gista#utils#vital#zip(pbufnums, filenames)
       call gista#utils#call_on_buffer(
             \ bufnum,
-            \ function("<SID>connect"),
+            \ function('gista#interface#connect_action'),
             \ gist.id, filename)
     endfor
   endif
@@ -838,6 +813,39 @@ function! gista#interface#browse_action(gistid, filename, ...) abort " {{{
   let gist = gista#gist#api#get(a:gistid, settings)
   let url = gista#utils#get_gist_url(gist, a:filename)
   call gista#utils#browse(url)
+endfunction " }}}
+function! gista#interface#connect_action(...) abort " {{{
+  if exists('b:gistinfo')
+    redraw
+    echohl WarningMsg
+    echo 'Gist is already connected'
+    echohl None
+    echo 'It seems that a gist is already connected to the current buffer.'
+    return
+  endif
+  let gist = gista#gist#api#get(a:gistid)
+  if empty(gist)
+    return
+  endif
+  " Connect current buffer to the gist
+  call s:set_bridge(a:gistid, a:filename, bufnr('%'))
+  " Keep gistid and filename to the buffer variable
+  let b:gistinfo = {
+        \ 'gistid': a:gistid,
+        \ 'filename': a:filename
+        \}
+  " is the gist editable?
+  if gist.owner.login == gista#gist#raw#get_authenticated_user()
+    " user own the gist, modifiable
+    setlocal modifiable
+    autocmd! BufWriteCmd <buffer>
+          \ call s:ac_write_gist_buffer(expand("<amatch>"))
+  else
+    " non user gist, nomodifiable
+    setlocal buftype=nowrite
+    setlocal nomodifiable
+    autocmd! BufWriteCmd <buffer>
+  endif
 endfunction " }}}
 function! gista#interface#disconnect_action(gistid, filenames) abort " {{{
   let bridges = s:get_bridges()

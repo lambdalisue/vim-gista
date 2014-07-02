@@ -152,6 +152,15 @@ function! gista#utils#browse(url) abort " {{{
     echohl None
   endtry
 endfunction " }}}
+function! gista#utils#find_gistid(lnum, ...) " {{{
+  if exists('b:gistinfo')
+    return b:gistinfo.gistid
+  endif
+  let gistid_pattern = 'GistID:\s*\zs\w\+\ze'
+  let content = join(getline(a:lnum, get(a:000, 0, a:lnum)), "\n")
+  let gistid = matchstr(content, gistid_pattern)
+  return gistid
+endfunction " }}}
 
 
 let s:consts = {}

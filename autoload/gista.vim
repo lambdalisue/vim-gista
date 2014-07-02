@@ -82,6 +82,10 @@ function! s:GistaPost(options) abort " {{{
       call input('Hit enter to continue')
       echohl None
     endif
+    if !exists('b:gistinfo')
+      " the current buffer is not connected yet thus connect it
+      call gista#interface#connect_action(gistid, expand('%:t'))
+    endif
     return gista#interface#save(
           \ a:options.__range__[0],
           \ a:options.__range__[1],

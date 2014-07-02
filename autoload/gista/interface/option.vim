@@ -10,15 +10,6 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
-function! s:find_gistid(lnum, ...) " {{{
-  if exists('b:gistinfo')
-    return b:gistinfo.gistid
-  endif
-  let gistid_pattern = 'GistID:\s*\zs\w\+\ze'
-  let content = join(getline(a:lnum, get(a:000, 0, a:lnum)), "\n")
-  let gistid = matchstr(content, gistid_pattern)
-  return gistid
-endfunction " }}}
 function! s:get_parser() " {{{
   if !exists('s:parser') || 1
     let s:parser = gista#utils#option#new()
@@ -184,9 +175,13 @@ function! s:get_parser() " {{{
           \})
     function! s:parser._pre_process(options) abort " {{{
       let options = a:options
+      " post (if no conflict options are specified)
+      if !self.has_conflicts('post', options)
+        let options['post'] = self.TRUE
+      endif
       " gistid (GistPost does not require gistid but use)
       if self.has_subordinated('gistid', options)
-        let gistid = s:find_gistid(
+        let gistid = gista#utils#find_gistid(
               \   a:options.__range__[0],
               \   a:options.__range__[1],
               \)
@@ -197,10 +192,6 @@ function! s:get_parser() " {{{
       " filename
       if exists('b:gistinfo') && self.has_subordinated('filename', options)
         let options['filename'] = b:gistinfo.filename
-      endif
-      " post (if no conflict options are specified)
-      if !self.has_conflicts('post', options)
-        let options['post'] = self.TRUE
       endif
       return options
     endfunction " }}}
