@@ -30,7 +30,7 @@ function! s:post_to_gist.func(candidates) abort " {{{
     " find usable filename
     let j = 1
     while index(filenames, filename) > -1
-      let filename = basename . j . extension
+      let filename = printf("%s-%d.%s", basename, j, extension)
       let j += 1
     endwhile
     call add(filenames, filename)

@@ -18,14 +18,14 @@ function! s:get_usable_buffer_name(name) abort " {{{
     return a:name
   endif
   let index = 1
+  let filename = fnamemodify(a:name, ':t')
   let basename = fnamemodify(a:name, ':r')
   let extension = fnamemodify(a:name, ':e')
-  let name = basename . index . extension
-  while bufnr(name) > -1
+  while bufnr(filename) > -1
     let index += 1
-    let name = basename . index . extension
+    let filename = printf("%s-%d.%s", basename, index, extension)
   endwhile
-  return name
+  return filename
 endfunction " }}}
 function! s:get_bridges() abort " {{{
   if !exists('s:bridges')
