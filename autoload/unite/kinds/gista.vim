@@ -59,8 +59,11 @@ function! s:kind.action_table.delete.func(candidates) " {{{
   echohl GistaTitle
   echo  'Delete:'
   echohl None
-  echo  'Deleting' len(a:candidates) 'gists. '
-  echon 'If you really want to delete these gists, type "DELETE".'
+  echo 'Deleting' len(a:candidates) 'gists. The followings will be deleted.'
+  for candidate in a:candidates
+    echo "-" get(candidate, 'abbr', candidate.word)
+  endfor
+  echo 'If you really want to delete these gists, type "DELETE".'
   echohl GistaWarning
   echo  'This operation cannot be undone even in Gist web interface.'
   echohl None
