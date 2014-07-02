@@ -20,7 +20,7 @@ let s:kind = {
       \   'select': {
       \     'description': 'select gist files',
       \     'is_selectable': 0,
-      \     'is_quit': 0,
+      \     'is_start': 1,
       \   },
       \   'delete': {
       \     'description': 'delete the selected gists',
@@ -52,7 +52,7 @@ endfunction " }}}
 function! s:kind.action_table.select.func(candidate) " {{{
   let context = {}
   let context.source__gist = a:candidate.source__gist
-  call unite#start_temporary(['gista_file'], context)
+  call unite#start_script(['gista_file'], context)
 endfunction " }}}
 function! s:kind.action_table.delete.func(candidates) " {{{
   redraw
