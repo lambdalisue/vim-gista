@@ -163,6 +163,7 @@ function! gista#interface#list(lookup, ...) abort " {{{
         nmap <buffer> s          <Plug>(gista-action-split)
         nmap <buffer> v          <Plug>(gista-action-vsplit)
         nmap <buffer> b          <Plug>(gista-action-browse)
+        nmap <buffer> yy         <Plug>(gista-action-yank)
       endif
 
       let b:links = []
@@ -236,6 +237,39 @@ function! gista#interface#update(...) abort " {{{
   let b:settings = gista#utils#vital#omit(settings, ['nocache'])
 endfunction " }}}
 
+function! gista#interface#connect(gistid, filename) abort " {{{
+  if exists('b:gistinfo')
+    redraw
+    echohl WarningMsg
+    echo 'Gist is already connected'
+    echohl None
+    echo 'It seems that a gist is already connected to the current buffer.'
+    return
+  endif
+  let gist = gista#gist#api#get(a:gistid)
+  if empty(gist)
+    return
+  endif
+  " Connect current buffer to the gist
+  call s:set_bridge(a:gistid, a:filename, bufnr('%'))
+  " Keep gistid and filename to the buffer variable
+  let b:gistinfo = {
+        \ 'gistid': a:gistid,
+        \ 'filename': a:filename
+        \}
+  " is the gist editable?
+  if gist.owner.login == gista#gist#raw#get_authenticated_user()
+    " user own the gist, modifiable
+    setlocal modifiable
+    autocmd! BufWriteCmd <buffer>
+          \ call s:ac_write_gist_buffer(expand("<amatch>"))
+  else
+    " non user gist, nomodifiable
+    setlocal buftype=nowrite
+    setlocal nomodifiable
+    autocmd! BufWriteCmd <buffer>
+  endif
+endfunction " }}}
 function! gista#interface#open(gistid, filenames, ...) abort " {{{
   let settings = extend({
         \ 'openers': g:gista#gist_openers,
@@ -288,7 +322,7 @@ function! gista#interface#open(gistid, filenames, ...) abort " {{{
         setlocal nomodified
 
         " connect the gist
-        call gista#interface#connect_action(a:gistid, filename)
+        call gista#interface#connect(a:gistid, filename)
 
         " successfully loaded, call autocmd
         doautocmd StdinReadPost,BufRead,BufReadPost
@@ -314,7 +348,7 @@ function! gista#interface#post(line1, line2, ...) abort " {{{
 
   " Connect the buffer to the gist
   if settings.auto_connect_after_post
-    call gista#interface#connect_action(gist.id, filename)
+    call gista#interface#connect(gist.id, filename)
   endif
   " Update list window
   if settings.update_list
@@ -362,7 +396,7 @@ function! gista#interface#post_buffers(...) abort " {{{
     for [bufnum, filename] in gista#utils#vital#zip(pbufnums, filenames)
       call gista#utils#call_on_buffer(
             \ bufnum,
-            \ function('gista#interface#connect_action'),
+            \ function('gista#interface#connect'),
             \ gist.id, filename)
     endfor
   endif
@@ -601,7 +635,7 @@ function! gista#interface#browse(...) abort " {{{
     echo 'No gist is connected'
     echohl None
     echo 'It seems that no gist is connected to the current buffer.'
-          \ 'gista#interface#fork() function need to be executed on the'
+          \ 'gista#interface#browse() function need to be executed on the'
           \ 'buffer which is connected to a gist.'
     return
   endif
@@ -612,6 +646,23 @@ function! gista#interface#browse(...) abort " {{{
   let filename = b:gistinfo.filename
 
   call gista#interface#browse_action(gistid, filename, settings)
+endfunction " }}}
+function! gista#interface#yank() abort " {{{
+  if !exists('b:gistinfo')
+    redraw
+    echohl WarningMsg
+    echo 'No gist is connected'
+    echohl None
+    echo 'It seems that no gist is connected to the current buffer.'
+          \ 'gista#interface#yank() function need to be executed on the'
+          \ 'buffer which is connected to a gist.'
+    return
+  endif
+
+  let gistid = b:gistinfo.gistid
+  let filename = b:gistinfo.filename
+
+  call gista#interface#yank_action(gistid, filename)
 endfunction " }}}
 
 function! gista#interface#do_action(action, info, ...) " {{{
@@ -705,6 +756,8 @@ function! gista#interface#do_action(action, info, ...) " {{{
     call gista#interface#fork_action(a:info.gist.id) " }}}
   elseif a:action ==# 'browse' " {{{
     call gista#interface#browse_action(a:info.gist.id, a:info.filename) " }}}
+  elseif a:action ==# 'yank' " {{{
+    call gista#interface#yank_action(a:info.gist.id, a:info.filename) " }}}
   endif
 
 endfunction " }}}
@@ -814,39 +867,6 @@ function! gista#interface#browse_action(gistid, filename, ...) abort " {{{
   let url = gista#utils#get_gist_url(gist, a:filename)
   call gista#utils#browse(url)
 endfunction " }}}
-function! gista#interface#connect_action(gistid, filename) abort " {{{
-  if exists('b:gistinfo')
-    redraw
-    echohl WarningMsg
-    echo 'Gist is already connected'
-    echohl None
-    echo 'It seems that a gist is already connected to the current buffer.'
-    return
-  endif
-  let gist = gista#gist#api#get(a:gistid)
-  if empty(gist)
-    return
-  endif
-  " Connect current buffer to the gist
-  call s:set_bridge(a:gistid, a:filename, bufnr('%'))
-  " Keep gistid and filename to the buffer variable
-  let b:gistinfo = {
-        \ 'gistid': a:gistid,
-        \ 'filename': a:filename
-        \}
-  " is the gist editable?
-  if gist.owner.login == gista#gist#raw#get_authenticated_user()
-    " user own the gist, modifiable
-    setlocal modifiable
-    autocmd! BufWriteCmd <buffer>
-          \ call s:ac_write_gist_buffer(expand("<amatch>"))
-  else
-    " non user gist, nomodifiable
-    setlocal buftype=nowrite
-    setlocal nomodifiable
-    autocmd! BufWriteCmd <buffer>
-  endif
-endfunction " }}}
 function! gista#interface#disconnect_action(gistid, filenames) abort " {{{
   let bridges = s:get_bridges()
 
@@ -863,6 +883,21 @@ function! gista#interface#disconnect_action(gistid, filenames) abort " {{{
     let bufnum = s:get_bridge(a:gistid, filename)
     call gista#utils#call_on_buffer(bufnum, F)
   endfor
+endfunction " }}}
+function! gista#interface#yank_action(gistid, ...) abort " {{{
+  let filename = get(a:000, 0, '')
+  if empty(filename)
+    let content = a:gistid
+  else
+    let content = printf("%s/%s", a:gistid, filename)
+  endif
+
+  let @" = content
+  redraw | echo 'Yanked: ' . content
+
+  if has('clipboard')
+    call setreg(v:register, content)
+  endif
 endfunction " }}}
 
 nnoremap <silent> <Plug>(gista-update)
@@ -901,6 +936,8 @@ nnoremap <silent> <Plug>(gista-action-fork)
       \ :call <SID>action('fork')<CR>
 nnoremap <silent> <Plug>(gista-action-browse)
       \ :call <SID>action('browse')<CR>
+nnoremap <silent> <Plug>(gista-action-yank)
+      \ :call <SID>action('yank')<CR>
 
 
 let s:consts = {}

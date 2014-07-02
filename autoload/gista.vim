@@ -139,6 +139,11 @@ function! s:GistaDisconnect(options) abort " {{{
   let filename = get(a:options, 'filename', '')
   return gista#interface#disconnect_action(gistid, split(filename, ";"))
 endfunction " }}}
+function! s:GistaYank(options) abort " {{{
+  let gistid = a:options.gistid
+  let filename = get(a:options, 'filename', '')
+  return gista#interface#yank_action(gistid, filename)
+endfunction " }}}
 
 
 function! gista#Gista(options) abort " {{{
@@ -174,6 +179,8 @@ function! gista#Gista(options) abort " {{{
     return s:GistaBrowse(a:options)
   elseif get(a:options, 'disconnect')
     return s:GistaDisconnect(a:options)
+  elseif get(a:options, 'yank')
+    return s:GistaYank(a:options)
   endif
 endfunction " }}}
 function! gista#define_syntax() abort " {{{

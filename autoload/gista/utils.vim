@@ -120,15 +120,6 @@ function! gista#utils#input_yesno(message, ...) "{{{
   redraw
   return yesno =~? 'y\%[es]'
 endfunction " }}}
-function! gista#utils#set_clipboard(content) abort " {{{
-  if exists('g:gista#clip_command')
-    call gista#utils#vital#system(g:gista#clip_command, a:content)
-  elseif has('unix') && !has('xterm_clipboard')
-    let @" = a:content
-  else
-    let @+ = a:content
-  endif
-endfunction " }}}
 function! gista#utils#get_gist_url(gist, ...) abort " {{{
   let url = get(a:gist, 'html_url', 'https://gist.github.com/' . a:gist.id)
   let filename = substitute(get(a:000, 0, ''), '\.', '-', '')

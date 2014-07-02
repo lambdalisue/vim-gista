@@ -100,7 +100,7 @@ function! s:get_parser() " {{{
           \   'subordinations_of': [
           \     'open', 'post', 'rename', 'remove', 'delete',
           \     'star', 'unstar', 'is-starred', 'fork',
-          \     'disconnect',
+          \     'disconnect', 'yank',
           \   ],
           \})
     call s:parser.add_argument(
@@ -108,7 +108,7 @@ function! s:get_parser() " {{{
           \ 'Specify a filename', {
           \   'kind': s:parser.VALUE,
           \   'subordinations_of': [
-          \     'open', 'rename', 'remove', 'disconnect',
+          \     'open', 'rename', 'remove', 'disconnect', 'yank',
           \   ],
           \})
     call s:parser.add_argument(
@@ -169,6 +169,13 @@ function! s:get_parser() " {{{
     call s:parser.add_argument(
           \ '--disconnect',
           \ 'Disconnect a buffer from the gist', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'command',
+          \   'requires': 'gistid',
+          \})
+    call s:parser.add_argument(
+          \ '--yank',
+          \ 'Yank Gist ID (and filename)', {
           \   'kind': s:parser.SWITCH,
           \   'conflicts': 'command',
           \   'requires': 'gistid',

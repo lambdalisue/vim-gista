@@ -25,6 +25,7 @@ function! s:source.gather_candidates(args, context) abort " {{{
           \ 'source__gist': gist,
           \ 'source__filename': filename,
           \ 'action__path': gista#utils#get_gist_url(gist, filename),
+          \ 'action__text': printf("%s/%s", gist.id, filename),
           \})
   endfor
   return candidates

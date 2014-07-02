@@ -223,6 +223,7 @@ opened. You can manipulate your gists with following keys (See
 	s			|<Plug>(gista-action-split)|
 	v			|<Plug>(gista-action-vsplit)|
 	b			|<Plug>(gista-action-browser)|
+	yy			|<Plug>(gista-action-yank)|
 
 If you want to list a particular user's gist entries, give the username to the
 command like:
@@ -552,6 +553,7 @@ g:gista#enable_default_keymaps
 		nmap <buffer> s          <Plug>(gista-action-split)
 		nmap <buffer> v          <Plug>(gista-action-vsplit)
 		nmap <buffer> b          <Plug>(gista-action-browse)
+		nmap <buffer> yy         <Plug>(gista-action-yank)
 <
 	The default value is 1.
 
@@ -654,6 +656,14 @@ Commands										*vim-gista-interface-commands*
 	opened+listed+visible buffers (see
 	|g:gista#include_invisible_buffer_in_multiple|).
 
+												*:Gista-yank*
+:Gista --yank
+	Yank a gist ID (and filename) of the gist connected from the current
+	buffer.
+	If |clipboard| is enable, it will also yank the text into |v:register|
+	thus if you use 'unnamed' or 'unnamedplus', the text will be copied into
+	the system clipboard.
+
 ------------------------------------------------------------------------------
 Mappings										*vim-gista-interface-mappings*
 
@@ -730,6 +740,12 @@ Mappings										*vim-gista-interface-mappings*
 <Plug>(gista-action-browse)
 	Open a browser with a selected gist or gist file if called in a gist:list
 	buffer. It require 'tyru/open-browser.vim'.
+
+
+										*<Plug>(gista-action-yank)*
+<Plug>(gista-action-yank)
+	Yank a gist ID (and filename) of selected gist or file.
+	It will yank the text to |v:register| as well if |clipboard| is enable.
 
 
 ==============================================================================

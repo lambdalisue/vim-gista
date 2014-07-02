@@ -58,6 +58,7 @@ function! s:get_candidates(lookup, nocache) abort " {{{
               \ 'source__gist': gist,
               \ 'action__gist': gist,
               \ 'action__path': gista#utils#get_gist_url(gist),
+              \ 'action__text': gist.id,
               \})
       endfor
     endif
