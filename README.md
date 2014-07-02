@@ -2,7 +2,7 @@ vim-gista
 ===============================================================================
 ![vim-gista interface (screencast)](./doc/screencast-interface.gif)
 
-Version: 0.1.2
+Version: 0.1.3
 
 *vim-gista* is a plugin for manipulating [Gists](https://gist.github.com/).
 It provide the following features:
