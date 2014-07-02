@@ -1,6 +1,6 @@
 *vim-gista.txt* A plugin which helps user to manipulate gists
 
-Version: 0.1.4
+Version: 0.1.5
 Author:  Alisue <lambdalisue@hashnote.net>					*vim-gista-author*
 License: MIT license  {{{
 	Copyright (c) 2014 Alisue, hashnote.net
