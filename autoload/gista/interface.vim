@@ -314,7 +314,7 @@ function! gista#interface#post(line1, line2, ...) abort " {{{
 
   " Connect the buffer to the gist
   if settings.auto_connect_after_post
-    call gista#interface#connect(gist.id, filename)
+    call gista#interface#connect_action(gist.id, filename)
   endif
   " Update list window
   if settings.update_list
@@ -814,7 +814,7 @@ function! gista#interface#browse_action(gistid, filename, ...) abort " {{{
   let url = gista#utils#get_gist_url(gist, a:filename)
   call gista#utils#browse(url)
 endfunction " }}}
-function! gista#interface#connect_action(...) abort " {{{
+function! gista#interface#connect_action(gistid, filename) abort " {{{
   if exists('b:gistinfo')
     redraw
     echohl WarningMsg
