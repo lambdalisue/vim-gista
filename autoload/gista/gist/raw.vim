@@ -380,7 +380,7 @@ function! gista#gist#raw#list(lookup, ...) abort " {{{
 
     let status = 'Requesting gists ... '
     let status = printf(
-          \ '%s %d/%d pages has been loaded (Ctrl-C to cacel)',
+          \ '%s %d/%d pages has been loaded (Ctrl-C to cancel)',
           \ status, params.page, terminal
           \)
     redraw | echo status
