@@ -336,6 +336,7 @@ function! gista#interface#post(line1, line2, ...) abort " {{{
   let settings = extend({
         \ 'auto_connect_after_post': g:gista#auto_connect_after_post,
         \ 'update_list': 1,
+        \ 'auto_yank_gistid_after_post': g:gista#auto_yank_gistid_after_post,
         \}, get(a:000, 0, {}))
 
   let filename = gista#utils#provide_filename(expand('%'), 0)
@@ -354,6 +355,13 @@ function! gista#interface#post(line1, line2, ...) abort " {{{
   if settings.update_list
     call gista#interface#update()
   endif
+  " Yank GistID
+  if settings.auto_yank_gistid_after_post
+    call gista#interface#yank_action(gist.id, '', {
+          \ 'verbose': 0,
+          \ 'gistid_yank_format': g:gista#gistid_yank_format_in_post,
+          \})
+  endif
 endfunction " }}}
 function! gista#interface#post_buffers(...) abort " {{{
   let settings = extend({
@@ -361,6 +369,7 @@ function! gista#interface#post_buffers(...) abort " {{{
         \     g:gista#include_invisible_buffers_in_multiple,
         \ 'auto_connect_after_post': g:gista#auto_connect_after_post,
         \ 'update_list': 1,
+        \ 'auto_yank_gistid_after_post': g:gista#auto_yank_gistid_after_post,
         \}, get(a:000, 0, {}))
 
   let filenames = []
@@ -404,6 +413,13 @@ function! gista#interface#post_buffers(...) abort " {{{
   if settings.update_list
     call gista#interface#update()
   endif
+  " Yank GistID
+  if settings.auto_yank_gistid_after_post
+    call gista#interface#yank_action(gist.id, '', {
+          \ 'verbose': 0,
+          \ 'gistid_yank_format': g:gista#gistid_yank_format_in_post,
+          \})
+  endif
 endfunction " }}}
 function! gista#interface#save(line1, line2, ...) abort " {{{
   if !exists('b:gistinfo')
@@ -419,6 +435,7 @@ function! gista#interface#save(line1, line2, ...) abort " {{{
 
   let settings = extend({
         \ 'update_list': 1,
+        \ 'auto_yank_gistid_after_save': g:gista#auto_yank_gistid_after_save,
         \}, get(a:000, 0, {}))
 
   let gistid = b:gistinfo.gistid
@@ -433,6 +450,14 @@ function! gista#interface#save(line1, line2, ...) abort " {{{
   " Update list window
   if settings.update_list
     call gista#interface#update()
+  endif
+
+  " Yank GistID
+  if settings.auto_yank_gistid_after_save
+    call gista#interface#yank_action(gist.id, '', {
+          \ 'verbose': 0,
+          \ 'gistid_yank_format': g:gista#gistid_yank_format_in_save,
+          \})
   endif
 endfunction " }}}
 function! gista#interface#rename(new_filename, ...) abort " {{{
@@ -886,17 +911,27 @@ function! gista#interface#disconnect_action(gistid, filenames) abort " {{{
 endfunction " }}}
 function! gista#interface#yank_action(gistid, ...) abort " {{{
   let filename = get(a:000, 0, '')
+  let settings = extend({
+        \ 'verbose': 1,
+        \ 'gistid_yank_format': g:gista#gistid_yank_format,
+        \ 'gistid_yank_format_with_file': g:gista#gistid_yank_format_with_file,
+        \}, get(a:000, 1, {}))
   if empty(filename)
-    let content = a:gistid
+    let content = substitute(
+          \ settings.gistid_yank_format, '{gistid}', a:gistid, '')
   else
-    let content = printf("%s/%s", a:gistid, filename)
+    let content = substitute(
+          \ settings.gistid_yank_format_with_file, '{gistid}', a:gistid, '')
+    let content = substitute(
+          \ content, '{filename}', filename, '')
   endif
 
   let @" = content
-  redraw | echo 'Yanked: ' . content
-
   if has('clipboard')
     call setreg(v:register, content)
+  endif
+  if settings.verbose
+    redraw | echo 'Yanked: ' . content
   endif
 endfunction " }}}
 

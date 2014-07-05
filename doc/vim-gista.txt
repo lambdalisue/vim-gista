@@ -593,6 +593,35 @@ g:gista#unite_smart_open_threshold
 	execute 'select' action, otherwise it execute 'open' action.
 	The default value is 1.
 
+					*g:gista#gistid_yank_format*
+g:gista#gistid_yank_format
+	This format is used when user yank a Gist ID on gist:list buffer or
+	Unite interface.
+	'{gistid}' is substituted to the actual Gist ID.
+	The default value is '{gistid}'
+
+					*g:gista#gistid_yank_format_with_file*
+g:gista#gistid_yank_format_with_file
+	This format is used when user yank a Gist ID and filename on gist:list
+	buffer or Unite interface.
+	'{gistid}' and '{filename}' are substituted to the actual Gist ID and
+	filename respectively.
+	The default value is '{gistid}/{filename}'
+
+					*g:gista#gistid_yank_format_in_post*
+g:gista#gistid_yank_format_in_post
+	This format is used for auto yank when user post a new gist.
+	'{gistid}' is substituted to the actual Gist ID.
+	See |g:gista#auto_yank_gistid_after_post|.
+	The default value is 'GistID: {gistid}'
+
+					*g:gista#gistid_yank_format_in_save*
+g:gista#gistid_yank_format_in_save
+	This format is used for auto yank when user save a gist.
+	'{gistid}' is substituted to the actual Gist ID.
+	See |g:gista#auto_yank_gistid_after_save|.
+	The default value is 'GistID: {gistid}'
+
 ------------------------------------------------------------------------------
 Commands				*vim-gista-interface-commands*
 

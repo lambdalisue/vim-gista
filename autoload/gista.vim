@@ -232,6 +232,12 @@ let s:settings = {
       \ 'include_invisible_buffers_in_multiple': 0,
       \ 'unite_smart_open_threshold': 1,
       \ 'unite_smart_open_method': '"open"',
+      \ 'gistid_yank_format': '"{gistid}"',
+      \ 'gistid_yank_format_with_file': '"{gistid}/{filename}"',
+      \ 'gistid_yank_format_in_post': '"GistID: {gistid}"',
+      \ 'gistid_yank_format_in_save': '"GistID: {gistid}"',
+      \ 'auto_yank_gistid_after_post': 1,
+      \ 'auto_yank_gistid_after_save': 1,
       \}
 function! s:init() " {{{
   for [key, value] in items(s:settings)
