@@ -187,6 +187,7 @@ function! gista#gist#raw#login(...) abort " {{{
   let username = get(a:000, 0, authenticated_user)
   let settings = extend({
         \ 'use_default_username': 1,
+        \ 'allow_anonymous': 0,
         \}, get(a:000, 1, {}))
   if is_authenticated && username == authenticated_user
     " the user have already logged in
@@ -196,7 +197,9 @@ function! gista#gist#raw#login(...) abort " {{{
     let username = g:gista#github_user
   endif
 
-  if empty(username)
+  if empty(username) && settings.allow_anonymous
+    return s:get_anonymous_header()
+  elseif empty(username)
     redraw
     echohl GistaTitle
     echo  'GitHub Login:'
@@ -294,11 +297,10 @@ endfunction " }}}
 function! gista#gist#raw#get(gistid, ...) abort " {{{
   let settings = extend({}, get(a:000, 0, {}))
 
-  let header = gista#gist#raw#login()
-  if empty(header)
-    return {}
-  endif
-
+  let authenticated_user = gista#gist#raw#get_authenticated_user()
+  let header = gista#gist#raw#login(authenticated_user, {
+        \ 'allow_anonymous': 1,
+        \})
   let request_settings = gista#utils#vital#omit(settings, [
         \ 'anonymous',
         \])
@@ -316,15 +318,16 @@ function! gista#gist#raw#list(lookup, ...) abort " {{{
         \ 'since': '',
         \}, get(a:000, 0, {}))
 
-  let header = gista#gist#raw#login()
-  if empty(header)
-    return {}
-  endif
+  let authenticated_user = gista#gist#raw#get_authenticated_user()
+  let header = gista#gist#raw#login(authenticated_user, {
+        \ 'allow_anonymous': 1,
+        \})
 
+  let is_authenticated = gista#gist#raw#is_authenticated()
   let username = gista#gist#raw#get_authenticated_user()
-  if a:lookup == username || a:lookup == ''
+  if is_authenticated && (a:lookup == username || a:lookup == '')
     let url = s:get_api_url('gists')
-  elseif a:lookup == 'starred'
+  elseif is_authenticated && a:lookup == 'starred'
     let url = s:get_api_url('gists', 'starred')
   elseif a:lookup == 'public'
     let url = s:get_api_url('gists', a:lookup)
@@ -333,6 +336,15 @@ function! gista#gist#raw#list(lookup, ...) abort " {{{
       let settings.page = 1
     endif
   else
+    if empty(a:lookup)
+      redraw
+      echohl GistaError
+      echo 'No lookup username is specified.'
+      echohl None
+      echo 'You have not logged in your GitHub account thus you have to'
+            \ 'specify a GitHub username to lookup.'
+      return {}
+    endif
     let url = s:get_api_url('users', a:lookup, 'gists')
   endif
 
@@ -429,10 +441,10 @@ function! gista#gist#raw#post(filenames, contents, ...) abort " {{{
   if settings.anonymous
     let header = s:get_anonymous_header()
   else
-    let header = gista#gist#raw#login()
-    if empty(header)
-      return {}
-    endif
+    let authenticated_user = gista#gist#raw#get_authenticated_user()
+    let header = gista#gist#raw#login(authenticated_user, {
+          \ 'allow_anonymous': 1,
+          \})
   endif
 
   let gist = {

@@ -86,6 +86,7 @@ function! gista#gist#api#get(gistid, ...) abort " {{{
   endif
 
   let res = gista#gist#raw#get(a:gistid, settings)
+  let res = extend({'status': '', 'content': ''}, res)
 
   if res.status == 404
     redraw
@@ -103,7 +104,7 @@ function! gista#gist#api#get(gistid, ...) abort " {{{
       redraw | echo printf('%s is removed from the cache.', a:gistid)
     endif
     return {}
-  elseif res.status != 200
+  elseif type(res.status) == 0 && res.status != 200
     redraw
     echohl GistaWarning
     echo res.status . ' ' . res.statusText . '. '
@@ -124,15 +125,28 @@ function! gista#gist#api#list(lookup, ...) abort " {{{
         \}, get(a:000, 0, {}))
 
   " make sure that the user is logged in
-  call gista#gist#raw#login()
+  let username = gista#gist#raw#get_authenticated_user()
+  call gista#gist#raw#login(username, {
+        \ 'allow_anonymous': 1,
+        \})
 
   " get cache (to update the cache, get the cache even if nocache is 1)
+  let is_authenticated = gista#gist#raw#is_authenticated()
   let username = gista#gist#raw#get_authenticated_user()
-  if a:lookup == username || a:lookup == ''
+  if is_authenticated && (a:lookup == username || a:lookup == '')
     let cache = s:get_gist_entries(username . '.all')
-  elseif a:lookup == 'starred'
+  elseif is_authenticated && a:lookup == 'starred'
     let cache = s:get_gist_entries(username . '.starred')
   elseif a:lookup != 'public'
+    if empty(a:lookup)
+      redraw
+      echohl GistaError
+      echo 'No lookup username is specified.'
+      echohl None
+      echo 'You have not logged in your GitHub account thus you have to'
+            \ 'specify a GitHub username to lookup.'
+      return []
+    endif
     let cache = s:get_gist_entries(a:lookup . '.public')
   endif
 
@@ -147,6 +161,7 @@ function! gista#gist#api#list(lookup, ...) abort " {{{
   endif
 
   let res = gista#gist#raw#list(a:lookup, settings)
+  let res = extend({'status': '', 'content': ''}, res)
 
   if res.status == 200
     let loaded_gists = res.content
@@ -172,7 +187,7 @@ function! gista#gist#api#list(lookup, ...) abort " {{{
     endif
     redraw | echo len(loaded_gists) 'gist entries are updated.'
     return gists
-  elseif res.status != 200
+  elseif type(res.status) == 0 && res.status != 200
     redraw
     echohl GistaWarning
     echo res.status . ' ' . res.statusText . '. '
@@ -180,23 +195,19 @@ function! gista#gist#api#list(lookup, ...) abort " {{{
     if res.status == 404
       echo 'Gists of "' . a:lookup .'" could not be found. '
     endif
-  elseif empty(res.content)
-    redraw
-    echohl GistaWarning
-    echo 'No gists matched with "' . a:lookup .'" are found. '
-    echohl None
   endif
 endfunction " }}}
 function! gista#gist#api#list_commits(gistid, ...) abort " {{{
   let settings = extend({}, get(a:000, 0, {}))
 
   let res = gista#gist#raw#list_commits(a:gistid, settings)
+  let res = extend({'status': '', 'content': ''}, res)
 
   if res.status == 200
     let commits = res.content
     redraw | echo len(commits) 'commits are loaded.'
     return commits
-  else
+  elseif type(res.status) == 0
     redraw
     echohl GistaError
     echo  res.status . ' ' . res.statusText
@@ -211,12 +222,13 @@ function! gista#gist#api#list_forks(gistid, ...) abort " {{{
   let settings = extend({}, get(a:000, 0, {}))
 
   let res = gista#gist#raw#list_forks(a:gistid, settings)
+  let res = extend({'status': '', 'content': ''}, res)
 
   if res.status == 200
     let forks = res.content
     redraw | echo len(forks) 'forks are loaded.'
     return forks
-  else
+  elseif type(res.status) == 0
     redraw
     echohl GistaError
     echo  res.status . ' ' . res.statusText
@@ -265,6 +277,7 @@ function! gista#gist#api#post(filenames, contents, ...) abort " {{{
   endif
 
   let res = gista#gist#raw#post(a:filenames, a:contents, settings)
+  let res = extend({'status': '', 'content': ''}, res)
 
   if res.status == 201
     " save gist
@@ -272,7 +285,7 @@ function! gista#gist#api#post(filenames, contents, ...) abort " {{{
     call s:set_gist(gist.id, gist)
     redraw | echo 'Gist is posted: ' . gist.html_url
     return gist
-  else
+  elseif type(res.status) == 0
     redraw
     echohl GistaError
     echo  res.status . ' ' . res.statusText
@@ -323,6 +336,7 @@ function! gista#gist#api#patch(gistid, filenames, contents, ...) abort " {{{
   endif
 
   let res = gista#gist#raw#patch(gist, a:filenames, a:contents, settings)
+  let res = extend({'status': '', 'content': ''}, res)
 
   if res.status == 200
     let gist = res.content
@@ -330,7 +344,7 @@ function! gista#gist#api#patch(gistid, filenames, contents, ...) abort " {{{
     call s:set_gist(a:gistid, gist)
     redraw | echo 'Gist is saved: ' . gist.html_url
     return gist
-  else
+  elseif type(res.status) == 0
     redraw
     echohl GistaError
     echo  res.status . ' ' . res.statusText
@@ -369,6 +383,7 @@ function! gista#gist#api#rename(gistid, filename, new_filename, ...) abort " {{{
   let res = gista#gist#raw#rename(gist,
         \ [a:filename], [new_filename],
         \ settings)
+  let res = extend({'status': '', 'content': ''}, res)
 
   if res.status == 200
     let gist = res.content
@@ -376,7 +391,7 @@ function! gista#gist#api#rename(gistid, filename, new_filename, ...) abort " {{{
     call s:set_gist(a:gistid, gist)
     redraw | echo a:filename 'renamed to' new_filename '(' . a:gistid . ')'
     return gist
-  else
+  elseif type(res.status) == 0
     redraw
     echohl GistaError
     echo  res.status . ' ' . res.statusText
@@ -417,6 +432,7 @@ function! gista#gist#api#remove(gistid, filename, ...) abort " {{{
   endif
 
   let res = gista#gist#raw#remove(gist, [a:filename], settings)
+  let res = extend({'status': '', 'content': ''}, res)
 
   if res.status == 200
     let gist = res.content
@@ -424,7 +440,7 @@ function! gista#gist#api#remove(gistid, filename, ...) abort " {{{
     call s:set_gist(a:gistid, gist)
     redraw | echo a:filename 'is removed (' . a:gistid . ')'
     return gist
-  else
+  elseif type(res.status) == 0
     redraw
     echohl GistaError
     echo  res.status . ' ' . res.statusText
@@ -467,6 +483,7 @@ function! gista#gist#api#delete(gistid, ...) abort " {{{
   endif
 
   let res = gista#gist#raw#delete(gist, settings)
+  let res = extend({'status': '', 'content': ''}, res)
 
   if res.status == 204
     " remove the gist from the cache
@@ -474,7 +491,7 @@ function! gista#gist#api#delete(gistid, ...) abort " {{{
     call gista#gist#api#remove_gist_entry_from_cache(a:gistid)
     redraw | echo a:gistid 'is deleted.'
     return 1
-  else
+  elseif type(res.status) == 0
     redraw
     echohl GistaError
     echo  res.status . ' ' . res.statusText
@@ -489,11 +506,12 @@ function! gista#gist#api#star(gistid, ...) abort " {{{
   let settings = extend({}, get(a:000, 0, {}))
 
   let res = gista#gist#raw#star(a:gistid, settings)
+  let res = extend({'status': '', 'content': ''}, res)
 
   if res.status == 204
     redraw | echo a:gistid 'is starred.'
     return 1
-  else
+  elseif type(res.status) == 0
     redraw
     echohl GistaError
     echo  res.status . ' ' . res.statusText
@@ -508,11 +526,12 @@ function! gista#gist#api#unstar(gistid, ...) abort " {{{
   let settings = extend({}, get(a:000, 0, {}))
 
   let res = gista#gist#raw#unstar(a:gistid, settings)
+  let res = extend({'status': '', 'content': ''}, res)
 
   if res.status == 204
     redraw | echo a:gistid 'is unstarred.'
     return 1
-  else
+  elseif type(res.status) == 0
     redraw
     echohl GistaError
     echo  res.status . ' ' . res.statusText
@@ -533,12 +552,13 @@ function! gista#gist#api#is_starred(gistid, ...) abort " {{{
   endif
 
   let res = gista#gist#raw#is_starred(a:gistid, settings)
+  let res = extend({'status': '', 'content': ''}, res)
 
   if res.status == 204
     return 1
   elseif res.status == 404
     return 0
-  else
+  elseif type(res.status) == 0
     redraw
     echohl GistaError
     echo  res.status . ' ' . res.statusText
@@ -568,12 +588,13 @@ function! gista#gist#api#fork(gistid, ...) abort " {{{
   endif
 
   let res = gista#gist#raw#fork(a:gistid, settings)
+  let res = extend({'status': '', 'content': ''}, res)
 
   if res.status == 201
     let gist = res.content
     redraw | echo a:gistid 'is forked to "' . gist.id . '".'
     return gist
-  else
+  elseif type(res.status) == 0
     redraw
     echohl GistaError
     echo  res.status . ' ' . res.statusText

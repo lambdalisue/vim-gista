@@ -242,6 +242,7 @@ let s:settings = {
       \ 'auto_yank_gistid_after_post': 1,
       \ 'auto_yank_gistid_after_save': 1,
       \ 'private_mark': '"<PRIVATE>"',
+      \ 'anonymous_mode': 1,
       \}
 function! s:init() " {{{
   for [key, value] in items(s:settings)
