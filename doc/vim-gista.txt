@@ -219,17 +219,20 @@ opened. You can manipulate your gists with following keys (See
 	<C-l><C-l>	|<Plug>(gista-action-update-nocache)|
 	<CR>		|<Plug>(gista-action-open)|
 	<S-CR>		|<Plug>(gista-action-browser)|
-	+			|<Plug>(gista-action-star)|
-	-			|<Plug>(gista-action-unstar)|
-	?			|<Plug>(gista-action-is-starred)|
-	r			|<Plug>(gista-action-rename)|
-	D			|<Plug>(gista-action-smart-delete)|
-	F			|<Plug>(gista-action-fork)|
-	e			|<Plug>(gista-action-edit)|
-	s			|<Plug>(gista-action-split)|
-	v			|<Plug>(gista-action-vsplit)|
-	b			|<Plug>(gista-action-browser)|
-	yy			|<Plug>(gista-action-yank)|
+	+		|<Plug>(gista-action-star)|
+	-		|<Plug>(gista-action-unstar)|
+	?		|<Plug>(gista-action-is-starred)|
+	r		|<Plug>(gista-action-rename)|
+	D		|<Plug>(gista-action-smart-delete)|
+	F		|<Plug>(gista-action-fork)|
+	e		|<Plug>(gista-action-edit)|
+	s		|<Plug>(gista-action-split)|
+	v		|<Plug>(gista-action-vsplit)|
+	E		|<Plug>(gista-action-edit-nocache)|
+	S		|<Plug>(gista-action-split-nocache)|
+	V		|<Plug>(gista-action-vsplit-nocache)|
+	b		|<Plug>(gista-action-browser)|
+	yy		|<Plug>(gista-action-yank)|
 
 If you want to list a particular user's gist entries, give the username to the
 command like:
@@ -317,6 +320,16 @@ like:
 >
 	:Gista -o --gistid XXXXXXXX --filename "A.txt;B.txt;C.txt"
 <
+If you want to revert your change or want to re-download the gist.
+Hit a upper case of open commands (E, S, V) on the gist:list buffer or call
+open command with a bang (!) like below:
+>
+	:Gista! -o
+<
+Then it will open the gist connected to the current buffer again without using
+cache.
+
+
 ------------------------------------------------------------------------------
 Posting						*vim-gista-usage-posting*
 
@@ -569,6 +582,9 @@ g:gista#enable_default_keymaps
 		nmap <buffer> e          <Plug>(gista-action-edit)
 		nmap <buffer> s          <Plug>(gista-action-split)
 		nmap <buffer> v          <Plug>(gista-action-vsplit)
+		nmap <buffer> E          <Plug>(gista-action-edit-nocache)
+		nmap <buffer> S          <Plug>(gista-action-split-nocache)
+		nmap <buffer> V          <Plug>(gista-action-vsplit-nocache)
 		nmap <buffer> b          <Plug>(gista-action-browse)
 		nmap <buffer> yy         <Plug>(gista-action-yank)
 <
@@ -762,6 +778,36 @@ Mappings					*vim-gista-interface-mappings*
 <Plug>(gista-action-vsplit)
 	Open a selected gist with an 'vsplit' opener if called in a gist:list
 	buffer.
+
+					*<Plug>(gista-action-open-nocache)*
+<Plug>(gista-action-open-nocache)
+	Open a selected gist with a default opener if called in a gist:list
+	buffer. It is similar to |<Plug>(gista-action-open)| but it won't use
+	a cached gist and re-download the gist for opening. Useful to revert
+	the changes.
+	The default opener is determined by
+	|g:gista#gist_default_opener_in_action|
+
+					*<Plug>(gista-action-edit-nocache)*
+<Plug>(gista-action-edit-nocache)
+	Open a selected gist with an 'edit' opener if called in a gist:list
+	buffer.
+	It won't use a cached gist and re-download the gist for opening.
+	Useful to revert the changes.
+
+					*<Plug>(gista-action-split-nocache)*
+<Plug>(gista-action-split-nocache)
+	Open a selected gist with an 'split' opener if called in a gist:list
+	buffer.
+	It won't use a cached gist and re-download the gist for opening.
+	Useful to revert the changes.
+
+					*<Plug>(gista-action-vsplit-nocache)*
+<Plug>(gista-action-vsplit-nocache)
+	Open a selected gist with an 'vsplit' opener if called in a gist:list
+	buffer.
+	It won't use a cached gist and re-download the gist for opening.
+	Useful to revert the changes.
 
 					*<Plug>(gista-action-rename)*
 <Plug>(gista-action-rename)

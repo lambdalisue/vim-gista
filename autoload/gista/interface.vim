@@ -162,6 +162,9 @@ function! gista#interface#list(lookup, ...) abort " {{{
         nmap <buffer> e          <Plug>(gista-action-edit)
         nmap <buffer> s          <Plug>(gista-action-split)
         nmap <buffer> v          <Plug>(gista-action-vsplit)
+        nmap <buffer> E          <Plug>(gista-action-edit-nocache)
+        nmap <buffer> S          <Plug>(gista-action-split-nocache)
+        nmap <buffer> V          <Plug>(gista-action-vsplit-nocache)
         nmap <buffer> b          <Plug>(gista-action-browse)
         nmap <buffer> yy         <Plug>(gista-action-yank)
       endif
@@ -276,6 +279,7 @@ function! gista#interface#open(gistid, filenames, ...) abort " {{{
   let settings = extend({
         \ 'openers': g:gista#gist_openers,
         \ 'opener': g:gista#gist_default_opener,
+        \ 'nocache': 0,
         \}, get(a:000, 0, {}))
 
   let gist = gista#gist#api#get(a:gistid, settings)
@@ -331,6 +335,17 @@ function! gista#interface#open(gistid, filenames, ...) abort " {{{
       endif
     else
       execute winnum . 'wincmd w'
+      if settings.nocache
+        let save_undolevels = &undolevels
+        let save_modifiable = &modifiable
+        setlocal undolevels=-1
+        setlocal modifiable
+        silent %delete _
+        call setline(1, split(gist.files[filename].content, "\n"))
+        let &undolevels = save_undolevels
+        let &modifiable = save_modifiable
+        setlocal nomodified
+      endif
     endif
   endfor
 endfunction " }}}
@@ -720,10 +735,10 @@ function! gista#interface#do_action(action, info, ...) " {{{
     let settings = deepcopy(settings)
     let settings.nocache = 1
     call gista#interface#update(settings) " }}}
-  elseif a:action ==# 'open' ||
-        \ a:action ==# 'edit' ||
-        \ a:action ==# 'split' ||
-        \ a:action ==# 'vsplit' " {{{
+  elseif a:action =~# 'open!\?' ||
+        \ a:action =~# 'edit!\?' ||
+        \ a:action =~# 'split!\?' ||
+        \ a:action =~# 'vsplit!\?' " {{{
     if empty(a:info.gist.files)
       redraw
       echohl GistaWarning
@@ -733,11 +748,19 @@ function! gista#interface#do_action(action, info, ...) " {{{
       return
     endif
 
-    if a:action !=# 'open'
-      " overwrite opener
-      let settings = extend(settings, {
-            \ 'opener': a:action,
-            \})
+    if a:action !~# 'open!\?'
+      if a:action =~# '!$'
+        " overwrite opener (strip trailing !)
+        let settings = extend(settings, {
+              \ 'opener': a:action[:-2],
+              \ 'nocache': 1,
+              \})
+      else
+        " overwrite opener
+        let settings = extend(settings, {
+              \ 'opener': a:action,
+              \})
+      endif
     endif
 
     " move the focuse to the previous selected window
@@ -968,6 +991,14 @@ nnoremap <silent> <Plug>(gista-action-split)
       \ :call <SID>action('split')<CR>
 nnoremap <silent> <Plug>(gista-action-vsplit)
       \ :call <SID>action('vsplit')<CR>
+nnoremap <silent> <Plug>(gista-action-open-nocache)
+      \ :call <SID>action('open!')<CR>
+nnoremap <silent> <Plug>(gista-action-edit-nocache)
+      \ :call <SID>action('edit!')<CR>
+nnoremap <silent> <Plug>(gista-action-split-nocache)
+      \ :call <SID>action('split!')<CR>
+nnoremap <silent> <Plug>(gista-action-vsplit-nocache)
+      \ :call <SID>action('vsplit!')<CR>
 nnoremap <silent> <Plug>(gista-action-rename)
       \ :call <SID>action('rename')<CR>
 nnoremap <silent> <Plug>(gista-action-remove)

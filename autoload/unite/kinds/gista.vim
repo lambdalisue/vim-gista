@@ -17,6 +17,10 @@ let s:kind = {
       \     'description': 'open gist files',
       \     'is_selectable': 1,
       \   },
+      \   'open!': {
+      \     'description': 'open gist files without using cache',
+      \     'is_selectable': 1,
+      \   },
       \   'select': {
       \     'description': 'select gist files',
       \     'is_selectable': 0,
@@ -46,6 +50,16 @@ function! s:kind.action_table.open.func(candidates) " {{{
     call gista#interface#open(gist.id, '', {
           \ 'openers': {},
           \ 'opener': 'open',
+          \})
+  endfor
+endfunction " }}}
+function! s:kind.action_table['open!'].func(candidates) " {{{
+  for candidate in a:candidates
+    let gist = candidate.source__gist
+    call gista#interface#open(gist.id, '', {
+          \ 'openers': {},
+          \ 'opener': 'open',
+          \ 'nocache': 1,
           \})
   endfor
 endfunction " }}}

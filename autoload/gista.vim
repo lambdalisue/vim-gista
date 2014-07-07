@@ -45,7 +45,11 @@ endfunction " }}}
 function! s:GistaOpen(options) abort " {{{
   let gistid = a:options.gistid
   let filename = split(a:options.filename, ';')
-  return gista#interface#open(gistid, filename, {})
+  let settings = {}
+  if a:options.__bang__
+    let settings.nocache = 1
+  endif
+  return gista#interface#open(gistid, filename, settings)
 endfunction " }}}
 function! s:GistaPost(options) abort " {{{
   let gistid = get(a:options, 'gistid', '')
