@@ -349,6 +349,11 @@ function! gista#interface#post(line1, line2, ...) abort " {{{
     return
   endif
 
+  " the changes are updated correctly
+  if a:line1 == 1 && a:line2 == '$'
+    setl nomodified
+  endif
+
   " Connect the buffer to the gist
   if settings.auto_connect_after_post
     call gista#interface#connect(gist.id, filename)
@@ -402,6 +407,11 @@ function! gista#interface#post_buffers(...) abort " {{{
     return
   endif
 
+  " the changes are updated correctly
+  for bufnum in pbufnums
+    call setbufvar(bufnum, '&modified', 0)
+  endfor
+
   " Connect the buffer to the gist
   if settings.auto_connect_after_post
     for [bufnum, filename] in gista#utils#vital#zip(pbufnums, filenames)
@@ -447,6 +457,11 @@ function! gista#interface#save(line1, line2, ...) abort " {{{
   let gist = gista#gist#api#patch(gistid, [filename], [content], settings)
   if empty(gist)
     return
+  endif
+
+  " the changes are updated correctly
+  if a:line1 == 1 && a:line2 == '$'
+    setl nomodified
   endif
 
   " Update list window
