@@ -370,9 +370,10 @@ function! gista#gist#api#rename(gistid, filename, new_filename, ...) abort " {{{
     echohl GistaTitle
     echo  'Rename:'
     echohl None
-    echo  'Please input a new filename (Empty to cancel).'
+    echo  'Please input a new filename (hit return without modification to cancel).'
     let new_filename = input(a:filename . ' -> ', a:filename)
-    if empty(new_filename)
+    if empty(new_filename) || a:filename ==# new_filename
+      redraw
       echohl GistaWarning
       echo 'Canceled'
       echohl None
