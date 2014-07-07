@@ -1,6 +1,6 @@
 *vim-gista.txt* A plugin which helps user to manipulate gists
 
-Version: 0.1.10
+Version: 0.1.11
 Author:  Alisue <lambdalisue@hashnote.net>		*vim-gista-author*
 Support: Vim 7.3 and above
 License: MIT license  {{{
@@ -41,6 +41,7 @@ Usage				|vim-gista-usage|
 	Star/Unstar			|vim-gista-usage-star|
 	Forking				|vim-gista-usage-forking|
 	Browsing			|vim-gista-usage-browsing|
+	Anonymous-mode			|vim-gista-usage-anonymous-mode|
 Interface			|vim-gista-interface|
 	Options				|vim-gista-interface-options|
 	Commands			|vim-gista-interface-commands|
@@ -449,6 +450,17 @@ the commands below:
 	:Gista --browse
 <
 This feature require 'tyru/open-browser.vim'
+
+------------------------------------------------------------------------------
+Anonymous mode				*vim-gista-usage-anonymous-mode*
+
+If user does not specify |g:gista#github_user|, vim-gista works on an
+anonymous mode.
+If anonymous mode, user can
+
+- List a specific user's gist entries
+- Open a specific user's gist (in |nomodifiable| buffer)
+- Post a gist as an anonymous gist
 
 
 ==============================================================================
