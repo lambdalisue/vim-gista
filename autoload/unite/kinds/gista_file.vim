@@ -38,7 +38,7 @@ endfunction " }}}
 function! s:kind.action_table.rename.func(candidate) " {{{
   let gist = a:candidate.source__gist
   let filename = a:candidate.source__filename
-  call gista#interface#rename_action(gist.id, filename, {
+  call gista#interface#rename_action(gist.id, filename, '', {
         \ 'update_list': 0,
         \})
 endfunction " }}}
