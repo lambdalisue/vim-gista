@@ -99,13 +99,19 @@ function! gista#utils#vital#base64_encode(...) " {{{
 endfunction " }}}
 
 " HTTP
+function! gista#utils#vital#request(method, url, ...) abort " {{{
+  let settings = extend({
+        \ 'client': g:gista#disable_python_client ? ['curl', 'wget'] : ['python', 'curl', 'wget'],
+        \}, get(a:000, 0, {}))
+  return s:get_http().request(a:method, a:url, settings)
+endfunction
 function! gista#utils#vital#get(url, params, headers, ...) abort " {{{
   let settings = extend({
         \ 'default_content': s:consts.DEFAULT_CONTENT,
         \}, get(a:000, 0, {}))
   let settings['param'] = a:params
   let settings['headers'] = a:headers
-  let res = s:get_http().request('GET', a:url, settings)
+  let res = gista#utils#vital#request('GET', a:url, settings)
   let res.content = get(res, 'content', settings.default_content)
   let res.content = s:get_json().decode(
         \ empty(res.content) ? settings.default_content : res.content)
@@ -117,7 +123,7 @@ function! gista#utils#vital#post(url, params, headers, ...) abort " {{{
         \}, get(a:000, 0, {}))
   let settings['data'] = s:get_json().encode(a:params)
   let settings['headers'] = a:headers
-  let res = s:get_http().request('POST', a:url, settings)
+  let res = gista#utils#vital#request('POST', a:url, settings)
   let res.content = get(res, 'content', settings.default_content)
   let res.content = s:get_json().decode(
         \ empty(res.content) ? settings.default_content : res.content)
@@ -129,7 +135,7 @@ function! gista#utils#vital#put(url, params, headers, ...) abort " {{{
         \}, get(a:000, 0, {}))
   let settings['data'] = s:get_json().encode(a:params)
   let settings['headers'] = a:headers
-  let res = s:get_http().request('PUT', a:url, settings)
+  let res = gista#utils#vital#request('PUT', a:url, settings)
   let res.content = get(res, 'content', settings.default_content)
   let res.content = s:get_json().decode(
         \ empty(res.content) ? settings.default_content : res.content)
@@ -141,7 +147,7 @@ function! gista#utils#vital#patch(url, params, headers, ...) abort " {{{
         \}, get(a:000, 0, {}))
   let settings['data'] = s:get_json().encode(a:params)
   let settings['headers'] = a:headers
-  let res = s:get_http().request('PATCH', a:url, settings)
+  let res = gista#utils#vital#request('PATCH', a:url, settings)
   let res.content = get(res, 'content', settings.default_content)
   let res.content = s:get_json().decode(
         \ empty(res.content) ? settings.default_content : res.content)
@@ -152,7 +158,7 @@ function! gista#utils#vital#delete(url, headers, ...) abort " {{{
         \ 'default_content': s:consts.DEFAULT_CONTENT,
         \}, get(a:000, 0, {}))
   let settings['headers'] = a:headers
-  let res = s:get_http().request('DELETE', a:url, settings)
+  let res = gista#utils#vital#request('DELETE', a:url, settings)
   let res.content = get(res, 'content', settings.default_content)
   let res.content = s:get_json().decode(
         \ empty(res.content) ? settings.default_content : res.content)

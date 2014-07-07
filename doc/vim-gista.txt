@@ -637,6 +637,11 @@ g:gista#gistid_yank_format_in_save
 	See |g:gista#auto_yank_gistid_after_save|.
 	The default value is 'GistID: {gistid}'
 
+					*g:gista#disable_python_client*
+g:gista#disable_python_client
+	Disable Python client in HTTP connection.
+	The default value is 1.
+
 ------------------------------------------------------------------------------
 Commands				*vim-gista-interface-commands*
 
