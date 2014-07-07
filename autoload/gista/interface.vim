@@ -45,7 +45,7 @@ function! s:set_bridge(gistid, filename, bufnum) abort " {{{
   let bridges[a:gistid][a:filename] = a:bufnum
 endfunction " }}}
 function! s:format_gist(gist) abort " {{{
-  let gistid = printf("[%-20S]", a:gist.id)
+  let gistid = printf("[%-20s]", a:gist.id)
   let update = printf("%s",
         \ gista#utils#datetime(a:gist.updated_at).format('%Y/%m/%d %H:%M:%S'))
   let private = a:gist.public ? "" : g:gista#private_mark
@@ -54,7 +54,7 @@ function! s:format_gist(gist) abort " {{{
         \ a:gist.description
   let bwidth = gista#utils#get_bufwidth()
   let width = bwidth - len(private) - len(gistid) - len(update) - 4
-  return printf(printf("%%-%dS %%s %%s %%s", width),
+  return printf(printf("%%-%ds %%s %%s %%s", width),
         \ gista#utils#trancate(description, width),
         \ private,
         \ gistid,
@@ -191,7 +191,8 @@ function! gista#interface#list(lookup, ...) abort " {{{
 endfunction " }}}
 function! gista#interface#update(...) abort " {{{
   let bufname = s:get_buffer_name('list')
-  let settings = extend({}, get(a:000, 0, getbufvar(bufname, 'settings', {})))
+  let settings = extend({}, get(a:000, 0,
+        \ gista#utils#getbufvar(bufname, 'settings', {})))
   " this function should be called on the gista:list window
   if bufname !=# expand('%')
     call gista#utils#call_on_buffer(bufname,

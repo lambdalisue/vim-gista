@@ -152,6 +152,19 @@ function! gista#utils#find_gistid(lnum, ...) " {{{
   let gistid = matchstr(content, gistid_pattern)
   return gistid
 endfunction " }}}
+function! gista#utils#getbufvar(expr, name, ...) abort " {{{
+  " Ref: https://github.com/vim-jp/issues/issues/245#issuecomment-13858947
+  let default = get(a:000, 0, '')
+  if v:version > 703 || (v:version == 703 && has('patch831'))
+    return getbufvar(a:expr, a:name, default)
+  else
+    let value = getbufvar(a:expr, a:name)
+    if type(value) == 1 && empty(value)
+      return default
+    endif
+    return default
+  endif
+endfunction " }}}
 
 
 let s:consts = {}
