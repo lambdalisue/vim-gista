@@ -100,7 +100,7 @@ function! s:action(action) abort " {{{
 endfunction " }}}
 function! s:ac_write_gist_buffer(filename) abort " {{{
   " Note: this function is assumed to called from autocmd.
-  if substitute(a:filename, '\\', '/', 'g') == expand("%:p:gs@\\@/@")
+  if substitute(a:filename, '\\', '/', 'g') == expand("%:p:gs@\\@/@") && &modifiable
     if &buftype == ''
       " save the file to the filesystem
       execute "w".(v:cmdbang ? "!" : "") fnameescape(v:cmdarg) fnameescape(a:filename)
@@ -269,6 +269,7 @@ function! gista#interface#connect(gistid, filename) abort " {{{
     setlocal buftype=nowrite
     setlocal nomodifiable
     autocmd! BufWriteCmd <buffer>
+          \ call s:ac_write_gist_buffer(expand("<amatch>"))
   endif
 endfunction " }}}
 function! gista#interface#open(gistid, filenames, ...) abort " {{{
