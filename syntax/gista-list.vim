@@ -13,6 +13,8 @@ endif
 let s:save_cpo = &cpo
 set cpo&vim
 
+syntax clear
+call gista#define_highlights()
 call gista#define_syntax()
 
 let b:current_syntax = "gista-list"

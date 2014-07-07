@@ -14,7 +14,7 @@ function! s:format_gist(gist) " {{{
   let description = empty(a:gist.description) ?
         \ '<<No description>>' :
         \ a:gist.description
-  let private = a:gist.public ? "" : "<private>"
+  let private = a:gist.public ? "" : g:gista#private_mark
   return printf("%s %s %s",
         \ nfiles,
         \ description,

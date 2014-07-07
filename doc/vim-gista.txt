@@ -44,11 +44,13 @@ Interface			|vim-gista-interface|
 	Options				|vim-gista-interface-options|
 	Commands			|vim-gista-interface-commands|
 	Mappings			|vim-gista-interface-mappings|
+	Highlights			|vim-gista-interface-highlights|
 Unite interface		|vim-gista-unite-interface|
 	Sources				|vim-gista-unite-interface-sources|
 	Kinds				|vim-gista-unite-interface-kinds|
 	Actions				|vim-gista-unite-interface-actions|
 	Filters				|vim-gista-unite-interface-filters|
+	Highlights			|vim-gista-unite-interface-highlights|
 
 ==============================================================================
 INTRODUCTION					*vim-gista-introduction*
@@ -781,6 +783,69 @@ Mappings					*vim-gista-interface-mappings*
 	It will yank the text to |v:register| as well if |clipboard| is enable.
 
 
+------------------------------------------------------------------------------
+Highlights				*vim-gista-interface-highlights*
+
+							*hl-GistaTitle*
+GistaTitle
+	A hightlight used to indicate a title of messages.
+	It is linked to 'Title' in default.
+
+							*hl-GistaError*
+GistaError
+	A highlight used to indicate a error (message).
+	It is linked to |hl-ErrorMsg| in default.
+
+							*hl-GistaWarning*
+GistaWarning
+	A highlight used to indicate a warning (message).
+	It is linked to |hl-WarningMsg| in default.
+
+							*hl-GistaInfo*
+GistaInfo
+	A highlight used to indicate a information (message).
+	It is linked to 'Comment' in default.
+
+							*hl-GistaQuestion*
+GistaQuestion
+	A highlight used to indicate a question (message).
+	It is linked to |hl-Question| in default.
+
+							*hl-GistaGistID*
+GistaGistID
+	A hightlight used to indicate a gist ID.
+	It is linked to 'Tag' in default.
+
+							*hl-GistaPrivate*
+GistaPrivate
+	A hightlight used to indicate a private mark.
+	It is linked to |hl-ErrorMsg| in default.
+
+							*hl-GistaDate*
+GistaDate
+	A hightlight used to indicate a date.
+	It is linked to 'Comment' in default.
+
+							*hl-GistaTime*
+GistaTime
+	A hightlight used to indicate a time.
+	It is linked to 'Comment' in default.
+
+							*hl-GistaFiles*
+GistaFiles
+	A hightlight used to indicate a files.
+	It is linked to 'Comment' in default.
+
+							*hl-GistaComment*
+GistaComment
+	A hightlight used to indicate a comment.
+	It is linked to 'Comment' in default.
+
+							*hl-GistaStatement*
+GistaStatement
+	A hightlight used to indicate a statement.
+	It is linked to 'Statement' in default.
+
 ==============================================================================
 UNITE INTERFACE					*vim-gista-unite-interface*
 
@@ -884,5 +949,33 @@ unite/filters/converter_gista_without_datet
 unite/filters/converter_gista_without_time
 	A 'gista' converter which display informations about the gist, without
 	an updated time.
+
+------------------------------------------------------------------------------
+Highlights				*vim-gista-unite-interface-highlights*
+
+					*hl-uniteSource__gista_fnum*
+uniteSource__gista_fnum
+	A highlight used to indicate the number of files in the gist.
+	It is linked to |hl-GistaStatement| in default.
+
+					*hl-uniteSource__gista_gistid*
+uniteSource__gista_gistid
+	A highlight used to indicate a gist ID of the gist.
+	It is linked to |hl-GistaGistID| in default.
+
+					*hl-uniteSource__gista_private*
+uniteSource__gista_private
+	A highlight used to indicate a private mark on the gist.
+	It is linked to |hl-GistaPrivate| in default.
+
+					*hl-uniteSource__gista_date*
+uniteSource__gista_date
+	A highlight used to indicate a created/updated date on the gist.
+	It is linked to |hl-GistaDate| in default.
+
+					*hl-uniteSource__gista_time*
+uniteSource__gista_time
+	A highlight used to indicate a created/updated time on the gist.
+	It is linked to |hl-GistaTime| in default.
 
 vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl:noet

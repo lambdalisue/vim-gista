@@ -300,7 +300,10 @@ vim-gista have much more features, check it out with
 
 With Unite.vim
 -------------------------------------------------------------------------------
+![vim-gista with Unite.vim (screenshot)](./doc/screenshot-unite.png)
 ![vim-gista with Unite.vim (screencast)](./doc/screencast-unite.gif)
+
+(The screencast was taken in development stage. The interface is changed a bit in the production.)
 
 If you are using [Unite.vim](https://github.com/Shougo/unite.vim), you can manipulate gists with it.
 The source name is 'gista' thus call the unite as follow:

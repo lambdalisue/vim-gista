@@ -37,7 +37,7 @@ function! s:format_gist(gist) " {{{
         \ gista#utils#datetime(a:gist.updated_at).format('%Y/%m/%d %H:%M:%S'),
         \ gista#utils#datetime(a:gist.created_at).format('%Y/%m/%d %H:%M:%S'),
         \ a:gist.description,
-        \ a:gist.public ? "" : "<private>" 
+        \ a:gist.public ? "" : g:gista#private_mark
         \)
 endfunction " }}}
 function! s:get_candidates(lookup, nocache) abort " {{{
@@ -71,6 +71,7 @@ endfunction " }}}
 let s:source = {
       \ 'name': 'gista',
       \ 'description': 'manipulate gists',
+      \ 'hooks': {},
       \}
 function! s:source.gather_candidates(args, context) abort " {{{
   let lookup = s:parse_args(a:args)
@@ -81,6 +82,30 @@ function! s:source.gather_candidates(args, context) abort " {{{
 
   let candidates = s:get_candidates(lookup, 1)
   return copy(candidates)
+endfunction " }}}
+function! s:source.hooks.on_syntax(args, context) abort " {{{
+  call gista#define_highlights()
+  highlight default link uniteSource__gista_gistid  GistaGistID
+  highlight default link uniteSource__gista_private GistaPrivate
+  highlight default link uniteSource__gista_date    GistaDate
+  highlight default link uniteSource__gista_time    GistaTime
+  highlight default link uniteSource__gista_fnum    GistaStatement
+
+  execute 'syntax match uniteSource__gista_fnum'
+        \ '/[^(]\zs\d\{1,2})\ze\s/'
+        \ 'contained containedin=uniteSource__gista'
+  execute 'syntax match uniteSource__gista_gistid'
+        \ '/\[.\{20}\]/'
+        \ 'contained containedin=uniteSource__gista'
+  execute 'syntax match uniteSource__gista_private'
+        \ printf('/%s/', g:gista#private_mark)
+        \ 'contained containedin=uniteSource__gista'
+  execute 'syntax match uniteSource__gista_date'
+        \ '/\d\{4}\/\d\{2}\/\d\{2}/'
+        \ 'contained containedin=uniteSource__gista'
+  execute 'syntax match uniteSource__gista_time'
+        \ '/\d\{2}:\d\{2}:\d\{2}/'
+        \ 'contained containedin=uniteSource__gista'
 endfunction " }}}
 function! unite#sources#gista#define() " {{{
   return s:source

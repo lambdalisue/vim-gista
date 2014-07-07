@@ -183,26 +183,29 @@ function! gista#Gista(options) abort " {{{
     return s:GistaYank(a:options)
   endif
 endfunction " }}}
-function! gista#define_syntax() abort " {{{
-  highlight default link GistaTitle     Title
-  highlight default link GistaError     ErrorMsg
-  highlight default link GistaWarning   WarningMsg
-  highlight default link GistaInfo      Comment
-  highlight default link GistaQuestion  Question
+function! gista#define_highlights() abort " {{{
+  highlight default link GistaTitle       Title
+  highlight default link GistaError       ErrorMsg
+  highlight default link GistaWarning     WarningMsg
+  highlight default link GistaInfo        Comment
+  highlight default link GistaQuestion    Question
 
-  highlight default link GistaGistID      Identifier
-  highlight default link GistaDescription Title
-  highlight default link GistaPublic      Statement
-  highlight default link GistaPrivate     Statement
+  highlight default link GistaGistID      Tag
+  highlight default link GistaPrivate     ErrorMsg
+  highlight default link GistaDate        Comment
+  highlight default link GistaTime        Comment
   highlight default link GistaFiles       Comment
   highlight default link GistaComment     Comment
-
-  syntax clear
-  syntax match GistaGistID  /\[.\{20}\]/
-  syntax match GistaFiles   /^-.*/
-  syntax match GistaComment /^".*/
-  syntax match GistaPrivate /<private>/
-  syntax match GistaComment /@\d\d\d\d-\d\d-\d\d.*$/
+  highlight default link GistaStatement   Statement
+endfunction " }}}
+function! gista#define_syntax() abort " {{{
+  execute 'syntax match GistaGistID  /\[.\{20}\]/'
+  execute 'syntax match GistaFiles   /^-.*/'
+  execute 'syntax match GistaComment /^".*/'
+  execute printf('syntax match GistaPrivate /%s/',
+        \ g:gista#private_mark)
+  execute 'syntax match GistaDate /\d\{4}\/\d\{2}\/\d\{2}/'
+  execute 'syntax match GistaTime /\d\{2}:\d\{2}:\d\{2}/'
 endfunction " }}}
 
 
@@ -238,6 +241,7 @@ let s:settings = {
       \ 'gistid_yank_format_in_save': '"GistID: {gistid}"',
       \ 'auto_yank_gistid_after_post': 1,
       \ 'auto_yank_gistid_after_save': 1,
+      \ 'private_mark': '"<PRIVATE>"',
       \}
 function! s:init() " {{{
   for [key, value] in items(s:settings)
