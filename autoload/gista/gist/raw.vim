@@ -59,7 +59,7 @@ function! s:get_anonymous_header() abort " {{{
   return {}
 endfunction " }}}
 function! s:get_authenticated_header() abort " {{{
-  let [username, token] = s:get_auth()
+  let token = s:get_auth()[1]
   return {'Authorization': 'token ' . token}
 endfunction " }}}
 
@@ -178,7 +178,7 @@ function! gista#gist#raw#is_authenticated() abort " {{{
   return !(empty(username) || empty(token))
 endfunction " }}}
 function! gista#gist#raw#get_authenticated_user() abort " {{{
-  let [username, token] = s:get_auth()
+  let username = s:get_auth()[0]
   return username
 endfunction " }}}
 function! gista#gist#raw#login(...) abort " {{{
@@ -187,7 +187,6 @@ function! gista#gist#raw#login(...) abort " {{{
   let username = get(a:000, 0, authenticated_user)
   let settings = extend({
         \ 'use_default_username': 1,
-        \ 'allow_anonymous': 0,
         \}, get(a:000, 1, {}))
   if is_authenticated && username == authenticated_user
     " the user have already logged in
@@ -197,9 +196,7 @@ function! gista#gist#raw#login(...) abort " {{{
     let username = g:gista#github_user
   endif
 
-  if empty(username) && settings.allow_anonymous
-    return s:get_anonymous_header()
-  elseif empty(username)
+  if empty(username)
     redraw
     echohl GistaTitle
     echo  'GitHub Login:'
@@ -213,8 +210,12 @@ function! gista#gist#raw#login(...) abort " {{{
       echohl GistaWarning
       echo 'Canceled.'
       echohl None
-      return []
+      return s:get_anonymous_header()
     endif
+  endif
+  " Note: 'anonymous' is a reserved username on GitHub
+  if username == 'anonymous'
+    return s:get_anonymous_header()
   endif
 
   " If the user have logged in, use cached token
@@ -297,13 +298,10 @@ endfunction " }}}
 function! gista#gist#raw#get(gistid, ...) abort " {{{
   let settings = extend({}, get(a:000, 0, {}))
 
-  let authenticated_user = gista#gist#raw#get_authenticated_user()
-  let header = gista#gist#raw#login(authenticated_user, {
-        \ 'allow_anonymous': 1,
-        \})
-  let request_settings = gista#utils#vital#omit(settings, [
-        \ 'anonymous',
-        \])
+  " get does not require authentication (private gist can be shown if the user
+  " know the url)
+  let header = s:get_anonymous_header()
+  let request_settings = gista#utils#vital#omit(settings, [])
 
   redraw | echo 'Requesting a gist (' . a:gistid . ') ...'
   return gista#utils#vital#get(
@@ -316,14 +314,18 @@ function! gista#gist#raw#list(lookup, ...) abort " {{{
   let settings = extend({
         \ 'page': -1,
         \ 'since': '',
+        \ 'anonymous': 0,
         \}, get(a:000, 0, {}))
 
-  let authenticated_user = gista#gist#raw#get_authenticated_user()
-  let header = gista#gist#raw#login(authenticated_user, {
-        \ 'allow_anonymous': 1,
-        \})
+  if settings.anonymous
+    let header = s:get_anonymous_header()
+    let is_authenticated = 0
+  else
+    let authenticated_user = gista#gist#raw#get_authenticated_user()
+    let header = gista#gist#raw#login(authenticated_user)
+    let is_authenticated = gista#gist#raw#is_authenticated()
+  endif
 
-  let is_authenticated = gista#gist#raw#is_authenticated()
   let username = gista#gist#raw#get_authenticated_user()
   if is_authenticated && (a:lookup == username || a:lookup == '')
     let url = s:get_api_url('gists')
@@ -361,7 +363,11 @@ function! gista#gist#raw#list(lookup, ...) abort " {{{
   let loaded_gists = []
   let res = {}
 
-  redraw | echo 'Requesting gists ...'
+  if settings.anonymous
+    redraw | echo 'Requesting gists as an anonymous ...'
+  else
+    redraw | echo 'Requesting gists ...'
+  endif
   while terminal == -1 || params.page <= terminal
     let res = gista#utils#vital#get(url, params, header, request_settings)
     if res.status != 200
@@ -390,7 +396,11 @@ function! gista#gist#raw#list(lookup, ...) abort " {{{
       break
     endif
 
-    let status = 'Requesting gists ... '
+    if settings.anonymous
+      let status = 'Requesting gists as an anonymous ... '
+    else
+      let status = 'Requesting gists ... '
+    endif
     let status = printf(
           \ '%s %d/%d pages has been loaded (Ctrl-C to cancel)',
           \ status, params.page, terminal
@@ -442,9 +452,7 @@ function! gista#gist#raw#post(filenames, contents, ...) abort " {{{
     let header = s:get_anonymous_header()
   else
     let authenticated_user = gista#gist#raw#get_authenticated_user()
-    let header = gista#gist#raw#login(authenticated_user, {
-          \ 'allow_anonymous': 1,
-          \})
+    let header = gista#gist#raw#login(authenticated_user)
   endif
 
   let gist = {
@@ -461,7 +469,11 @@ function! gista#gist#raw#post(filenames, contents, ...) abort " {{{
         \ 'public',
         \ 'anonymous',
         \])
-  redraw | echo 'Posting gist ...'
+  if empty(header)
+    redraw | echo 'Posting gist as an anonymous gist ...'
+  else
+    redraw | echo 'Posting gist ...'
+  endif
   return gista#utils#vital#post(
         \ s:get_api_url('gists'),
         \ gist, header,

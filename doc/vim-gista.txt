@@ -67,8 +67,8 @@ It provide the following features:
 	-	Gist entries in Gist web
 	-	Listing gist entries in Unite (require 'Shougo/unite.vim')
 2.	Opening gists
-	-	Open files of an authenticated user in |modifiable| buffers
-	-	Open files of a particular user in |nomodifiable| buffers
+	-	Open files of an authenticated user
+	-	Open files of a particular user
 	-	Open files of a gist with a browser (require
 		'tyru/open-browser.vim')
 3.	Posting gists
@@ -275,17 +275,16 @@ gist with default opener (See |g:gista#gist_defaut_opener| and
 |g:gista#gist_default_opener_in_action|.) If you want to specify the way to
 open the buffer, hit e, s, or v for 'edit', 'split', or 'vsplit' respectively.
 
-If you are the owner of the gist, the gist will be opened in |modifiable|
-buffer, otherwise it will be opened in |nomodifiable| buffer. The buffer will
-automatically be connected to the gist. If a buffer is connected to a gist,
-you can get the gist informations with (the following functions are assumed to
-be used in statusline):
+If you are the owner of the gist, the gist will be tightly connected to the
+buffer, otherwise it will be loosely connected to the buffer. If a buffer is
+tightly or loosely connected to a gist, you can get the gist informations with
+(the following functions are assumed to be used in statusline):
 >
 	:echo gista#statusline#components#gistid()	" return Gist ID
 	:echo gista#statusline#components#filename()	" return filename
 	:echo gista#statusline#components#gistinfo()	" return both
 
-Or if the buffer is |modifiable|, you can upload changes on the buffer with
+If the buffer is tightly connected, you can upload changes on the buffer with
 posting commands like (See |g:gista#update_on_write| for more details):
 >
 	" Short
@@ -467,12 +466,12 @@ This feature require 'tyru/open-browser.vim'
 ------------------------------------------------------------------------------
 Anonymous mode				*vim-gista-usage-anonymous-mode*
 
-If user does not specify |g:gista#github_user|, vim-gista works on an
+If user specify |g:gista#github_user| to 'anonymous', vim-gista works on an
 anonymous mode.
 If anonymous mode, user can
 
 - List a specific user's gist entries
-- Open a specific user's gist (in |nomodifiable| buffer)
+- Open a specific user's gist
 - Post a gist as an anonymous gist
 
 
@@ -489,6 +488,9 @@ g:gista#github_user
 
 	1.	A value of g:github_user
 	2.	A git profile (See |vim-gista-install| section)
+
+	If you set this value to 'anonymous', vim-gista works on anonymous
+	mode (see |vim-gista-usage-anonymous-mode|).
 
 					*g:gista#gist_api_url*
 g:gista#gist_api_url

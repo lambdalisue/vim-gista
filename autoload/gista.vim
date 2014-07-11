@@ -71,6 +71,14 @@ function! s:GistaPost(options) abort " {{{
             \ options)
     endif
   else
+    let gist = gista#gist#api#get(gistid)
+    let gist = extend({'owner': {'login': 'anonymous'}}, gist)
+    if gist.owner.login == 'anonymous' ||
+          \ gist.owner.login != gista#gist#raw#get_authenticated_user()
+      " the user does not have a permission to edit the gist
+      return s:GistaPost(gista#utils#vital#omit(a:options, ['gistid']))
+    endif
+
     if has_key(a:options, 'public')
       redraw
       echohl GistaWarning
@@ -88,7 +96,7 @@ function! s:GistaPost(options) abort " {{{
     endif
     if !exists('b:gistinfo')
       " the current buffer is not connected yet thus connect it
-      call gista#interface#connect_action(gistid, expand('%:t'))
+      call gista#interface#connect(gistid, expand('%:t'))
     endif
     return gista#interface#save(
           \ a:options.__range__[0],

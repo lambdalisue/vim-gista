@@ -125,6 +125,21 @@ function! s:ac_write_gist_buffer(filename) abort " {{{
     execute "w".(v:cmdbang ? "!" : "") fnameescape(v:cmdarg) fnameescape(a:filename)
   endif
 endfunction " }}}
+function! s:ac_write_gist_buffer_not_owner(filename) abort " {{{
+  " Note: this function is assumed to called from autocmd.
+  if substitute(a:filename, '\\', '/', 'g') == expand("%:p:gs@\\@/@")
+    echohl GistaInfo
+    echo  'Type ":w <filename>" to save the gist in local file system.'
+    echohl None
+  else
+    " new filename is given, save the content with a new filename
+    " and stop autocmd, unlink the content from Gist
+    execute "file" fnameescape(a:filename)
+    call s:disconnect({'provide_filename': 0})
+    execute "w".(v:cmdbang ? "!" : "")
+          \ fnameescape(v:cmdarg) fnameescape(a:filename)
+  endif
+endfunction " }}}
 
 
 function! gista#interface#list(lookup, ...) abort " {{{
@@ -242,37 +257,34 @@ function! gista#interface#update(...) abort " {{{
 endfunction " }}}
 
 function! gista#interface#connect(gistid, filename) abort " {{{
-  if exists('b:gistinfo')
-    redraw
-    echohl WarningMsg
-    echo 'Gist is already connected'
-    echohl None
-    echo 'It seems that a gist is already connected to the current buffer.'
-    return
-  endif
   let gist = gista#gist#api#get(a:gistid)
   if empty(gist)
     return
   endif
+  " Anonymous gist does not have owner.gist thus extend
+  let gist = extend({'owner': {'login': 'anonymous'}}, gist)
   " Connect current buffer to the gist
   call s:set_bridge(a:gistid, a:filename, bufnr('%'))
   " Keep gistid and filename to the buffer variable
   let b:gistinfo = {
         \ 'gistid': a:gistid,
-        \ 'filename': a:filename
+        \ 'filename': a:filename,
+        \ 'owner': gist.owner.login,
+        \ 'ownership':
+        \   gist.owner.login != 'anonymous' &&
+        \   gist.owner.login == gista#gist#raw#get_authenticated_user(),
         \}
   " is the gist editable?
-  if gist.owner.login == gista#gist#raw#get_authenticated_user()
+  if b:gistinfo.ownership
     " user own the gist, modifiable
     setlocal modifiable
     autocmd! BufWriteCmd <buffer>
           \ call s:ac_write_gist_buffer(expand("<amatch>"))
-  else
-    " non user gist, nomodifiable
-    setlocal buftype=nowrite
-    setlocal nomodifiable
+  elseif &buftype == 'acwrite'
+    " not owner and opened.
+    setlocal modifiable
     autocmd! BufWriteCmd <buffer>
-          \ call s:ac_write_gist_buffer(expand("<amatch>"))
+          \ call s:ac_write_gist_buffer_not_owner(expand("<amatch>"))
   endif
 endfunction " }}}
 function! gista#interface#open(gistid, filenames, ...) abort " {{{
@@ -458,6 +470,15 @@ function! gista#interface#save(line1, line2, ...) abort " {{{
           \ 'gista#interface#save() function need to be executed on the'
           \ 'buffer which is connected to a gist.'
     return
+  elseif !b:gistinfo.ownership
+    redraw
+    echohl WarningMsg
+    echo 'Not owner'
+    echohl None
+    echo 'It seems that you are not owner of the connected gist.'
+          \ 'gista#interface#save() function require you to be an owner of the'
+          \ 'connected gist.'
+    return
   endif
 
   let settings = extend({
@@ -502,6 +523,15 @@ function! gista#interface#rename(new_filename, ...) abort " {{{
           \ 'gista#interface#rename() function need to be executed on the'
           \ 'buffer which is connected to a gist.'
     return
+  elseif !b:gistinfo.ownership
+    redraw
+    echohl WarningMsg
+    echo 'Not owner'
+    echohl None
+    echo 'It seems that you are not owner of the connected gist.'
+          \ 'gista#interface#rename() function require you to be an owner of'
+          \ 'the connected gist.'
+    return
   endif
 
   let settings = extend({
@@ -530,6 +560,15 @@ function! gista#interface#remove(...) abort " {{{
     echo 'It seems that no gist is connected to the current buffer.'
           \ 'gista#interface#remove() function need to be executed on the'
           \ 'buffer which is connected to a gist.'
+    return
+  elseif !b:gistinfo.ownership
+    redraw
+    echohl WarningMsg
+    echo 'Not owner'
+    echohl None
+    echo 'It seems that you are not owner of the connected gist.'
+          \ 'gista#interface#remove() function require you to be an owner of'
+          \ 'the connected gist.'
     return
   endif
 
@@ -562,6 +601,15 @@ function! gista#interface#delete(...) abort " {{{
     echo 'It seems that no gist is connected to the current buffer.'
           \ 'gista#interface#delete() function need to be executed on the'
           \ 'buffer which is connected to a gist.'
+    return
+  elseif !b:gistinfo.ownership
+    redraw
+    echohl WarningMsg
+    echo 'Not owner'
+    echohl None
+    echo 'It seems that you are not owner of the connected gist.'
+          \ 'gista#interface#delete() function require you to be an owner of'
+          \ 'the connected gist.'
     return
   endif
 

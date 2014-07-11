@@ -126,11 +126,10 @@ function! gista#gist#api#list(lookup, ...) abort " {{{
 
   " make sure that the user is logged in
   let username = gista#gist#raw#get_authenticated_user()
-  call gista#gist#raw#login(username, {
-        \ 'allow_anonymous': 1,
-        \})
-
-  " get cache (to update the cache, get the cache even if nocache is 1)
+  if empty(gista#gist#raw#login(username))
+    " failed to login, enable anonymous
+    let settings.anonymous = 1
+  endif
   let is_authenticated = gista#gist#raw#is_authenticated()
   let username = gista#gist#raw#get_authenticated_user()
   if is_authenticated && (a:lookup == username || a:lookup == '')
@@ -148,11 +147,13 @@ function! gista#gist#api#list(lookup, ...) abort " {{{
       return []
     endif
     let cache = s:get_gist_entries(a:lookup . '.public')
+  else
+    let cache = {}
   endif
 
   if settings.page == -1 && !settings.nocache
     " recursive loading with cache
-    if exists('cache') && !empty(cache.last_updated)
+    if !empty(get(cache, 'last_updated', ''))
       " fetch gists newer than cache last updated
       if empty(settings.since)
         let settings.since = cache.last_updated
@@ -165,7 +166,7 @@ function! gista#gist#api#list(lookup, ...) abort " {{{
 
   if res.status == 200
     let loaded_gists = res.content
-    if settings.page == -1 && !settings.nocache && exists('cache')
+    if settings.page == -1 && !settings.nocache && !empty(cache)
       let cached_gists = cache.get('gists')
       " remove duplicated gists (keep newly loaded gists)
       if !(empty(cached_gists) || empty(loaded_gists))
@@ -182,7 +183,7 @@ function! gista#gist#api#list(lookup, ...) abort " {{{
     endif
 
     " store gists in cache
-    if exists('cache') && settings.page == -1
+    if !empty(cache) && settings.page == -1
       call cache.set('gists', gists)
     endif
     redraw | echo len(loaded_gists) 'gist entries are updated.'
