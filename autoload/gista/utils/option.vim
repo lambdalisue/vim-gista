@@ -54,6 +54,7 @@ function! s:prototype.add_argument(name, ...) abort " {{{
         \ 'conflicts': [],
         \ 'subordinations_of': [],
         \ 'requires': [],
+        \ 'choices': [],
         \}, settings)
   " validation
   if a:name !~# '^--'
@@ -263,6 +264,29 @@ function! s:prototype._validate_args(options) abort " {{{
     endif
     unlet Value
   endfor
+  " Choice
+  for [name, value] in items(options)
+    if name =~# '^__.*__$' || !has_key(self._long_arguments, name)
+      unlet value
+      continue
+    endif
+    let choices = self._long_arguments[name].settings.choices
+    if !empty(choices) && index(choices, value) == -1
+      redraw
+      echohl ErrorMsg
+      echo  'Invalid value:'
+      echohl None
+      echo  '"' . name . '" option value should be one of the following'
+            \ 'but "' . value . '" is specified.'
+      for choice in choices
+        echo '-' choice
+      endfor
+      echo  'The operation will be canceled.'
+      return {}
+    endif
+    unlet value
+  endfor
+
   " success
   return options
 endfunction " }}}

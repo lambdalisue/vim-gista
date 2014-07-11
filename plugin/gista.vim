@@ -16,7 +16,6 @@ endfunction " }}}
 command! -nargs=? -range=% -bang Gista
       \ :call s:Gista(<q-bang>, [<line1>, <line2>], <f-args>)
 
-
 let &cpo = s:save_cpo
 unlet s:save_cpo
 "vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker

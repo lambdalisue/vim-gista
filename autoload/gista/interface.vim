@@ -256,37 +256,6 @@ function! gista#interface#update(...) abort " {{{
   let b:settings = gista#utils#vital#omit(settings, ['nocache'])
 endfunction " }}}
 
-function! gista#interface#connect(gistid, filename) abort " {{{
-  let gist = gista#gist#api#get(a:gistid)
-  if empty(gist)
-    return
-  endif
-  " Anonymous gist does not have owner.gist thus extend
-  let gist = extend({'owner': {'login': 'anonymous'}}, gist)
-  " Connect current buffer to the gist
-  call s:set_bridge(a:gistid, a:filename, bufnr('%'))
-  " Keep gistid and filename to the buffer variable
-  let b:gistinfo = {
-        \ 'gistid': a:gistid,
-        \ 'filename': a:filename,
-        \ 'owner': gist.owner.login,
-        \ 'ownership':
-        \   gist.owner.login != 'anonymous' &&
-        \   gist.owner.login == gista#gist#raw#get_authenticated_user(),
-        \}
-  " is the gist editable?
-  if b:gistinfo.ownership
-    " user own the gist, modifiable
-    setlocal modifiable
-    autocmd! BufWriteCmd <buffer>
-          \ call s:ac_write_gist_buffer(expand("<amatch>"))
-  elseif &buftype == 'acwrite'
-    " not owner and opened.
-    setlocal modifiable
-    autocmd! BufWriteCmd <buffer>
-          \ call s:ac_write_gist_buffer_not_owner(expand("<amatch>"))
-  endif
-endfunction " }}}
 function! gista#interface#open(gistid, filenames, ...) abort " {{{
   let settings = extend({
         \ 'openers': g:gista#gist_openers,
@@ -340,7 +309,7 @@ function! gista#interface#open(gistid, filenames, ...) abort " {{{
         setlocal nomodified
 
         " connect the gist
-        call gista#interface#connect(a:gistid, filename)
+        call gista#interface#connect_action(a:gistid, filename)
 
         " successfully loaded, call autocmd
         doautocmd StdinReadPost,BufRead,BufReadPost
@@ -365,7 +334,7 @@ function! gista#interface#post(line1, line2, ...) abort " {{{
   let settings = extend({
         \ 'auto_connect_after_post': g:gista#auto_connect_after_post,
         \ 'update_list': 1,
-        \ 'auto_yank_gistid_after_post': g:gista#auto_yank_gistid_after_post,
+        \ 'auto_yank_after_post': g:gista#auto_yank_after_post,
         \}, get(a:000, 0, {}))
 
   let filename = gista#utils#provide_filename(expand('%'), 0)
@@ -383,16 +352,22 @@ function! gista#interface#post(line1, line2, ...) abort " {{{
 
   " Connect the buffer to the gist
   if settings.auto_connect_after_post
-    call gista#interface#connect(gist.id, filename)
+    call gista#interface#connect_action(gist.id, filename)
   endif
   " Update list window
   if settings.update_list
     call gista#interface#update()
   endif
   " Yank GistID
-  if settings.auto_yank_gistid_after_post
+  if !empty(settings.auto_yank_after_post)
+    if type(settings.auto_yank_after_post) == 0
+      let yank_method = g:gista#default_yank_method
+    else
+      let yank_method = settings.auto_yank_after_post
+    endif
     call gista#interface#yank_action(gist.id, '', {
           \ 'verbose': 0,
+          \ 'yank_method': yank_method,
           \ 'gistid_yank_format': g:gista#gistid_yank_format_in_post,
           \})
   endif
@@ -403,7 +378,7 @@ function! gista#interface#post_buffers(...) abort " {{{
         \     g:gista#include_invisible_buffers_in_multiple,
         \ 'auto_connect_after_post': g:gista#auto_connect_after_post,
         \ 'update_list': 1,
-        \ 'auto_yank_gistid_after_post': g:gista#auto_yank_gistid_after_post,
+        \ 'auto_yank_after_post': g:gista#auto_yank_after_post,
         \}, get(a:000, 0, {}))
 
   let filenames = []
@@ -444,7 +419,7 @@ function! gista#interface#post_buffers(...) abort " {{{
     for [bufnum, filename] in gista#utils#vital#zip(pbufnums, filenames)
       call gista#utils#call_on_buffer(
             \ bufnum,
-            \ function('gista#interface#connect'),
+            \ function('gista#interface#connect_action'),
             \ gist.id, filename)
     endfor
   endif
@@ -453,9 +428,15 @@ function! gista#interface#post_buffers(...) abort " {{{
     call gista#interface#update()
   endif
   " Yank GistID
-  if settings.auto_yank_gistid_after_post
+  if !empty(settings.auto_yank_after_post)
+    if type(settings.auto_yank_after_post) == 0
+      let yank_method = g:gista#default_yank_method
+    else
+      let yank_method = settings.auto_yank_after_post
+    endif
     call gista#interface#yank_action(gist.id, '', {
           \ 'verbose': 0,
+          \ 'yank_method': yank_method,
           \ 'gistid_yank_format': g:gista#gistid_yank_format_in_post,
           \})
   endif
@@ -483,7 +464,7 @@ function! gista#interface#save(line1, line2, ...) abort " {{{
 
   let settings = extend({
         \ 'update_list': 1,
-        \ 'auto_yank_gistid_after_save': g:gista#auto_yank_gistid_after_save,
+        \ 'auto_yank_after_save': g:gista#auto_yank_after_save,
         \}, get(a:000, 0, {}))
 
   let gistid = b:gistinfo.gistid
@@ -506,9 +487,15 @@ function! gista#interface#save(line1, line2, ...) abort " {{{
   endif
 
   " Yank GistID
-  if settings.auto_yank_gistid_after_save
+  if !empty(settings.auto_yank_after_save)
+    if type(settings.auto_yank_after_save) == 0
+      let yank_method = g:gista#default_yank_method
+    else
+      let yank_method = settings.auto_yank_after_save
+    endif
     call gista#interface#yank_action(gist.id, '', {
           \ 'verbose': 0,
+          \ 'yank_method': yank_method,
           \ 'gistid_yank_format': g:gista#gistid_yank_format_in_save,
           \})
   endif
@@ -770,6 +757,37 @@ function! gista#interface#yank() abort " {{{
   call gista#interface#yank_action(gistid, filename)
 endfunction " }}}
 
+function! gista#interface#connect_action(gistid, filename) abort " {{{
+  let gist = gista#gist#api#get(a:gistid)
+  if empty(gist)
+    return
+  endif
+  " Anonymous gist does not have owner.gist thus extend
+  let gist = extend({'owner': {'login': 'anonymous'}}, gist)
+  " Connect current buffer to the gist
+  call s:set_bridge(a:gistid, a:filename, bufnr('%'))
+  " Keep gistid and filename to the buffer variable
+  let b:gistinfo = {
+        \ 'gistid': a:gistid,
+        \ 'filename': a:filename,
+        \ 'owner': gist.owner.login,
+        \ 'ownership':
+        \   gist.owner.login != 'anonymous' &&
+        \   gist.owner.login == gista#gist#raw#get_authenticated_user(),
+        \}
+  " is the gist editable?
+  if b:gistinfo.ownership
+    " user own the gist, modifiable
+    setlocal modifiable
+    autocmd! BufWriteCmd <buffer>
+          \ call s:ac_write_gist_buffer(expand("<amatch>"))
+  elseif &buftype == 'acwrite'
+    " not owner and opened.
+    setlocal modifiable
+    autocmd! BufWriteCmd <buffer>
+          \ call s:ac_write_gist_buffer_not_owner(expand("<amatch>"))
+  endif
+endfunction " }}}
 function! gista#interface#do_action(action, info, ...) " {{{
   let settings = extend({
         \ 'openers': g:gista#gist_openers_in_action,
@@ -871,6 +889,10 @@ function! gista#interface#do_action(action, info, ...) " {{{
     call gista#interface#browse_action(a:info.gist.id, a:info.filename) " }}}
   elseif a:action ==# 'yank' " {{{
     call gista#interface#yank_action(a:info.gist.id, a:info.filename) " }}}
+  elseif a:action ==# 'yank_gistid' " {{{
+    call gista#interface#yank_gistid_action(a:info.gist.id, a:info.filename) " }}}
+  elseif a:action ==# 'yank_url' " {{{
+    call gista#interface#yank_url_action(a:info.gist.id, a:info.filename) " }}}
   endif
 
 endfunction " }}}
@@ -1000,6 +1022,33 @@ endfunction " }}}
 function! gista#interface#yank_action(gistid, ...) abort " {{{
   let filename = get(a:000, 0, '')
   let settings = extend({
+        \ 'yank_method': g:gista#default_yank_method,
+        \}, get(a:000, 1, {}))
+  if settings.yank_method == 'gistid'
+    call gista#interface#yank_gistid_action(a:gistid, filename, settings)
+  else
+    call gista#interface#yank_url_action(a:gistid, filename, settings)
+  endif
+endfunction " }}}
+function! gista#interface#yank_url_action(gistid, ...) abort " {{{
+  let filename = get(a:000, 0, '')
+  let settings = extend({
+        \ 'verbose': 1,
+        \}, get(a:000, 1, {}))
+  let gist = gista#gist#api#get(a:gistid, settings)
+  let content = gista#utils#get_gist_url(gist, filename)
+
+  let @" = content
+  if has('clipboard')
+    call setreg(v:register, content)
+  endif
+  if settings.verbose
+    redraw | echo 'Yanked: ' . content
+  endif
+endfunction " }}}
+function! gista#interface#yank_gistid_action(gistid, ...) abort " {{{
+  let filename = get(a:000, 0, '')
+  let settings = extend({
         \ 'verbose': 1,
         \ 'gistid_yank_format': g:gista#gistid_yank_format,
         \ 'gistid_yank_format_with_file': g:gista#gistid_yank_format_with_file,
@@ -1069,6 +1118,10 @@ nnoremap <silent> <Plug>(gista-action-browse)
       \ :call <SID>action('browse')<CR>
 nnoremap <silent> <Plug>(gista-action-yank)
       \ :call <SID>action('yank')<CR>
+nnoremap <silent> <Plug>(gista-action-yank-gistid)
+      \ :call <SID>action('yank_gistid')<CR>
+nnoremap <silent> <Plug>(gista-action-yank-url)
+      \ :call <SID>action('yank_url')<CR>
 
 
 let s:consts = {}

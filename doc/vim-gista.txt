@@ -461,7 +461,11 @@ the commands below:
 	:Gista -b
 	:Gista --browse
 <
-This feature require 'tyru/open-browser.vim'
+This feature require 'tyru/open-browser.vim'.
+You can yank the URL of the current connected gist with:
+>
+	:Gista --yank-url
+<
 
 ------------------------------------------------------------------------------
 Anonymous mode				*vim-gista-usage-anonymous-mode*
@@ -655,6 +659,28 @@ g:gista#gistid_yank_format_in_save
 	See |g:gista#auto_yank_gistid_after_save|.
 	The default value is 'GistID: {gistid}'
 
+					*g:gista#default_yank_method*
+g:gista#default_yank_method
+	A default yank method. This value need to be one of the follwoing
+
+	- 'gistid': To yank a Gist ID
+	- 'url': To yank a URL
+
+	This value is used in |Gista-yank|, |<Plug>(gista-action-yank)|, and
+	'yank' action in Unite interface.
+
+					*g:gista#auto_yank_after_post*
+g:gista#auto_yank_after_post
+	This value should be a boolean or one of the values in
+	|g:gista#default_yank_method|.
+	If this value is not 0, a Gist ID or URL will be yanked after post.
+
+					*g:gista#auto_yank_after_save*
+g:gista#auto_yank_after_save
+	This value should be a boolean or one of the values in
+	|g:gista#default_yank_method|.
+	If this value is not 0, a Gist ID or URL will be yanked after save.
+
 					*g:gista#disable_python_client*
 g:gista#disable_python_client
 	Disable Python client in HTTP connection.
@@ -729,8 +755,27 @@ Commands				*vim-gista-interface-commands*
 
 						*:Gista-yank*
 :Gista --yank
+:Gista --yank {method}
+	Yank a gist ID or URL of the gist connected from the current buffer,
+	determined from {method}.
+	If no {method} is specifid, the value of |g:gista#default_yank_method|
+	will be used.
+	{method} required to be a value in |g:gista#default_yank_method|.
+	If |clipboard| is enable, it will also yank the text into |v:register|
+	thus if you use 'unnamed' or 'unnamedplus', the text will be copied
+	into the system clipboard.
+
+						*:Gista-yank-gistid*
+:Gista --yank-gistid
 	Yank a gist ID (and filename) of the gist connected from the current
 	buffer.
+	If |clipboard| is enable, it will also yank the text into |v:register|
+	thus if you use 'unnamed' or 'unnamedplus', the text will be copied
+	into the system clipboard.
+
+						*:Gista-yank-url*
+:Gista --yank-url
+	Yank a URL of the gist connected from the current buffer.
 	If |clipboard| is enable, it will also yank the text into |v:register|
 	thus if you use 'unnamed' or 'unnamedplus', the text will be copied
 	into the system clipboard.
@@ -959,6 +1004,10 @@ unite/actions/gista
 	unstar		Unstar the gist
 	fork		Fork the gist (it does not work with authenticated
 			user's gist)
+	yank		Yank a Gist ID or URL (determined from
+			|g:gista#default_yank_method|)
+	yank_gistid	Yank a Gist ID
+	yank_url	Yank a URL
 	smart_open	Do 'select' or 'open', determined from the number of
 			files in the gist.
 			See |g:gista#unite_smart_open_threshold|
@@ -977,6 +1026,10 @@ unite/actions/gista_file
 	open		Open the file
 	rename		Rename the file
 	delete		Delete the file
+	yank		Yank a Gist ID or URL (determined from
+			|g:gista#default_yank_method|)
+	yank_gistid	Yank a Gist ID
+	yank_url	Yank a URL
 
 						*unite/actions/post_to_gist*
 unite/actions/post_to_gist

@@ -42,6 +42,18 @@ let s:kind = {
       \     'description': 'fork the selected gists',
       \     'is_selectable': 1,
       \   },
+      \   'yank': {
+      \     'description': 'yank a gistid or url',
+      \     'is_selectable': 0,
+      \   },
+      \   'yank_gistid': {
+      \     'description': 'yank a gistid',
+      \     'is_selectable': 0,
+      \   },
+      \   'yank_url': {
+      \     'description': 'yank a gist url',
+      \     'is_selectable': 0,
+      \   },
       \ },
       \}
 function! s:kind.action_table.open.func(candidates) " {{{
@@ -116,6 +128,18 @@ function! s:kind.action_table.fork.func(candidates) " {{{
           \ 'update_list': 0,
           \})
   endfor
+endfunction " }}}
+function! s:kind.action_table.yank.func(candidate) " {{{
+  let gist = a:candidate.source__gist
+  call gista#interface#yank_action(gist.id, '')
+endfunction " }}}
+function! s:kind.action_table.yank_gistid.func(candidate) " {{{
+  let gist = a:candidate.source__gist
+  call gista#interface#yank_gistid_action(gist.id, '')
+endfunction " }}}
+function! s:kind.action_table.yank_url.func(candidate) " {{{
+  let gist = a:candidate.source__gist
+  call gista#interface#yank_url_action(gist.id, '')
 endfunction " }}}
 function! s:smart_xxxx(candidate) dict abort " {{{
   let gist = a:candidate.source__gist

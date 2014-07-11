@@ -100,7 +100,7 @@ function! s:get_parser() " {{{
           \   'subordinations_of': [
           \     'open', 'post', 'rename', 'remove', 'delete',
           \     'star', 'unstar', 'is-starred', 'fork', 'browse',
-          \     'disconnect', 'yank',
+          \     'disconnect', 'yank', 'yank-gistid', 'yank-url',
           \   ],
           \})
     call s:parser.add_argument(
@@ -108,7 +108,8 @@ function! s:get_parser() " {{{
           \ 'Specify a filename', {
           \   'kind': s:parser.VALUE,
           \   'subordinations_of': [
-          \     'open', 'rename', 'remove', 'disconnect', 'browse', 'yank',
+          \     'open', 'rename', 'remove', 'disconnect', 'browse',
+          \     'yank', 'yank-gistid', 'yank-url',
           \   ],
           \})
     call s:parser.add_argument(
@@ -175,6 +176,21 @@ function! s:get_parser() " {{{
           \})
     call s:parser.add_argument(
           \ '--yank',
+          \ 'Yank Gist ID or URL', {
+          \   'kind': s:parser.ANY,
+          \   'conflicts': 'command',
+          \   'requires': 'gistid',
+          \   'choices': ['gistid', 'url'],
+          \})
+    call s:parser.add_argument(
+          \ '--yank-gistid',
+          \ 'Yank Gist ID (and filename)', {
+          \   'kind': s:parser.SWITCH,
+          \   'conflicts': 'command',
+          \   'requires': 'gistid',
+          \})
+    call s:parser.add_argument(
+          \ '--yank-url',
           \ 'Yank Gist ID (and filename)', {
           \   'kind': s:parser.SWITCH,
           \   'conflicts': 'command',
@@ -199,6 +215,13 @@ function! s:get_parser() " {{{
       " filename
       if exists('b:gistinfo') && self.has_subordinated('filename', options)
         let options['filename'] = b:gistinfo.filename
+      endif
+      " yank
+      if has_key(options, 'yank')
+        if type(options.yank) != 1 && options.yank == self.TRUE
+          unlet options.yank
+          let options.yank = g:gista#default_yank_method
+        endif
       endif
       return options
     endfunction " }}}

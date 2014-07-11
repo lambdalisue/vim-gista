@@ -96,7 +96,7 @@ function! s:GistaPost(options) abort " {{{
     endif
     if !exists('b:gistinfo')
       " the current buffer is not connected yet thus connect it
-      call gista#interface#connect(gistid, expand('%:t'))
+      call gista#interface#connect_action(gistid, expand('%:t'))
     endif
     return gista#interface#save(
           \ a:options.__range__[0],
@@ -154,7 +154,24 @@ endfunction " }}}
 function! s:GistaYank(options) abort " {{{
   let gistid = a:options.gistid
   let filename = get(a:options, 'filename', '')
-  return gista#interface#yank_action(gistid, filename)
+  if type(a:options.yank) == 0
+    let yank_method = g:gista#default_yank_method
+  else
+    let yank_method = a:options.yank
+  endif
+  return gista#interface#yank_action(gistid, filename, {
+        \ 'yank_method': yank_method,
+        \})
+endfunction " }}}
+function! s:GistaYankGistID(options) abort " {{{
+  let gistid = a:options.gistid
+  let filename = get(a:options, 'filename', '')
+  return gista#interface#yank_gistid_action(gistid, filename)
+endfunction " }}}
+function! s:GistaYankURL(options) abort " {{{
+  let gistid = a:options.gistid
+  let filename = get(a:options, 'filename', '')
+  return gista#interface#yank_url_action(gistid, filename)
 endfunction " }}}
 
 
@@ -191,8 +208,12 @@ function! gista#Gista(options) abort " {{{
     return s:GistaBrowse(a:options)
   elseif get(a:options, 'disconnect')
     return s:GistaDisconnect(a:options)
-  elseif get(a:options, 'yank')
+  elseif !empty(get(a:options, 'yank'))
     return s:GistaYank(a:options)
+  elseif get(a:options, 'yank-gistid')
+    return s:GistaYankGistID(a:options)
+  elseif get(a:options, 'yank-url')
+    return s:GistaYankURL(a:options)
   endif
 endfunction " }}}
 function! gista#define_highlights() abort " {{{
@@ -251,13 +272,33 @@ let s:settings = {
       \ 'gistid_yank_format_with_file': '"{gistid}/{filename}"',
       \ 'gistid_yank_format_in_post': '"GistID: {gistid}"',
       \ 'gistid_yank_format_in_save': '"GistID: {gistid}"',
-      \ 'auto_yank_gistid_after_post': 1,
-      \ 'auto_yank_gistid_after_save': 1,
+      \ 'default_yank_method': '"gistid"',
+      \ 'auto_yank_after_post': 1,
+      \ 'auto_yank_after_save': 1,
       \ 'private_mark': '"<PRIVATE>"',
-      \ 'anonymous_mode': 1,
       \ 'disable_python_client': 1,
       \}
+function! s:deprecated(name, replacement) " {{{
+  if exists("g:gista#" . a:name)
+    echohl WarningMsg
+    echo printf("g:gista#%s is deprecated. Use g:gista#%s instead.",
+          \ a:name, a:replacement)
+    echohl None
+
+    if !exists("g:gista#" . a:replacement)
+      execute printf("let g:gista#%s = g:gista#%s",
+            \ a:name, a:replacement)
+    endif
+  endif
+endfunction " }}}
 function! s:init() " {{{
+  call s:deprecated(
+        \ 'auto_yank_gistid_after_post',
+        \ 'auto_yank_after_post')
+  call s:deprecated(
+        \ 'auto_yank_gistid_after_save',
+        \ 'auto_yank_after_save')
+
   for [key, value] in items(s:settings)
     if !exists('g:gista#' . key)
       execute 'let g:gista#' . key . ' = ' . value
