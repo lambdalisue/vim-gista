@@ -99,7 +99,7 @@ function! s:get_parser() " {{{
           \   'kind': s:parser.VALUE,
           \   'subordinations_of': [
           \     'open', 'post', 'rename', 'remove', 'delete',
-          \     'star', 'unstar', 'is-starred', 'fork',
+          \     'star', 'unstar', 'is-starred', 'fork', 'browse',
           \     'disconnect', 'yank',
           \   ],
           \})
@@ -108,7 +108,7 @@ function! s:get_parser() " {{{
           \ 'Specify a filename', {
           \   'kind': s:parser.VALUE,
           \   'subordinations_of': [
-          \     'open', 'rename', 'remove', 'disconnect', 'yank',
+          \     'open', 'rename', 'remove', 'disconnect', 'browse', 'yank',
           \   ],
           \})
     call s:parser.add_argument(
