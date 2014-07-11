@@ -110,10 +110,12 @@ function! s:ac_write_gist_buffer(filename) abort " {{{
       " do not save the gist on the web
       return
     elseif g:gista#update_on_write == 2 && !v:cmdbang
-      echohl GistaInfo
-      echo  'Type ":w!" to update the gist or set "let g:gista#update_on_write'
-      echon ' = 1" to update the gist everytime when the file is saved.'
-      echohl None
+      if !g:gista#suppress_acwrite_info_message
+        echohl GistaInfo
+        echo  'Type ":w!" to update the gist or set "let g:gista#update_on_write'
+        echon ' = 1" to update the gist everytime when the file is saved.'
+        echohl None
+      endif
     else
       return gista#interface#save(1, '$')
     endif
@@ -128,9 +130,11 @@ endfunction " }}}
 function! s:ac_write_gist_buffer_not_owner(filename) abort " {{{
   " Note: this function is assumed to called from autocmd.
   if substitute(a:filename, '\\', '/', 'g') == expand("%:p:gs@\\@/@")
-    echohl GistaInfo
-    echo  'Type ":w <filename>" to save the gist in local file system.'
-    echohl None
+    if !g:gista#suppress_not_owner_acwrite_info_message
+      echohl GistaInfo
+      echo  'Type ":w <filename>" to save the gist in local file system.'
+      echohl None
+    endif
   else
     " new filename is given, save the content with a new filename
     " and stop autocmd, unlink the content from Gist

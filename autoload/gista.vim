@@ -277,6 +277,8 @@ let s:settings = {
       \ 'auto_yank_after_save': 1,
       \ 'private_mark': '"<PRIVATE>"',
       \ 'disable_python_client': 1,
+      \ 'suppress_acwrite_info_message': 0,
+      \ 'suppress_not_owner_acwrite_info_message': 0,
       \}
 function! s:deprecated(name, replacement) " {{{
   if exists("g:gista#" . a:name)
