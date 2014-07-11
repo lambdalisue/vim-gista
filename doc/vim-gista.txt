@@ -686,6 +686,16 @@ g:gista#disable_python_client
 	Disable Python client in HTTP connection.
 	The default value is 1.
 
+					*g:gista#suppress_acwrite_info_message*
+g:gista#suppress_acwrite_info_message
+	Suppress acwrite info message of owned files.
+	The default value is 0.
+
+			*g:gista#suppress_not_owner_acwrite_info_message*
+g:gista#suppress_not_owner_acwrite_info_message
+	Suppress acwrite info message of not owned files.
+	The default value is 0.
+
 ------------------------------------------------------------------------------
 Commands				*vim-gista-interface-commands*
 

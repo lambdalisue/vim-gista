@@ -98,7 +98,6 @@ function! s:from_format(string, format, ...)
       if matched_len == 0
         throw "Vital.DateTime: Parse error:\n" .
         \     'input: ' . a:string . "\nformat: " . a:format
-        break
       endif
       let remain = remain[matched_len :]
     else  " if s:Prelude.is_list(f)
@@ -114,10 +113,11 @@ function! s:from_format(string, format, ...)
   endfor
   return o._normalize()
 endfunction
+" @vimlint(EVL102, 1, l:locale)
 function! s:_read_format(datetime, descriptor, remain, skip_pattern, locale)
   " "o", "key", "value" and "locale" is used by parse_conv
   let o = a:datetime
-  let locale = a:locale  " for parse_conv
+  let locale = a:locale " for parse_conv
   let [info, flag, width] = a:descriptor
   let key = '_' . info[0]
   if !has_key(o, key)
@@ -160,6 +160,7 @@ function! s:_read_format(datetime, descriptor, remain, skip_pattern, locale)
   endif
   return a:remain[matched_len :]
 endfunction
+" @vimlint(EVL102, 0, l:locale)
 
 " Creates a DateTime object from Julian day.
 function! s:from_julian_day(jd, ...)
@@ -382,6 +383,7 @@ function! s:DateTime.to(...)
   let dt._second += delta.seconds() * delta.sign()
   return dt._normalize()
 endfunction
+" @vimlint(EVL102, 1, l:locale)
 function! s:DateTime.format(format, ...)
   let locale = a:0 ? a:1 : ''
   let result = ''
@@ -404,6 +406,8 @@ function! s:DateTime.format(format, ...)
         endif
       elseif 2 < len(info)
         let value = info[2]
+      else
+        let value = ''
       endif
       if flag ==# '^'
         let value = toupper(value)
@@ -421,6 +425,7 @@ function! s:DateTime.format(format, ...)
   endfor
   return result
 endfunction
+" @vimlint(EVL102, 0, l:locale)
 function! s:DateTime.strftime(format)
   let expr = printf('strftime(%s, %d)', string(a:format), self.unix_time())
   return s:_with_locale(expr, a:0 ? a:1 : '')
@@ -610,6 +615,7 @@ function! s:_names(dates, format, locale)
 endfunction
 
 function! s:_with_locale(expr, locale, ...)
+  let current_locale = ''
   if a:locale !=# ''
     let current_locale = v:lc_time
     execute 'language time' a:locale
