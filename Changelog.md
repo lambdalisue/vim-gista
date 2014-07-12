@@ -1,3 +1,17 @@
+### v0.1.16 (Sat Jul 12 17:34:52 2014 +0900)
+
+- Add changelog (Mon Jul 7 21:29:12 2014 +0900) [9b4ca12](https://github.com/lambdalisue/vim-gista/commit/9b4ca121c90bfe7f7db9f3794d44d58584f977d9)
+- Update Changelog.md (Thu Jul 10 13:49:49 2014 +0900) [22d8636](https://github.com/lambdalisue/vim-gista/commit/22d8636b636d8f7a24cd6acaf5a0000a221692ba)
+- Update Changelog (Thu Jul 10 16:01:51 2014 +0900) [d4e9fe3](https://github.com/lambdalisue/vim-gista/commit/d4e9fe3b293eab7727ca48e570089bc5acb93fdf)
+- Improve anonymous mode (Sat Jul 12 02:08:53 2014 +0900) [d129286](https://github.com/lambdalisue/vim-gista/commit/d12928603b531b02e4628c77ee9350b31f37e949)
+- Fix :Gista --browse command (Sat Jul 12 02:11:20 2014 +0900) [44c3b60](https://github.com/lambdalisue/vim-gista/commit/44c3b6001d2bf39676397e0744b4100dc2e0f6ac)
+- Add 'yank_gistid' and 'yank_url' (Sat Jul 12 02:58:17 2014 +0900) [563d99e](https://github.com/lambdalisue/vim-gista/commit/563d99ee6d05b063530af792946228e442964c88)
+- Add suppress options for acwrite (Sat Jul 12 03:31:34 2014 +0900) [52705eb](https://github.com/lambdalisue/vim-gista/commit/52705eb9291925bd252363808d32afc3403aab0f)
+- Add suppress options for acwrite (Sat Jul 12 03:31:34 2014 +0900) [a02d9a1](https://github.com/lambdalisue/vim-gista/commit/a02d9a1e9b02d680fed1d3c1aeee8867437fda7b)
+- Replace bundled option parser to vital module. (Sat Jul 12 17:33:29 2014 +0900) [f24246d](https://github.com/lambdalisue/vim-gista/commit/f24246d1632ee2818f10d4834d7b3a1d6cc53839)
+- Merge branch 'vital-ArgumentParser' (Sat Jul 12 17:33:43 2014 +0900) [5672ea4](https://github.com/lambdalisue/vim-gista/commit/5672ea482782b0a80ab38003cbc6c5ce08d0b385)
+- Bump version (Sat Jul 12 17:34:37 2014 +0900) [47dcc7f](https://github.com/lambdalisue/vim-gista/commit/47dcc7feb49bbfa40877f136d38d03e3f0f7271c)
+
 ### v0.1.15 (Mon Jul 7 20:33:49 2014 +0900)
 
 - Add a way to reopen a gist without using cache (Mon Jul 7 20:32:56 2014 +0900) [85be809](https://github.com/lambdalisue/vim-gista/commit/85be809bbd954dae4ba99ad607ad045d1d1e527a)
