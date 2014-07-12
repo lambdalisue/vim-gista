@@ -62,6 +62,12 @@ function! s:get_datetime() " {{{
   endif
   return s:DateTime
 endfunction " }}}
+function! s:get_parser() " {{{
+  if !exists('s:Parser')
+    let s:Parser = gista#utils#vital#get_vital().import('ArgumentParser')
+  endif
+  return s:Parser
+endfunction " }}}
 
 " Prelude
 function! gista#utils#vital#is_windows() " {{{
@@ -104,7 +110,7 @@ function! gista#utils#vital#request(method, url, ...) abort " {{{
         \ 'client': g:gista#disable_python_client ? ['curl', 'wget'] : ['python', 'curl', 'wget'],
         \}, get(a:000, 0, {}))
   return s:get_http().request(a:method, a:url, settings)
-endfunction
+endfunction " }}}
 function! gista#utils#vital#get(url, params, headers, ...) abort " {{{
   let settings = extend({
         \ 'default_content': s:consts.DEFAULT_CONTENT,
@@ -195,6 +201,11 @@ function! gista#utils#vital#from_format(...) " {{{
   return call(s:get_datetime().from_format, a:000)
 endfunction " }}}
 
+" ArgumentParser
+function! gista#utils#vital#ArgumentParesr(...) " {{{
+  return call(s:get_parser().new, a:000)
+endfunction " }}}
+
 
 let s:consts = {}
 let s:consts.DEFAULT_CONTENT = '{}'
@@ -202,3 +213,4 @@ let s:consts.DEFAULT_CONTENT = '{}'
 let &cpo = s:save_cpo
 unlet s:save_cpo
 "vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
+
