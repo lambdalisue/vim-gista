@@ -343,6 +343,7 @@ function! gista#interface#post(line1, line2, ...) abort " {{{
 
   let filename = gista#utils#provide_filename(expand('%'), 0)
   let content = join(getline(a:line1, a:line2), "\n")
+  let is_partial = !(a:line1 == 1 && a:line2 == '$')
 
   let gist = gista#gist#api#post([filename], [content], settings)
   if empty(gist)
@@ -350,12 +351,12 @@ function! gista#interface#post(line1, line2, ...) abort " {{{
   endif
 
   " the changes are updated correctly
-  if a:line1 == 1 && a:line2 == '$'
+  if !is_partial
     setl nomodified
   endif
 
-  " Connect the buffer to the gist
-  if settings.auto_connect_after_post
+  " Connect the buffer to the gist unless the content is partially posted
+  if !is_partial && settings.auto_connect_after_post
     call gista#interface#connect_action(gist.id, filename)
   endif
   " Update list window
@@ -469,11 +470,32 @@ function! gista#interface#save(line1, line2, ...) abort " {{{
   let settings = extend({
         \ 'update_list': 1,
         \ 'auto_yank_after_save': g:gista#auto_yank_after_save,
+        \ 'warn_in_partial_save': g:gista#warn_in_partial_save,
         \}, get(a:000, 0, {}))
 
   let gistid = b:gistinfo.gistid
   let filename = b:gistinfo.filename
   let content = join(getline(a:line1, a:line2), "\n")
+  let is_partial = !(a:line1 == 1 && a:line2 == '$')
+
+  if is_partial && settings.warn_in_partial_save
+    redraw
+    echohl GistaWarning
+    echo  'Partial content is selected:'
+    echohl None
+    echo  'You have requested to save partial content (selected lines)'
+          \ 'to the connected gist. '
+    echo  'Thus only the partial content will be written in the gist and'
+          \ 'the other part of the file will be lost.'
+    let response = gista#utils#input_yesno('Are you sure to save the gist?')
+    if !response
+      redraw
+      echohl GistaWarning
+      echo 'Canceled'
+      echohl None
+      return
+    endif
+  endif
 
   let gist = gista#gist#api#patch(gistid, [filename], [content], settings)
   if empty(gist)
@@ -481,7 +503,7 @@ function! gista#interface#save(line1, line2, ...) abort " {{{
   endif
 
   " the changes are updated correctly
-  if a:line1 == 1 && a:line2 == '$'
+  if !is_partial
     setl nomodified
   endif
 

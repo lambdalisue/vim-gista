@@ -279,6 +279,7 @@ let s:settings = {
       \ 'disable_python_client': 1,
       \ 'suppress_acwrite_info_message': 0,
       \ 'suppress_not_owner_acwrite_info_message': 0,
+      \ 'warn_in_partial_save': 1,
       \}
 function! s:deprecated(name, replacement) " {{{
   if exists("g:gista#" . a:name)

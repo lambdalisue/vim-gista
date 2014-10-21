@@ -696,6 +696,12 @@ g:gista#suppress_not_owner_acwrite_info_message
 	Suppress acwrite info message of not owned files.
 	The default value is 0.
 
+					*g:gista#warn_in_partial_save*
+g:gista#warn_in_partial_save
+	Show a warning message and confirmation dialog if user tried to save
+	a partial part of content to the connected gist.
+	The default value is 1.
+
 ------------------------------------------------------------------------------
 Commands				*vim-gista-interface-commands*
 
