@@ -1,3 +1,11 @@
+### v0.1.17 (Mon Nov 3 19:38:27 2014 +0900)
+
+- Update Changelog (Sat Jul 12 17:35:24 2014 +0900) [33cf7b3](https://github.com/lambdalisue/vim-gista/commit/33cf7b3d83ffc7bc3779a29fd36d0abafe541582)
+- Fix issue #38 and add warnings on partial save (Tue Oct 21 18:32:19 2014 +0900) [9c80945](https://github.com/lambdalisue/vim-gista/commit/9c8094539e3aab38333bb0b405c579d24fa7ea86)
+- Merge pull request #39 from lambdalisue/issue38 (Tue Oct 21 19:52:13 2014 +0900) [3e41e2c](https://github.com/lambdalisue/vim-gista/commit/3e41e2ca9d34a502421f5c7bf61e2f8b21487962)
+- Hide gistid on list interface (Mon Nov 3 19:37:13 2014 +0900) [1084fec](https://github.com/lambdalisue/vim-gista/commit/1084fec0a64c0be804ae5f74f20e7f564b5f505d)
+- Bump version (Mon Nov 3 19:38:11 2014 +0900) [51f680d](https://github.com/lambdalisue/vim-gista/commit/51f680d9e0d6db370e508c21440d93ec6101deb9)
+
 ### v0.1.16 (Sat Jul 12 17:34:52 2014 +0900)
 
 - Add changelog (Mon Jul 7 21:29:12 2014 +0900) [9b4ca12](https://github.com/lambdalisue/vim-gista/commit/9b4ca121c90bfe7f7db9f3794d44d58584f977d9)
