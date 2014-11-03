@@ -17,6 +17,9 @@ function! s:format_gist(gist) " {{{
         \ '<<No description>>' :
         \ a:gist.description
   let private = a:gist.public ? "" : g:gista#private_mark
+  if g:gista#hide_private_gistid && !a:gist.public
+    let gistid = "[xxxxxxxxxxxxxxxxxxxx]"
+  endif
   return printf("%s %s %s %s %s",
         \ nfiles,
         \ gistid,

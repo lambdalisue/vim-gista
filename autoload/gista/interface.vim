@@ -49,6 +49,9 @@ function! s:format_gist(gist) abort " {{{
   let update = printf("%s",
         \ gista#utils#datetime(a:gist.updated_at).format('%Y/%m/%d %H:%M:%S'))
   let private = a:gist.public ? "" : g:gista#private_mark
+  if g:gista#hide_private_gistid && !a:gist.public
+    let gistid = "[xxxxxxxxxxxxxxxxxxxx]"
+  endif
   let description = empty(a:gist.description) ?
         \ '<<No description>>' :
         \ a:gist.description
