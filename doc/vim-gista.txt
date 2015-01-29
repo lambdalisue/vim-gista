@@ -97,7 +97,7 @@ References:
 ==============================================================================
 INSTALL						*vim-gista-install*
 
-First of all, |vim-gista| use 'cURL' or 'wget' to communicate with Gist API
+First of all, |vim-gista| use 'cURL' or 'Wget' to communicate with Gist API
 thus make sure that one of those commands is available in your system.
 
 -   cURL - http://curl.haxx.se/
@@ -260,7 +260,7 @@ modified gist entries), hit <C-l> (|<Plug>(gista-action-update)|) on the
 'gist:list' buffer.
 If you want to re-build a cache of your gist entries, use '--nocache' option
 then all gist entries are recursively re-downloaded and the cache will be
-rebuilded by the new downloads.
+rebuilt by the new downloads.
 >
 	:Gista -l --nocache
 <
@@ -271,7 +271,7 @@ buffer.
 Opening						*vim-gista-usage-opening*
 
 If you want to open a gist on the 'gist:list' buffer, hit <CR> to open the
-gist with default opener (See |g:gista#gist_defaut_opener| and
+gist with default opener (See |g:gista#gist_default_opener| and
 |g:gista#gist_default_opener_in_action|.) If you want to specify the way to
 open the buffer, hit e, s, or v for 'edit', 'split', or 'vsplit' respectively.
 
@@ -313,7 +313,7 @@ You can open a particular gist via Gist ID as well. Provide a Gist ID with
 	:Gista --open --gistid XXXXXXXX
 <
 Then all files in the gist will be opened with default opener (See
-|g:gista#gist_defaut_opener|.) If you want to open particular files, you can
+|g:gista#gist_default_opener|.) If you want to open particular files, you can
 specify filenames with '--filename' option as a semi-colon separated filenames
 like:
 >
@@ -519,7 +519,7 @@ g:gista#gist_entries_cache_directory
 
 					*g:gist_default_filename*
 g:gista#gist_default_filename
-	A defaut filename used for posting a gist if the buffer does not have
+	A default filename used for posting a gist if the buffer does not have
 	a filename.
 	The default value is 'gist-file'.
 
@@ -661,7 +661,7 @@ g:gista#gistid_yank_format_in_save
 
 					*g:gista#default_yank_method*
 g:gista#default_yank_method
-	A default yank method. This value need to be one of the follwoing
+	A default yank method. This value need to be one of the following
 
 	- 'gistid': To yank a Gist ID
 	- 'url': To yank a URL
@@ -774,8 +774,8 @@ Commands				*vim-gista-interface-commands*
 :Gista --yank {method}
 	Yank a gist ID or URL of the gist connected from the current buffer,
 	determined from {method}.
-	If no {method} is specifid, the value of |g:gista#default_yank_method|
-	will be used.
+	If no {method} is specified, the value of
+	|g:gista#default_yank_method| will be used.
 	{method} required to be a value in |g:gista#default_yank_method|.
 	If |clipboard| is enable, it will also yank the text into |v:register|
 	thus if you use 'unnamed' or 'unnamedplus', the text will be copied
@@ -915,7 +915,7 @@ Highlights				*vim-gista-interface-highlights*
 
 							*hl-GistaTitle*
 GistaTitle
-	A hightlight used to indicate a title of messages.
+	A highlight used to indicate a title of messages.
 	It is linked to 'Title' in default.
 
 							*hl-GistaError*
@@ -940,37 +940,37 @@ GistaQuestion
 
 							*hl-GistaGistID*
 GistaGistID
-	A hightlight used to indicate a gist ID.
+	A highlight used to indicate a gist ID.
 	It is linked to 'Tag' in default.
 
 							*hl-GistaPrivate*
 GistaPrivate
-	A hightlight used to indicate a private mark.
+	A highlight used to indicate a private mark.
 	It is linked to |hl-ErrorMsg| in default.
 
 							*hl-GistaDate*
 GistaDate
-	A hightlight used to indicate a date.
+	A highlight used to indicate a date.
 	It is linked to 'Comment' in default.
 
 							*hl-GistaTime*
 GistaTime
-	A hightlight used to indicate a time.
+	A highlight used to indicate a time.
 	It is linked to 'Comment' in default.
 
 							*hl-GistaFiles*
 GistaFiles
-	A hightlight used to indicate a files.
+	A highlight used to indicate a files.
 	It is linked to 'Comment' in default.
 
 							*hl-GistaComment*
 GistaComment
-	A hightlight used to indicate a comment.
+	A highlight used to indicate a comment.
 	It is linked to 'Comment' in default.
 
 							*hl-GistaStatement*
 GistaStatement
-	A hightlight used to indicate a statement.
+	A highlight used to indicate a statement.
 	It is linked to 'Statement' in default.
 
 ==============================================================================
@@ -1076,7 +1076,7 @@ unite/filters/converter_gista_without_datetime
 	an updated datetime.
 
 				*unite/filters/converter_gista_without_date*
-unite/filters/converter_gista_without_datet
+unite/filters/converter_gista_without_date
 	A 'gista' converter which display informations about the gist, without
 	an updated date.
 
