@@ -281,6 +281,7 @@ let s:settings = {
       \ 'suppress_not_owner_acwrite_info_message': 0,
       \ 'warn_in_partial_save': 1,
       \ 'hide_private_gistid': 1,
+      \ 'get_with_authentication': 0,
       \}
 function! s:deprecated(name, replacement) " {{{
   if exists("g:gista#" . a:name)

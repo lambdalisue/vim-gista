@@ -77,6 +77,7 @@ endfunction " }}}
 function! gista#gist#api#get(gistid, ...) abort " {{{
   let settings = extend({
         \ 'nocache': 0,
+        \ 'with_authentication': g:gista#get_with_authentication,
         \}, get(a:000, 0, {}))
 
   if !settings.nocache
