@@ -296,11 +296,16 @@ endfunction " }}}
 
 " API
 function! gista#gist#raw#get(gistid, ...) abort " {{{
-  let settings = extend({}, get(a:000, 0, {}))
+  let settings = extend({
+        \ 'with_authentication': 0
+        \}, get(a:000, 0, {}))
 
-  " get does not require authentication (private gist can be shown if the user
-  " know the url)
-  let header = s:get_anonymous_header()
+  if settings.with_authentication
+    let authenticated_user = gista#gist#raw#get_authenticated_user()
+    let header = gista#gist#raw#login(authenticated_user)
+  else
+    let header = s:get_anonymous_header()
+  endif
   let request_settings = gista#utils#vital#omit(settings, [])
 
   redraw | echo 'Requesting a gist (' . a:gistid . ') ...'

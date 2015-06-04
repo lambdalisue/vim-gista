@@ -702,6 +702,13 @@ g:gista#warn_in_partial_save
 	a partial part of content to the connected gist.
 	The default value is 1.
 
+					*g:gista#get_with_authentication*
+g:gista#get_with_authentication
+	In usual, you can get gists with no authentication. But you need to be
+	authenticated in certain circumstances such as strictly restricted
+	Github Enterprise. You may try this option in such time.
+	The default value is 0.
+
 ------------------------------------------------------------------------------
 Commands				*vim-gista-interface-commands*
 
