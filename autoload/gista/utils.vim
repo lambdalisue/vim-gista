@@ -80,7 +80,7 @@ function! gista#utils#guess_extension(filetype) " {{{
   elseif has_key(s:consts.EXTMAP, a:filetype)
     return s:consts.EXTMAP[a:filetype]
   endif
-  return '.' + a:filetype
+  return '.' . a:filetype
 endfunction " }}}
 function! gista#utils#input_yesno(message, ...) "{{{
   " forked from Shougo/unite.vim
