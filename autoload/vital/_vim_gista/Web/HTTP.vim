@@ -2,29 +2,29 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
-function! s:_vital_loaded(V)
+function! s:_vital_loaded(V) abort
   let s:V = a:V
   let s:Prelude = s:V.import('Prelude')
   let s:Process = s:V.import('Process')
   let s:String = s:V.import('Data.String')
 endfunction
 
-function! s:_vital_depends()
+function! s:_vital_depends() abort
   return ['Prelude', 'Data.String', 'Process']
 endfunction
 
-function! s:__urlencode_char(c)
-  return printf("%%%02X", char2nr(a:c))
+function! s:__urlencode_char(c) abort
+  return printf('%%%02X', char2nr(a:c))
 endfunction
 
-function! s:decodeURI(str)
+function! s:decodeURI(str) abort
   let ret = a:str
   let ret = substitute(ret, '+', ' ', 'g')
   let ret = substitute(ret, '%\(\x\x\)', '\=printf("%c", str2nr(submatch(1), 16))', 'g')
   return ret
 endfunction
 
-function! s:escape(str)
+function! s:escape(str) abort
   let result = ''
   for i in range(len(a:str))
     if a:str[i] =~# '^[a-zA-Z0-9_.~-]$'
@@ -36,19 +36,19 @@ function! s:escape(str)
   return result
 endfunction
 
-function! s:encodeURI(items)
+function! s:encodeURI(items) abort
   let ret = ''
   if s:Prelude.is_dict(a:items)
     for key in sort(keys(a:items))
       if strlen(ret)
-        let ret .= "&"
+        let ret .= '&'
       endif
-      let ret .= key . "=" . s:encodeURI(a:items[key])
+      let ret .= key . '=' . s:encodeURI(a:items[key])
     endfor
   elseif s:Prelude.is_list(a:items)
     for item in sort(a:items)
       if strlen(ret)
-        let ret .= "&"
+        let ret .= '&'
       endif
       let ret .= item
     endfor
@@ -58,20 +58,20 @@ function! s:encodeURI(items)
   return ret
 endfunction
 
-function! s:encodeURIComponent(items)
+function! s:encodeURIComponent(items) abort
   let ret = ''
   if s:Prelude.is_dict(a:items)
     for key in sort(keys(a:items))
-      if strlen(ret) | let ret .= "&" | endif
-      let ret .= key . "=" . s:encodeURIComponent(a:items[key])
+      if strlen(ret) | let ret .= '&' | endif
+      let ret .= key . '=' . s:encodeURIComponent(a:items[key])
     endfor
   elseif s:Prelude.is_list(a:items)
     for item in sort(a:items)
-      if strlen(ret) | let ret .= "&" | endif
+      if strlen(ret) | let ret .= '&' | endif
       let ret .= item
     endfor
   else
-    let items = iconv(a:items, &enc, "utf-8")
+    let items = iconv(a:items, &enc, 'utf-8')
     let len = strlen(items)
     let i = 0
     while i < len
@@ -89,37 +89,18 @@ function! s:encodeURIComponent(items)
   return ret
 endfunction
 
-let s:default_settings = {
-\   'method': 'GET',
-\   'headers': {},
-\   'client': ['python', 'curl', 'wget'],
-\   'maxRedirect': 20,
-\   'retry': 1,
-\ }
-function! s:request(...)
-  let settings = {}
-  for arg in a:000
-    if s:Prelude.is_dict(arg)
-      let settings = extend(settings, arg, 'keep')
-    elseif s:Prelude.is_string(arg)
-      if has_key(settings, 'url')
-        let settings.method = settings.url
-      endif
-      let settings.url = arg
-    endif
-    unlet arg
-  endfor
-  call extend(settings, deepcopy(s:default_settings), 'keep')
+function! s:request(...) abort
+  let settings = s:_build_settings(a:000)
   let settings.method = toupper(settings.method)
   if !has_key(settings, 'url')
-    throw 'Vital.Web.HTTP.request(): "url" parameter is required.'
+    throw 'vital: Web.HTTP: "url" parameter is required.'
   endif
   if !s:Prelude.is_list(settings.client)
     let settings.client = [settings.client]
   endif
   let client = s:_get_client(settings)
   if empty(client)
-    throw 'Vital.Web.HTTP.request(): Available client not found: '
+    throw 'vital: Web.HTTP: Available client not found: '
     \    . string(settings.client)
   endif
   if has_key(settings, 'contentType')
@@ -141,17 +122,19 @@ function! s:request(...)
   endif
   let settings._file = {}
 
-  let [header, content] = client.request(settings)
+  let responses = client.request(settings)
 
   for file in values(settings._file)
     if filereadable(file)
       call delete(file)
     endif
   endfor
-  return s:_build_response(header, content)
+
+  call map(responses, 's:_build_response(v:val[0], v:val[1])')
+  return s:_build_last_response(responses)
 endfunction
 
-function! s:get(url, ...)
+function! s:get(url, ...) abort
   let settings = {
   \    'url': a:url,
   \    'param': a:0 > 0 ? a:1 : {},
@@ -160,7 +143,7 @@ function! s:get(url, ...)
   return s:request(settings)
 endfunction
 
-function! s:post(url, ...)
+function! s:post(url, ...) abort
   let settings = {
   \    'url': a:url,
   \    'data': a:0 > 0 ? a:1 : {},
@@ -170,20 +153,24 @@ function! s:post(url, ...)
   return s:request(settings)
 endfunction
 
-function! s:_readfile(file)
+function! s:_readfile(file) abort
   if filereadable(a:file)
     return join(readfile(a:file, 'b'), "\n")
   endif
   return ''
 endfunction
 
-function! s:_make_postfile(data)
-  let fname = tr(tempname(),'\','/')
+function! s:_make_postfile(data) abort
+  let fname = s:_tempname()
   call writefile(a:data, fname, 'b')
   return fname
 endfunction
 
-function! s:_postdata(data)
+function! s:_tempname() abort
+  return tr(tempname(), '\', '/')
+endfunction
+
+function! s:_postdata(data) abort
   if s:Prelude.is_dict(a:data)
     return [s:encodeURI(a:data)]
   elseif s:Prelude.is_list(a:data)
@@ -193,7 +180,7 @@ function! s:_postdata(data)
   endif
 endfunction
 
-function! s:_build_response(header, content)
+function! s:_build_response(header, content) abort
   let response = {
   \   'header' : a:header,
   \   'content': a:content,
@@ -206,9 +193,9 @@ function! s:_build_response(header, content)
     let status_line = get(a:header, 0)
     let matched = matchlist(status_line, '^HTTP/1\.\d\s\+\(\d\+\)\s\+\(.*\)')
     if !empty(matched)
-      let [status, statusText] = matched[1 : 2]
+      let [status, status_text] = matched[1 : 2]
       let response.status = status - 0
-      let response.statusText = statusText
+      let response.statusText = status_text
       let response.success = status =~# '^2'
       call remove(a:header, 0)
     endif
@@ -216,18 +203,54 @@ function! s:_build_response(header, content)
   return response
 endfunction
 
-function! s:_make_header_args(headdata, option, quote)
+function! s:_build_last_response(responses) abort
+  let all_headers = []
+  for response in a:responses
+    call extend(all_headers, response.header)
+  endfor
+  let last_response = remove(a:responses, -1)
+  let last_response.redirectInfo = a:responses
+  let last_response.allHeaders = all_headers
+  return last_response
+endfunction
+
+function! s:_build_settings(args) abort
+  let settings = {
+  \   'method': 'GET',
+  \   'headers': {},
+  \   'client': ['python', 'curl', 'wget'],
+  \   'maxRedirect': 20,
+  \   'retry': 1,
+  \ }
+  let args = copy(a:args)
+  if len(args) == 0
+    throw 'vital: Web.HTTP: request() needs one or more arguments.'
+  endif
+  if s:Prelude.is_dict(args[-1])
+    call extend(settings, remove(args, -1))
+  endif
+  if len(args) == 2
+    let settings.method = remove(args, 0)
+  endif
+  if !empty(args)
+    let settings.url = args[0]
+  endif
+
+  return settings
+endfunction
+
+function! s:_make_header_args(headdata, option, quote) abort
   let args = ''
   for [key, value] in items(a:headdata)
     if s:Prelude.is_windows()
       let value = substitute(value, '"', '"""', 'g')
     endif
-    let args .= " " . a:option . a:quote . key . ": " . value . a:quote
+    let args .= ' ' . a:option . a:quote . key . ': ' . value . a:quote
   endfor
   return args
 endfunction
 
-function! s:parseHeader(headers)
+function! s:parseHeader(headers) abort
   " FIXME: User should be able to specify the treatment method of the duplicate item.
   let header = {}
   for h in a:headers
@@ -241,10 +264,8 @@ function! s:parseHeader(headers)
 endfunction
 
 " Clients
-function! s:_get_client(settings)
-  let candidates = a:settings.client
-  let names = s:Prelude.is_list(candidates) ? candidates : [candidates]
-  for name in names
+function! s:_get_client(settings) abort
+  for name in a:settings.client
     if has_key(s:clients, name) && s:clients[name].available(a:settings)
       return s:clients[name]
     endif
@@ -255,7 +276,7 @@ let s:clients = {}
 
 let s:clients.python = {}
 
-function! s:clients.python.available(settings)
+function! s:clients.python.available(settings) abort
   if !has('python')
     return 0
   endif
@@ -267,28 +288,47 @@ function! s:clients.python.available(settings)
     " 'retry' is not supported yet
     return 0
   endif
+  if has_key(a:settings, 'authMethod')
+    return 0
+  endif
   return 1
 endfunction
 
-function! s:clients.python.request(settings)
-  " TODO: maxRedirect, retry, outputFile
-  let header = ''
-  let body = ''
+function! s:clients.python.request(settings) abort
+  " TODO: retry, outputFile
+  let responses = []
   python << endpython
 try:
     class DummyClassForLocalScope:
         def main():
-            import vim, urllib2, socket
-            def vimstr(s):
-                return "'" + s.replace("\0", "\n").replace("'", "''") + "'"
+            try:
+                from StringIO import StringIO
+            except ImportError:
+                from io import StringIO
+            import vim, urllib2, socket, gzip
+
+            responses = vim.bindeval('responses')
+
+            class CustomHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
+                def __init__(self, max_redirect):
+                    self.max_redirect = max_redirect
+
+                def redirect_request(self, req, fp, code, msg, headers, newurl):
+                    if self.max_redirect == 0:
+                        return None
+                    if 0 < self.max_redirect:
+                        self.max_redirect -= 1
+                    header_list = filter(None, str(headers).split("\r\n"))
+                    responses.extend([[[status(code, msg)] + header_list, fp.read()]])
+                    return urllib2.HTTPRedirectHandler.redirect_request(self, req, fp, code, msg, headers, newurl)
 
             def vimlist2str(list):
                 if not list:
                     return None
                 return "\n".join([s.replace("\n", "\0") for s in list])
 
-            def status(res):
-                return "HTTP/1.0 %d %s\r\n" % (res.code, res.msg)
+            def status(code, msg):
+                return "HTTP/1.0 %d %s\r\n" % (code, msg)
 
             def access():
                 settings = vim.eval('a:settings')
@@ -296,8 +336,9 @@ try:
                 timeout = settings.get('timeout')
                 if timeout:
                     timeout = float(timeout)
-                requestHeaders = settings.get('headers')
-                director = urllib2.build_opener()
+                request_headers = settings.get('headers')
+                max_redirect = int(settings.get('maxRedirect'))
+                director = urllib2.build_opener(CustomHTTPRedirectHandler(max_redirect))
                 if settings.has_key('username'):
                     passman = urllib2.HTTPPasswordMgrWithDefaultRealm()
                     passman.add_password(
@@ -309,29 +350,36 @@ try:
                     digestauth = urllib2.HTTPDigestAuthHandler(passman)
                     director.add_handler(basicauth)
                     director.add_handler(digestauth)
-                req = urllib2.Request(settings['url'], data, requestHeaders)
+                req = urllib2.Request(settings['url'], data, request_headers)
                 req.get_method = lambda: settings['method']
                 default_timeout = socket.getdefaulttimeout()
                 try:
                     # for Python 2.5 or before
                     socket.setdefaulttimeout(timeout)
                     res = director.open(req, timeout=timeout)
-                    socket.setdefaulttimeout(default_timeout)
-                except urllib2.URLError as res:
-                    socket.setdefaulttimeout(default_timeout)
-                    # FIXME: We want body and headers if possible
-                    return (status(res), '')
-                except socket.timeout as e:
-                    socket.setdefaulttimeout(default_timeout)
+                except urllib2.HTTPError as res:
+                    pass
+                except urllib2.URLError:
                     return ('', '')
+                except socket.timeout:
+                    return ('', '')
+                finally:
+                    socket.setdefaulttimeout(default_timeout)
 
-                st = status(res)
-                responseHeaders = st + ''.join(res.info().headers)
-                return (responseHeaders, res.read())
+                st = status(res.code, res.msg)
+                response_headers = st + ''.join(res.info().headers)
+                response_body = res.read()
+
+                gzip_decompress = settings.get('gzipDecompress', False)
+                if gzip_decompress:
+                    buf = StringIO(response_body)
+                    f = gzip.GzipFile(fileobj=buf)
+                    response_body = f.read()[:-1]
+
+                return (response_headers, response_body)
 
             (header, body) = access()
-            vim.command('let header = ' + vimstr(header))
-            vim.command('let body = ' + vimstr(body))
+            responses.extend([[header.split("\r\n"), body]])
 
         main()
         raise RuntimeError("Exit from local scope")
@@ -341,32 +389,35 @@ except RuntimeError as exception:
         raise exception
 
 endpython
-  return [split(header, "\r\n"), body]
+  return responses
 endfunction
 
 let s:clients.curl = {}
 
-function! s:clients.curl.available(settings)
+function! s:clients.curl.available(settings) abort
   return executable(self._command(a:settings))
 endfunction
 
-function! s:clients.curl._command(settings)
+function! s:clients.curl._command(settings) abort
   return get(get(a:settings, 'command', {}), 'curl', 'curl')
 endfunction
 
-function! s:clients.curl.request(settings)
+function! s:clients.curl.request(settings) abort
   let quote = s:_quote()
   let command = self._command(a:settings)
-  let a:settings._file.header = tr(tempname(),'\','/')
+  let a:settings._file.header = s:_tempname()
   let command .= ' --dump-header ' . quote . a:settings._file.header . quote
   let has_output_file = has_key(a:settings, 'outputFile')
   if has_output_file
     let output_file = a:settings.outputFile
   else
-    let output_file = tr(tempname(),'\','/')
+    let output_file = s:_tempname()
     let a:settings._file.content = output_file
   endif
   let command .= ' --output ' . quote . output_file . quote
+  if has_key(a:settings, 'gzipDecompress') && a:settings.gzipDecompress
+    let command .= ' --compressed '
+  endif
   let command .= ' -L -s -k -X ' . a:settings.method
   let command .= ' --max-redirs ' . a:settings.maxRedirect
   let command .= s:_make_header_args(a:settings.headers, '-H ', quote)
@@ -377,38 +428,51 @@ function! s:clients.curl.request(settings)
   endif
   if has_key(a:settings, 'username')
     let auth = a:settings.username . ':' . get(a:settings, 'password', '')
-    let command .= ' --anyauth --user ' . quote . auth . quote
+    if has_key(a:settings, 'authMethod')
+      if index(['basic', 'digest', 'ntlm', 'negotiate'], a:settings.authMethod) == -1
+        throw 'vital: Web.HTTP: Invalid authorization method: ' . a:settings.authMethod
+      endif
+      let method = a:settings.authMethod
+    else
+      let method = 'anyauth'
+    endif
+    let command .= ' --' . method . ' --user ' . quote . auth . quote
   endif
-  let command .= ' ' . quote . a:settings.url . quote
   if has_key(a:settings, 'data')
     let a:settings._file.post = s:_make_postfile(a:settings.data)
     let command .= ' --data-binary @' . quote . a:settings._file.post . quote
   endif
+  let command .= ' ' . quote . a:settings.url . quote
 
   call s:Process.system(command)
 
   let headerstr = s:_readfile(a:settings._file.header)
   let header_chunks = split(headerstr, "\r\n\r\n")
-  let header = split(get(header_chunks, -1, ''), "\r\n")
+  let headers = map(header_chunks, 'split(v:val, "\r\n")')
+  let responses = map(headers, '[v:val, ""]')
   if has_output_file
     let content = ''
   else
     let content = s:_readfile(output_file)
   endif
-  return [header, content]
+  let responses[-1][1] = content
+  return responses
 endfunction
 
 let s:clients.wget = {}
 
-function! s:clients.wget.available(settings)
+function! s:clients.wget.available(settings) abort
+  if has_key(a:settings, 'authMethod')
+    return 0
+  endif
   return executable(self._command(a:settings))
 endfunction
 
-function! s:clients.wget._command(settings)
+function! s:clients.wget._command(settings) abort
   return get(get(a:settings, 'command', {}), 'wget', 'wget')
 endfunction
 
-function! s:clients.wget.request(settings)
+function! s:clients.wget.request(settings) abort
   let quote = s:_quote()
   let command = self._command(a:settings)
   let method = a:settings.method
@@ -417,13 +481,13 @@ function! s:clients.wget.request(settings)
   elseif method !=# 'GET' && method !=# 'POST'
     let a:settings.headers['X-HTTP-Method-Override'] = a:settings.method
   endif
-  let a:settings._file.header = tr(tempname(),'\','/')
+  let a:settings._file.header = s:_tempname()
   let command .= ' -o ' . quote . a:settings._file.header . quote
   let has_output_file = has_key(a:settings, 'outputFile')
   if has_output_file
     let output_file = a:settings.outputFile
   else
-    let output_file = tr(tempname(),'\','/')
+    let output_file = s:_tempname()
     let a:settings._file.content = output_file
   endif
   let command .= ' -O ' . quote . output_file . quote
@@ -452,21 +516,23 @@ function! s:clients.wget.request(settings)
   if filereadable(a:settings._file.header)
     let header_lines = readfile(a:settings._file.header, 'b')
     call map(header_lines, 'matchstr(v:val, "^\\s*\\zs.*")')
-    let headerstr = join(header_lines, "\n")
-    let header_chunks = split(headerstr, '\n\zeHTTP/1\.\d')
-    let header = split(get(header_chunks, -1, ''), "\n")
+    let headerstr = join(header_lines, "\r\n")
+    let header_chunks = split(headerstr, '\r\n\zeHTTP/1\.\d')
+    let headers = map(header_chunks, 'split(v:val, "\r\n")')
+    let responses = map(headers, '[v:val, ""]')
   else
-    let header = []
+    let responses = [[[], '']]
   endif
   if has_output_file
     let content = ''
   else
     let content = s:_readfile(output_file)
   endif
-  return [header, content]
+  let responses[-1][1] = content
+  return responses
 endfunction
 
-function! s:_quote()
+function! s:_quote() abort
   return &shellxquote == '"' ?  "'" : '"'
 endfunction
 

@@ -11,6 +11,13 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
+function! gista#vital() abort " {{{
+  if !exists('s:V')
+    let s:V = vital#of('vim_gista')
+  endif
+  return s:V
+endfunction " }}}
+
 function! s:GistaLogin(options) abort " {{{
   let username = ''
   if type(a:options.login) == 1 " String
@@ -350,6 +357,11 @@ endfunction
 call s:init()
 " }}}
 " }}}
+
+
+call gista#util#init('', {
+      \ 'cache_dir': expand('~/.cache/vim-gista'),
+      \})
 
 let &cpo = s:save_cpo
 unlet s:save_cpo
