@@ -1,11 +1,3 @@
-"******************************************************************************
-" High functional argument (option) parser
-"
-" Author:   Alisue <lambdalisue@hashnote.net>
-" URL:      http://hashnote.net/
-" License:  MIT license
-" (C) 2014, Alisue, hashnote.net
-"******************************************************************************
 let s:save_cpo = &cpo
 set cpo&vim
 
@@ -16,14 +8,15 @@ function! s:_vital_loaded(V) abort " {{{
   let s:H = a:V.import('System.Filepath')
 endfunction " }}}
 function! s:_vital_created(module) abort " {{{
-  let s:const = {}
-  let s:const.types = {}
-  let s:const.types.any = 0
-  let s:const.types.value = 1
-  let s:const.types.switch = 2
-  let s:const.types.choice = 3
-  lockvar s:const
-
+  if !exists('s:const')
+    let s:const = {}
+    let s:const.types = {}
+    let s:const.types.any = 0
+    let s:const.types.value = 1
+    let s:const.types.switch = 2
+    let s:const.types.choice = 3
+    lockvar s:const
+  endif
   call extend(a:module, s:const)
 endfunction " }}}
 function! s:_vital_depends() abort " {{{

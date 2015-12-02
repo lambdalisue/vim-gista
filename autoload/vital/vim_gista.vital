@@ -1,13 +1,13 @@
 vim_gista
-e044c96
+9fbcf85b5c48c58c9f6524071b6a2ed9139cd6c6
 
-Data.List
-Data.Dict
-Data.Base64
 Web.HTTP
 Web.JSON
+System.Cache
 System.Filepath
-Process
-DateTime
+Data.List
+Data.Dict
+Vim.Buffer
+Vim.BufferManager
 ArgumentParser
 Web.API.GitHub
