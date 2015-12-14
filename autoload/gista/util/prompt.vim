@@ -1,6 +1,8 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+let s:disable_interactive = 0
+
 function! s:ensure_string(x) abort " {{{
   return type(a:x) == type('')
         \ ? a:x
@@ -27,7 +29,7 @@ function! s:echomsg(hl, msg) abort " {{{
   endtry
 endfunction " }}}
 function! s:input(hl, msg, ...) abort " {{{
-  if get(g:, 'gita#test')
+  if s:disable_interactive
     return ''
   endif
   execute 'echohl' a:hl
@@ -42,7 +44,7 @@ function! s:input(hl, msg, ...) abort " {{{
   endtry
 endfunction " }}}
 function! s:inputlist(hl, msg, candidates, ...) abort " {{{
-  if get(g:, 'gita#test')
+  if s:disable_interactive
     return 0
   endif
   execute 'echohl' a:hl
@@ -162,6 +164,14 @@ endfunction " }}}
 function! gista#util#prompt#_asktf_complete_yes_or_no(arglead, cmdline, cursorpos) abort " {{{
   return filter(['yes', 'no'], 'v:val =~# "^" . a:arglead')
 endfunction " }}}
+
+function! gista#util#prompt#enable_interactive() abort " {{{
+  let s:disable_interactive = 0
+endfunction " }}}
+function! gista#util#prompt#disable_interactive() abort " {{{
+  let s:disable_interactive = 1
+endfunction " }}}
+
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo

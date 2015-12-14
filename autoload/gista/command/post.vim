@@ -21,21 +21,33 @@ function! s:handle_exception(exception) abort " {{{
   call gista#util#prompt#error(a:exception)
 endfunction " }}}
 function! gista#command#post#call(...) abort " {{{
-  let options = get(a:000, 0, {})
+  let options = extend({
+        \ 'filenames': [],
+        \ 'contents': [],
+        \}, get(a:000, 0, {}),
+        \)
   try
-    let content = gista#api#call_post(options)
-    let b:gista = {
-          \ 'apiname': gista#api#get_current_apiname(),
-          \ 'username': gista#api#get_current_username(),
-          \ 'anonymous': gista#api#get_current_anonymous(),
-          \ 'gistid': gista#api#post#get_current_gistid(),
-          \}
+    let gist = gista#api#post#post(
+          \ options.filenames, options.contents, options,
+          \)
+    let client = gista#api#get_current_client()
+    for filename in options.filenames
+      if bufexists(filename)
+        call setbufvar(bufnr(filename), 'gista', {
+              \ 'apiname': client.apiname,
+              \ 'username': client.get_authorized_username(),
+              \ 'gistid': gist.id,
+              \ 'filename': fnamemodify(expand(filename), ':t'),
+              \})
+      endif
+    endfor
     redraw
+    call gista#command#list#update_if_necessary()
     call gista#util#prompt#info(printf(
-          \ 'The content has posted to a gist "%s"',
-          \ content.id,
+          \ 'The content(s) has posted to a gist "%s"',
+          \ gist.id,
           \))
-    return content
+    return gist
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return ''
@@ -43,27 +55,10 @@ function! gista#command#post#call(...) abort " {{{
 endfunction " }}}
 
 function! s:get_parser() abort " {{{
-  if !exists('s:parser')
+  if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
           \ 'name': 'Gista post',
           \ 'description': 'Post contents into a new gist',
-          \})
-    call s:parser.add_argument(
-          \ '--apiname',
-          \ 'An API name', {
-          \   'type': s:A.types.value,
-          \   'complete': function('g:gista#api#complete_apiname'),
-          \})
-    call s:parser.add_argument(
-          \ '--username',
-          \ 'A username of an API account.', {
-          \   'type': s:A.types.value,
-          \   'complete': function('g:gista#api#complete_username'),
-          \})
-    call s:parser.add_argument(
-          \ '--anonymous',
-          \ 'Request gists as an anonymous user', {
-          \   'deniable': 1,
           \})
     call s:parser.add_argument(
           \ '--description', '-d',
@@ -89,8 +84,9 @@ function! s:get_parser() abort " {{{
   endif
   return s:parser
 endfunction " }}}
-function! gista#command#post#command(bang, range, ...) abort " {{{
-  let options = s:get_parser().parse(a:bang, a:range, get(a:000, 0, ''))
+function! gista#command#post#command(...) abort " {{{
+  let parser  = s:get_parser()
+  let options = call(parser.parse, a:000, parser)
   if empty(options)
     return
   endif
@@ -99,21 +95,29 @@ function! gista#command#post#command(bang, range, ...) abort " {{{
         \ deepcopy(g:gista#command#post#default_options),
         \ options,
         \)
-  " get filenames
-  let filenames = filter(map(
-        \ empty(options.__unknown__) ? ['%'] : options.__unknown__,
-        \ 'expand(v:val)',
-        \), 'bufexists(v:val) || filereadable(v:val)')
-  let contents = map(
-        \ copy(filenames),
-        \ 'bufexists(v:val) ? getbufline(v:val, 1, "$") : readfile(v:val)',
-        \)
+  if empty(options.__unknown__)
+    " Get content from the current buffer
+    let filenames = [expand('%')]
+    let contents = [
+          \ call('getline', options.__range__)
+          \]
+  else
+    let filenames = filter(
+          \ map(options.__unknown__, 'expand(v:val)'),
+          \ 'bufexists(v:val) || filereadable(v:val)',
+          \)
+    let contents = map(
+          \ copy(filenames),
+          \ 'bufexists(v:val) ? getbufline(v:val, 1, "$") : readfile(v:val)',
+          \)
+  endif
   let options.filenames = map(filenames, 'fnamemodify(v:val, ":t")')
   let options.contents = contents
   call gista#command#post#call(options)
 endfunction " }}}
-function! gista#command#post#complete(arglead, cmdline, cursorpos) abort " {{{
-  return s:get_parser().complete(a:arglead, a:cmdline, a:cursorpos)
+function! gista#command#post#complete(...) abort " {{{
+  let parser = s:get_parser()
+  return call(parser.complete, a:000, parser)
 endfunction " }}}
 
 call gista#define_variables('command#post', {

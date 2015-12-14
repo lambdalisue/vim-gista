@@ -5,25 +5,16 @@ let s:V = gista#vital()
 let s:L = s:V.import('Data.List')
 let s:J = s:V.import('Web.JSON')
 
-let s:current_gistid = ''
-
-function! s:set_current_gistid(value) abort " {{{
-  let s:current_gistid = a:value
-endfunction " }}}
-
-function! gista#api#post#get_current_gistid() abort " {{{
-  return s:current_gistid
-endfunction " }}}
-function! gista#api#post#call(client, ...) abort " {{{
+function! gista#api#post#post(filenames, contents, ...) abort " {{{
   let options = extend({
         \ 'verbose': 1,
         \ 'description': g:gista#api#post#interactive_description,
         \ 'public': g:gista#api#post#default_public,
-        \ 'filenames': [],
-        \ 'contents': [],
         \}, get(a:000, 0, {})
         \)
-  let anonymous = gista#api#get_current_anonymous()
+  let client = gista#api#get_current_client()
+  let username = client.get_authorized_username()
+
   " Description
   let description = ''
   if type(options.description) == type(0)
@@ -48,7 +39,7 @@ function! gista#api#post#call(client, ...) abort " {{{
         \ 'public': options.public ? s:J.true : s:J.false,
         \ 'files': {},
         \}
-  for [filename, content] in s:L.zip(options.filenames, options.contents)
+  for [filename, content] in s:L.zip(a:filenames, a:contents)
     if type(content) == type('')
       let gist.files[filename] = { 'content': content }
     elseif type(content) == type([])
@@ -62,42 +53,37 @@ function! gista#api#post#call(client, ...) abort " {{{
   if options.verbose
     redraw
     call gista#util#prompt#echo(printf(
-          \ 'Posting a gist to %s%s ...',
-          \ a:client.name,
-          \ anonymous
-          \   ? ' as an anonymous user'
-          \   : ''
+          \ 'Posting a gist to %s %s ...',
+          \ client.apiname,
+          \ empty(username)
+          \   ? 'as an anonymous user'
+          \   : username,
           \))
   endif
+
   let url = 'gists'
-  let res = a:client.post(url, gist, {}, {
+  let res = client.post(url, gist, {}, {
         \ 'verbose': options.verbose,
-        \ 'anonymous': anonymous,
         \})
   let res.content = get(res, 'content', '')
   let res.content = empty(res.content) ? {} : s:J.decode(res.content)
   if res.status != 201
-    call gista#util#prompt#throw(
-          \ printf('%s: %s', res.status, res.statusText),
-          \ get(res.content, 'message', ''),
+    call gista#api#throw(res)
+  endif
+
+  let gist = gista#gist#mark_fetched(res.content)
+  call client.content_cache.set(gist.id, gist)
+  if !empty(username)
+    call gista#gist#apply_to_entry_cache(
+          \ client, gist.id,
+          \ function('gista#gist#mark_fetched'),
+          \)
+    call gista#gist#apply_to_entry_cache(
+          \ client, gist.id,
+          \ function('gista#gist#unmark_modified'),
           \)
   endif
-  call s:set_current_gistid(res.content.id)
-  call a:client.content_cache.set(res.content.id, res.content)
-  " update entry cache as well if post as non anonymous user
-  if !anonymous
-    call gista#gist#update_entry_cache(
-          \ a:client,
-          \ a:client.get_authorized_username(),
-          \ res.content,
-          \)
-    call gista#gist#update_entry_cache(
-          \ a:client,
-          \ 'starred',
-          \ res.content,
-          \)
-  endif
-  return res.content
+  return gist
 endfunction " }}}
 
 " Configure variables

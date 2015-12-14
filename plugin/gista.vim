@@ -6,12 +6,11 @@ command! -nargs=? -range=% -bang
       \ Gista
       \ :call gista#command#command(<q-bang>, [<line1>, <line2>], <f-args>)
 
-augroup vim_gista_global
+augroup vim_gista_read_file
   autocmd!
+  autocmd SourceCmd   gista:*:*:* call gista#autocmd#call('SourceCmd')
   autocmd BufReadCmd  gista:*:*:* call gista#autocmd#call('BufReadCmd')
   autocmd FileReadCmd gista:*:*:* call gista#autocmd#call('FileReadCmd')
-  autocmd BufWriteCmd  gista:*:*:* call gista#autocmd#call('BufWriteCmd')
-  autocmd FileWriteCmd gista:*:*:* call gista#autocmd#call('FileWriteCmd')
 augroup END
 
 let &cpo = s:save_cpo

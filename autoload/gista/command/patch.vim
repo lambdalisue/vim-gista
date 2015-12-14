@@ -24,19 +24,23 @@ endfunction " }}}
 function! gista#command#patch#call(...) abort " {{{
   let options = get(a:000, 0, {})
   try
-    let content = gista#api#call_patch(options)
+    let gist = gista#api#patch#patch(
+          \ options.gistid, options
+          \)
+    let client = gista#api#get_current_client()
     let b:gista = {
-          \ 'apiname': gista#api#get_current_apiname(),
-          \ 'username': gista#api#get_current_username(),
-          \ 'anonymous': 0,
-          \ 'gistid': gista#api#patch#get_current_gistid(),
+          \ 'apiname': client.apiname,
+          \ 'username': client.get_authorized_username(),
+          \ 'gistid': gist.id,
+          \ 'filename': expand('%:t'),
           \}
     redraw
+    call gista#command#list#update_if_necessary()
     call gista#util#prompt#info(printf(
           \ 'The content has patched to the gist "%s"',
-          \ content.id,
+          \ gist.id,
           \))
-    return content
+    return gist
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return ''
@@ -44,7 +48,7 @@ function! gista#command#patch#call(...) abort " {{{
 endfunction " }}}
 
 function! s:get_parser() abort " {{{
-  if !exists('s:parser')
+  if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
           \ 'name': 'Gista patch',
           \ 'description': 'Patch a current buffer content into an existing gist',
@@ -52,19 +56,7 @@ function! s:get_parser() abort " {{{
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#api#complete_gistid'),
-          \})
-    call s:parser.add_argument(
-          \ '--apiname',
-          \ 'An API name', {
-          \   'type': s:A.types.value,
-          \   'complete': function('g:gista#api#complete_apiname'),
-          \})
-    call s:parser.add_argument(
-          \ '--username',
-          \ 'A username of an API account.', {
-          \   'type': s:A.types.value,
-          \   'complete': function('g:gista#api#complete_username'),
+          \   'complete': function('g:gista#api#get#complete_gistid'),
           \})
     call s:parser.add_argument(
           \ '--description', '-d',
@@ -74,8 +66,9 @@ function! s:get_parser() abort " {{{
   endif
   return s:parser
 endfunction " }}}
-function! gista#command#patch#command(bang, range, ...) abort " {{{
-  let options = s:get_parser().parse(a:bang, a:range, get(a:000, 0, ''))
+function! gista#command#patch#command(...) abort " {{{
+  let parser  = s:get_parser()
+  let options = call(parser.parse, a:000, parser)
   if empty(options)
     return
   endif
@@ -87,11 +80,14 @@ function! gista#command#patch#command(bang, range, ...) abort " {{{
   " get filenames
   " not like post, patch only support a current buffer
   let options.filenames = [expand('%:t')]
-  let options.contents  = [getline(1, '$')]
+  let options.contents = [
+        \ call('getline', options.__range__)
+        \]
   call gista#command#patch#call(options)
 endfunction " }}}
-function! gista#command#patch#complete(arglead, cmdline, cursorpos) abort " {{{
-  return s:get_parser().complete(a:arglead, a:cmdline, a:cursorpos)
+function! gista#command#patch#complete(...) abort " {{{
+  let parser = s:get_parser()
+  return call(parser.complete, a:000, parser)
 endfunction " }}}
 
 call gista#define_variables('command#patch', {

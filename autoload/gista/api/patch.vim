@@ -1,35 +1,32 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-
 let s:V = gista#vital()
 let s:L = s:V.import('Data.List')
 let s:J = s:V.import('Web.JSON')
 
-let s:current_gistid = ''
-
-function! s:set_current_gistid(value) abort " {{{
-  let s:current_gistid = a:value
-endfunction " }}}
-
-function! gista#api#patch#get_current_gistid() abort " {{{
-  return s:current_gistid
-endfunction " }}}
-function! gista#api#patch#call(client, ...) abort " {{{
+function! gista#api#patch#patch(gistid, ...) abort " {{{
   let options = extend({
         \ 'verbose': 1,
-        \ 'gistid': '',
+        \ 'fresh': 0,
         \ 'description': g:gista#api#patch#interactive_description,
         \ 'filenames': [],
         \ 'contents': [],
         \}, get(a:000, 0, {})
         \)
-  if gista#api#get_current_anonymous()
+  let client = gista#api#get_current_client()
+  let username = client.get_authorized_username()
+  if empty(username)
     call gista#util#prompt#throw(
           \ 'Patching a gist cannot be performed as an anonymous user',
           \)
   endif
-  let gist = gista#api#get#call(a:client, options)
+
+  let gist = gista#api#get#get(a:gistid, {
+        \ 'verbose': options.verbose,
+        \ 'fresh': options.fresh,
+        \})
+
   " Description
   let description = gist.description
   if type(options.description) == type(0)
@@ -70,44 +67,38 @@ function! gista#api#patch#call(client, ...) abort " {{{
   if options.verbose
     redraw
     call gista#util#prompt#echo(printf(
-          \ 'Patching a gist "%s" to %s ...',
+          \ 'Patching a gist "%s" to %s as %s...',
           \ gist.id,
-          \ a:client.name,
+          \ client.apiname,
+          \ username,
           \))
   endif
-  let url = 'gists/' . gist.id
-  let res = a:client.patch(url, partial_gist, {}, {
+  let res = client.patch('gists/' . gist.id, partial_gist, {}, {
         \ 'verbose': options.verbose,
-        \ 'anonymous': 0,
         \})
   let res.content = get(res, 'content', '')
   let res.content = empty(res.content) ? {} : s:J.decode(res.content)
-  if res.status != 201
-    call gista#util#prompt#throw(
-          \ printf('%s: %s', res.status, res.statusText),
-          \ get(res.content, 'message', ''),
-          \)
+  if res.status != 200
+    call gista#api#throw(res)
   endif
-  call s:set_current_gistid(res.content.id)
-  call a:client.content_cache.set(res.content.id, res.content)
-  " update entry cache as well if post as non anonymous user
-  call gista#util#entry#update_entry_cache(
-        \ a:client,
-        \ a:client.get_authorized_username(),
-        \ res.content,
+
+  let gist = gista#gist#mark_fetched(res.content)
+  call client.content_cache.set(gist.id, gist)
+  call gista#gist#apply_to_entry_cache(
+        \ client, gist.id,
+        \ function('gista#gist#mark_fetched'),
         \)
-  call gista#util#entry#update_entry_cache(
-        \ a:client,
-        \ 'starred',
-        \ res.content,
+  call gista#gist#apply_to_entry_cache(
+        \ client, gist.id,
+        \ function('gista#gist#unmark_modified'),
         \)
-  return res.content
+  return gist
 endfunction " }}}
 
 " Configure variables
 call gista#define_variables('api#patch', {
-      \ 'interactive_description': 1,
-      \ 'allow_empty_description': 0,
+      \ 'interactive_description': 0,
+      \ 'allow_empty_description': 1,
       \})
 
 

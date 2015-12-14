@@ -35,9 +35,13 @@ function! gista#util#buffer#read_content(content, ...) abort " {{{
   " Save the content into a tempfile and read the tempfile to achieve Vim's
   " encoding detection
   let tempfile = get(a:000, 0, tempname())
+  let is_keepjumps = get(a:000, 1)
   try
     call writefile(a:content, tempfile)
-    execute printf('read %s', tempfile)
+    execute printf('%sread %s',
+          \ is_keepjumps ? 'keepjumps ' : '',
+          \ tempfile,
+          \)
   finally
     call delete(tempfile)
   endtry
@@ -48,10 +52,12 @@ function! gista#util#buffer#edit_content(content, ...) abort " {{{
   let saved_undolevels = &l:undolevels
   let &l:modifiable=1
   let &l:undolevels=-1
-  keepjump silent %delete_
-  silent call gista#util#buffer#read_content(a:content, get(a:000, 0, tempname()))
-  keepjump silent 1delete_
-  keepjump call setpos('.', saved_cursor)
+  silent keepjumps %delete_
+  silent call gista#util#buffer#read_content(
+        \ a:content, get(a:000, 0, tempname()), 1
+        \)
+  silent keepjumps 1delete_
+  keepjumps call setpos('.', saved_cursor)
   let &l:modifiable = saved_modifiable
   let &l:undolevels = saved_undolevels
   setlocal nomodified
