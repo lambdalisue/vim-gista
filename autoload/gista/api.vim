@@ -293,7 +293,7 @@ function! gista#api#complete_username(arglead, cmdline, cursorpos, ...) abort " 
   endtry
 endfunction " }}}
 
-function! gista#api#throw(res) abort " {{{
+function! gista#api#throw_api_exception(res) abort " {{{
   call gista#util#prompt#throw(s:G.build_exception_message(a:res))
 endfunction " }}}
 

@@ -24,7 +24,7 @@ endfunction " }}}
 function! gista#command#patch#call(...) abort " {{{
   let options = get(a:000, 0, {})
   try
-    let gist = gista#api#patch#patch(
+    let gist = gista#api#gists#patch(
           \ options.gistid, options
           \)
     let client = gista#api#get_current_client()
@@ -56,7 +56,7 @@ function! s:get_parser() abort " {{{
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#api#get#complete_gistid'),
+          \   'complete': function('g:gista#api#gists#complete_gistid'),
           \})
     call s:parser.add_argument(
           \ '--description', '-d',

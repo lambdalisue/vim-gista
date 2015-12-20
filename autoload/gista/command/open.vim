@@ -29,10 +29,10 @@ function! gista#command#open#read(...) abort " {{{
         \}, get(a:000, 0, {}),
         \)
   try
-    let gist = gista#api#get#get(
+    let gist = gista#api#gists#get(
           \ options.gistid, options
           \)
-    let content = gista#api#get#content(
+    let content = gista#api#gists#get_content(
           \ gist, options.filename, options,
           \)
     call gista#util#buffer#read_content(
@@ -52,10 +52,10 @@ function! gista#command#open#edit(...) abort " {{{
         \}, get(a:000, 0, {})
         \)
   try
-    let gist = gista#api#get#get(
+    let gist = gista#api#gists#get(
           \ options.gistid, options
           \)
-    let content = gista#api#get#content(
+    let content = gista#api#gists#get_content(
           \ gist, options.filename, options,
           \)
   catch /^vim-gista:/
@@ -131,13 +131,13 @@ function! s:get_parser() abort " {{{
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#api#get#complete_gistid'),
+          \   'complete': function('g:gista#api#gists#complete_gistid'),
           \   'type': s:A.types.value,
           \})
     call s:parser.add_argument(
           \ 'filename',
           \ 'A filename', {
-          \   'complete': function('g:gista#api#get#complete_filename'),
+          \   'complete': function('g:gista#api#gists#complete_filename'),
           \   'type': s:A.types.value,
           \})
     call s:parser.add_argument(

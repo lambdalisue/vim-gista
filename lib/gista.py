@@ -110,7 +110,6 @@ def request(url, token,
         workers = [Thread(**kwargs) for n in range(nprocess)]
         for worker in workers:
             worker.start()
-        # join until all quese are processed and all workers has terminated
         for worker in workers:
             worker.join()
         # merge and flatten entries

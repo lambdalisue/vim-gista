@@ -17,7 +17,7 @@ function! gista#api#star#get(gistid, ...) abort " {{{
           \)
   endif
 
-  let gist = gista#api#get#call(a:gistid, options)
+  let gist = gista#api#gists#get(a:gistid, options)
   if options.verbose
     redraw
     call gista#util#prompt#echo(printf(
@@ -36,7 +36,7 @@ function! gista#api#star#get(gistid, ...) abort " {{{
   elseif res.status == 404
     return 0
   else
-    call gista#api#throw(res)
+    call gista#api#throw_api_exception(res)
   endif
 endfunction " }}}
 function! gista#api#star#put(gistid, ...) abort " {{{
@@ -52,7 +52,7 @@ function! gista#api#star#put(gistid, ...) abort " {{{
           \)
   endif
 
-  let gist = gista#api#get#call(a:gistid, options)
+  let gist = gista#api#gists#get(a:gistid, options)
   if options.verbose
     redraw
     call gista#util#prompt#echo(printf(
@@ -70,7 +70,7 @@ function! gista#api#star#put(gistid, ...) abort " {{{
   if res.status == 204
     return
   else
-    call gista#api#throw(res)
+    call gista#api#throw_api_exception(res)
   endif
 endfunction " }}}
 function! gista#api#star#delete(gistid, ...) abort " {{{
@@ -86,7 +86,7 @@ function! gista#api#star#delete(gistid, ...) abort " {{{
           \)
   endif
 
-  let gist = gista#api#get#call(a:gistid, options)
+  let gist = gista#api#gists#get(a:gistid, options)
   if options.verbose
     redraw
     call gista#util#prompt#echo(printf(
@@ -103,7 +103,7 @@ function! gista#api#star#delete(gistid, ...) abort " {{{
   if res.status == 204
     return
   else
-    call gista#api#throw(res)
+    call gista#api#throw_api_exception(res)
   endif
 endfunction " }}}
 

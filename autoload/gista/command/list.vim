@@ -95,7 +95,7 @@ function! gista#command#list#call(...) abort " {{{
         \}, get(a:000, 0, {}),
         \)
   try
-    let content = gista#api#list#list(
+    let content = gista#api#gists#list(
           \ options.lookup, options
           \)
     return content
@@ -111,7 +111,7 @@ function! gista#command#list#open(...) abort " {{{
         \}, get(a:000, 0, {})
         \)
   try
-    let content = gista#api#list#list(
+    let content = gista#api#gists#list(
           \ options.lookup, options
           \)
     let client = gista#api#get_current_client()
@@ -137,12 +137,6 @@ function! gista#command#list#open(...) abort " {{{
         \ 'opener': opener,
         \})
   call s:set_content(content)
-  if !ret.loaded
-    " I don't know why but somehow the line below is required to assign
-    " syntax again
-    setlocal filetype=gista-list
-    return
-  endif
   noremap <buffer><silent> <Plug>(gista-quit)
         \ :<C-u>q<CR>
   noremap <buffer><silent> <Plug>(gista-update)
@@ -328,7 +322,7 @@ function! s:get_parser() abort " {{{
     call s:parser.add_argument(
           \ 'lookup',
           \ 'Gists lookup', {
-          \   'complete': function('gista#api#list#complete_lookup'), 
+          \   'complete': function('gista#api#gists#complete_lookup'), 
           \})
     call s:parser.add_argument(
           \ '--since', [

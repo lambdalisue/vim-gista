@@ -27,7 +27,7 @@ function! gista#command#post#call(...) abort " {{{
         \}, get(a:000, 0, {}),
         \)
   try
-    let gist = gista#api#post#post(
+    let gist = gista#api#gists#post(
           \ options.filenames, options.contents, options,
           \)
     let client = gista#api#get_current_client()

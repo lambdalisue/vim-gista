@@ -28,7 +28,7 @@ function! gista#command#json#read(...) abort " {{{
         \}, get(a:000, 0, {}),
         \)
   try
-    let gist = gista#api#get#get(
+    let gist = gista#api#gists#get(
           \ options.gistid, options
           \)
     let content = split(
@@ -51,7 +51,7 @@ function! gista#command#json#edit(...) abort " {{{
         \}, get(a:000, 0, {})
         \)
   try
-    let gist = gista#api#get#get(
+    let gist = gista#api#gists#get(
           \ options.gistid, options
           \)
     let content = split(
@@ -117,7 +117,7 @@ function! s:get_parser() abort " {{{
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#api#get#complete_gistid'),
+          \   'complete': function('g:gista#api#gists#complete_gistid'),
           \   'type': s:A.types.value,
           \})
     call s:parser.add_argument(

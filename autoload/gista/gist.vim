@@ -122,10 +122,8 @@ function! gista#gist#apply_to_entry_cache(client, gistid, fn) abort " {{{
   for lookup in lookups
     if a:client.entry_cache.has(lookup)
       let entries = a:client.entry_cache.get(lookup)
-      call a:client.entry_cache.set(
-            \ lookup,
-            \ map(entries, 'v:val.id ==# a:gistid ? a:fn(v:val) : v:val'),
-            \)
+      call map(entries, 'v:val.id ==# a:gistid ? a:fn(v:val) : v:val')
+      call a:client.entry_cache.set(lookup, gista#gist#sort_entries(entries))
     endif
   endfor
 endfunction " }}}

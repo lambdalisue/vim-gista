@@ -17,16 +17,16 @@ function! s:fetch_vim(client, url, params, indicator) abort " {{{
   let res.content = get(res, 'content', '')
   let res.content = empty(res.content) ? [] : s:J.decode(res.content)
   if res.status != 200
-    call gista#api#throw(res)
+    call gista#api#throw_api_exception(res)
   endif
   return res.content
 endfunction " }}}
 
-function! gista#api#fetch#vim(url, indicator, ...) abort " {{{
+function! gista#util#fetcher#vim(url, indicator, ...) abort " {{{
   let client = gista#api#get_current_client()
   let params = extend({
         \ 'since': '',
-        \ 'per_page': g:gista#api#fetch#default_per_page,
+        \ 'per_page': g:gista#util#fetcher#default_per_page,
         \}, get(a:000, 0, {})
         \)
   redraw
@@ -43,22 +43,22 @@ function! gista#api#fetch#vim(url, indicator, ...) abort " {{{
   endfor
   return entries
 endfunction " }}}
-function! gista#api#fetch#python(url, indicator, ...) abort " {{{
+function! gista#util#fetcher#python(url, indicator, ...) abort " {{{
   let client = gista#api#get_current_client()
   let params = extend({
         \ 'since': '',
-        \ 'per_page': g:gista#api#fetch#default_per_page,
+        \ 'per_page': g:gista#util#fetcher#default_per_page,
         \}, get(a:000, 0, {})
         \)
-  let g:gista#api#list#_temporary_kwargs = extend(copy(params), {
+  let g:gista#util#fetcher#_temporary_kwargs = extend(copy(params), {
         \ 'url': client.get_absolute_url(a:url),
         \ 'token': client.get_token(),
         \ 'indicator': a:indicator,
-        \ 'nprocess': g:gista#api#fetch#python_nprocess,
+        \ 'nprocess': g:gista#util#fetcher#python_nprocess,
         \})
   call gista#util#python#exec_code([
         \ 'from gista import request, echo_status_vim',
-        \ 'kwargs = vim.eval("g:gista#api#list#_temporary_kwargs")',
+        \ 'kwargs = vim.eval("g:gista#util#fetcher#_temporary_kwargs")',
         \ 'result = request(callback=echo_status_vim, **kwargs)',
         \])
   let [entries, exceptions] = gista#util#python#eval_code('result')
@@ -66,15 +66,16 @@ function! gista#api#fetch#python(url, indicator, ...) abort " {{{
     let errormsg = join(exceptions, "\n")
     call gista#util#prompt#throw(printf('python: %s', errormsg))
   endif
-  unlet g:gista#api#list#_temporary_kwargs
+  unlet g:gista#util#fetcher#_temporary_kwargs
   return entries
 endfunction " }}}
 
 " Configure variables
-call gista#define_variables('api#fetch', {
+call gista#define_variables('util#fetcher', {
       \ 'default_per_page': 100,
       \ 'python_nprocess': 50,
       \})
+
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo

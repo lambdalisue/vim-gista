@@ -17,7 +17,7 @@ function! gista#api#fork#post(gistid, ...) abort " {{{
           \)
   endif
 
-  let gist = gista#api#get#call(a:gistid, options)
+  let gist = gista#api#gists#get(a:gistid, options)
   if options.verbose
     redraw
     call gista#util#prompt#echo(printf(
@@ -34,7 +34,7 @@ function! gista#api#fork#post(gistid, ...) abort " {{{
   let res.content = get(res, 'content', '')
   let res.content = empty(res.content) ? {} : s:J.decode(res.content)
   if res.status != 201
-    call gista#api#throw(res)
+    call gista#api#throw_api_exception(res)
   endif
 
   let gist = gista#gist#mark_fetched(res.content)
