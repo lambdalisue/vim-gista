@@ -118,7 +118,6 @@ function! s:get_lookup(lookup) abort " {{{
   return s:get_valid_lookup(lookup)
 endfunction " }}}
 
-
 function! s:pick_necessary_params_of_content(content) abort " {{{
   return {
         \ 'size': a:content.size,
@@ -141,24 +140,6 @@ function! s:pick_necessary_params_of_entry(gist) abort " {{{
         \ '_gista_modified': get(a:gist, '_gista_modified', 0),
         \}
 endfunction " }}}
-function! s:merge_entries(lhs, rhs) abort " {{{
-  let known_gistids = map(copy(a:lhs), 'v:val.id')
-  return extend(
-        \ copy(a:lhs),
-        \ filter(
-        \   copy(a:rhs),
-        \   'index(known_gistids, v:val.id) == -1',
-        \ ),
-        \)
-endfunction " }}}
-function! s:remove_unmodified(content_cache, gistid) abort " {{{
-  if !a:content_cache.has(a:gistid)
-    return
-  endif
-  if !gista#gist#is_modified(a:content_cache.get(a:gistid))
-    call a:content_cache.remove(a:gistid)
-  endif
-endfunction " }}}
 
 " Resource API
 function! gista#api#gists#get_cache(gistid) abort " {{{
@@ -173,17 +154,8 @@ function! gista#api#gists#get(gistid, ...) abort " {{{
         \}, get(a:000, 0, {})
         \)
   let gist = gista#api#gists#get_cache(a:gistid)
-  if !empty(gist)
-    if options.fresh &&gista#gist#is_modified(gist)
-      if !gista#util#prompt#asktf(join([
-          \ 'The changes of the gist content has not been posted yet.',
-          \ 'Are you sure you want to overwrite the changes? ',
-          \], "\n"))
-        return gist
-      endif
-    elseif !options.fresh
-      return gist
-    endif
+  if !options.fresh && !empty(gist)
+    return gist
   endif
 
   let client = gista#api#get_current_client()
@@ -191,17 +163,15 @@ function! gista#api#gists#get(gistid, ...) abort " {{{
   if options.verbose
     redraw
     call gista#util#prompt#echo(printf(
-          \ 'Requesting a gist "%s" in %s %s ...',
+          \ 'Requesting a gist %s in %s as %s ...',
           \ gistid,
           \ client.apiname,
           \ empty(client.get_authorized_username())
-          \   ? 'as an anonymous user'
-          \   : 'as ' . client.get_authorized_username(),
+          \   ? 'an anonymous user'
+          \   : client.get_authorized_username(),
           \))
   endif
-  let res = client.get('gists/' . gistid, {}, {}, {
-        \ 'verbose': options.verbose,
-        \})
+  let res = client.get('gists/' . gistid)
   let res.content = get(res, 'content', '')
   let res.content = empty(res.content) ? {} : s:J.decode(res.content)
   if res.status != 200
@@ -252,8 +222,13 @@ function! gista#api#gists#list(lookup, ...) abort " {{{
         \ 'since': 1,
         \ 'fresh': 0,
         \ 'python': has('python') || has('python3'),
+        \ 'verbose': 1,
         \}, get(a:000, 0, {})
         \)
+  if options.verbose
+    redraw
+    call gista#util#prompt#echo('Loading gists from cache ...')
+  endif
   let cached_content = gista#api#gists#list_cache(a:lookup)
   if !options.fresh && !empty(cached_content.entries)
     return cached_content
@@ -281,57 +256,76 @@ function! gista#api#gists#list(lookup, ...) abort " {{{
   else
     let url = 'gists/public'
   endif
-
   " fetch entries
   let indicator = printf(
-        \ 'Requesting gists of "%s" in %s as %s %%%%(page)d/%%(page_count)d ...',
+        \ 'Requesting gists of %s in %s as %s %%%%(page)d/%%(page_count)d ...',
         \ lookup,
         \ client.apiname,
         \ empty(username)
         \   ? 'an anonymous user'
         \   : username,
         \)
-  let fetched_entries = client.retrieve(url, { 'since': since }, {}, {
-        \ 'python': options.python,
+  let cached_entries  = cached_content.entries
+  let fetched_entries = client.retrieve({
+        \ 'verbose': options.verbose,
+        \ 'url': url,
+        \ 'param': {
+        \   'since': since,
+        \ },
         \ 'indicator': indicator,
+        \ 'python': options.python,
         \})
-  redraw
-  call gista#util#prompt#echo('Removing unnecessary params ...')
+  " Remove unnecessary params
+  if options.verbose
+    redraw
+    call gista#util#prompt#echo('Removing unnecessary params of gists ...')
+  endif
   call map(
         \ fetched_entries,
-        \ 'gista#gist#pick_necessary_params_of_entry(v:val)'
+        \ 's:pick_necessary_params_of_entry(v:val)'
         \)
+  " Create fetched entry gistids
+  let fetched_entry_ids = map(copy(fetched_entries), 'v:val.id')
 
-  if empty(since)
-    " fetched_entries are corresponding to the actual entries in API
-    " so overwrite cache_entries with fetched_entries
+  if empty(since) || lookup ==# 'public'
+    " if 'since' is empty, fetched_entries should represent entire entires in
+    " API thus no entry merging is required.
+    " if 'lookup' is 'public', the entries change too often and cache size
+    " would be infinity thus forget about the previous cached entries
     let entries = fetched_entries
   else
-    " fetched_entries are partial entries in API
-    " so merge entries with cached_entries
-    redraw
-    call gista#util#prompt#echo('Removing duplicated gist entries ...')
-    let entries = gista#gist#merge_entries(
-          \ fetched_entries, cached_content.entries
-          \)
+    if options.verbose
+      redraw
+      call gista#util#prompt#echo('Removing duplicated entries ...')
+    endif
+    " Note: fetched_entries is also modified
+    let entries = extend(fetched_entries, filter(
+          \ cached_content.entries,
+          \ 'index(fetched_entry_ids, v:val.id) == -1'
+          \))
   endif
 
-  redraw
-  call gista#util#prompt#echo('Updating entry caches ...')
+  " Remove corresponding content cache
+  if options.verbose
+    redraw
+    call gista#util#prompt#echo('Removing corresponding content caches ...')
+  endif
+  call map(copy(fetched_entry_ids), 'client.content_cache.remove(v:val)')
+
+  " Update entry cache
+  if options.verbose
+    redraw
+    call gista#util#prompt#echo('Updating entry caches ...')
+  endif
   call client.entry_cache.set(lookup, entries)
 
-  redraw
-  call gista#util#prompt#echo('Removing corresponding content caches ...')
-  call map(
-        \ copy(fetched_entries),
-        \ 's:remove_unmodified(client.content_cache, v:val.id)'
-        \)
-
-  redraw
-  call gista#util#prompt#echo(printf(
-        \ '%d gist entries were listed.',
-        \ len(fetched_entries),
-        \))
+  if options.verbose
+    redraw
+    call gista#util#prompt#echo(printf(
+          \ '%d gist entries were listed.',
+          \ len(fetched_entry_ids),
+          \))
+  endif
   return {
         \ 'lookup': lookup,
         \ 'entries': entries,
@@ -395,9 +389,7 @@ function! gista#api#gists#post(filenames, contents, ...) abort " {{{
   endif
 
   let url = 'gists'
-  let res = client.post(url, gist, {}, {
-        \ 'verbose': options.verbose,
-        \})
+  let res = client.post(url, gist)
   let res.content = get(res, 'content', '')
   let res.content = empty(res.content) ? {} : s:J.decode(res.content)
   if res.status != 201
@@ -486,9 +478,7 @@ function! gista#api#gists#patch(gistid, ...) abort " {{{
           \ username,
           \))
   endif
-  let res = client.patch('gists/' . gist.id, partial_gist, {}, {
-        \ 'verbose': options.verbose,
-        \})
+  let res = client.patch('gists/' . gist.id, partial_gist)
   let res.content = get(res, 'content', '')
   let res.content = empty(res.content) ? {} : s:J.decode(res.content)
   if res.status != 200
@@ -531,9 +521,7 @@ function! gista#api#gists#delete(gistid, ...) abort " {{{
           \ username,
           \))
   endif
-  let res = client.delete('gists/' . gistid, {}, {}, {
-        \ 'verbose': options.verbose,
-        \})
+  let res = client.delete('gists/' . gistid)
   if res.status != 204
     call gista#api#throw_api_exception(res)
   endif

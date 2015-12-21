@@ -10,7 +10,6 @@ function! s:handle_exception(exception) abort " {{{
         \ '^vim-gista: Login canceled',
         \ '^vim-gista: ValidationError: An API name cannot be empty',
         \ '^vim-gista: ValidationError: An API account username cannot be empty',
-        \ '^vim-gista: ValidationError: A gist ID cannot be empty',
         \]
   for pattern in canceled_by_user_patterns
     if a:exception =~# pattern
@@ -21,26 +20,30 @@ function! s:handle_exception(exception) abort " {{{
   " else
   call gista#util#prompt#error(a:exception)
 endfunction " }}}
-function! gista#command#patch#call(...) abort " {{{
+function! gista#command#delete#call(...) abort " {{{
   let options = extend({
         \ 'gistid': '',
         \}, get(a:000, 0, {}),
         \)
   try
-    let gist = gista#api#gists#patch(
-          \ options.gistid, options
+    let gist = gista#api#gists#delete_cache(
+          \ options.gistid, options,
           \)
     let client = gista#api#get_current_client()
-    let b:gista = {
-          \ 'apiname': client.apiname,
-          \ 'username': client.get_authorized_username(),
-          \ 'gistid': gist.id,
-          \ 'filename': expand('%:t'),
-          \}
+    for filename in options.filenames
+      if bufexists(filename)
+        call setbufvar(bufnr(filename), 'gista', {
+              \ 'apiname': client.apiname,
+              \ 'username': client.get_authorized_username(),
+              \ 'gistid': gist.id,
+              \ 'filename': fnamemodify(expand(filename), ':t'),
+              \})
+      endif
+    endfor
     redraw
     call gista#command#list#update_if_necessary()
     call gista#util#prompt#info(printf(
-          \ 'The content has patched to the gist "%s"',
+          \ 'The content(s) has posted to a gist "%s"',
           \ gist.id,
           \))
     return gist
@@ -53,23 +56,18 @@ endfunction " }}}
 function! s:get_parser() abort " {{{
   if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
-          \ 'name': 'Gista patch',
-          \ 'description': 'Patch a current buffer content into an existing gist',
+          \ 'name': 'Gista delete',
+          \ 'description': 'Delete a gist',
           \})
     call s:parser.add_argument(
-          \ 'gistid',
-          \ 'A gist ID', {
-          \   'complete': function('g:gista#api#gists#complete_gistid'),
-          \})
-    call s:parser.add_argument(
-          \ '--description', '-d',
-          \ 'A description of a gist', {
+          \ '--remote', '-r',
+          \ 'Delete a gist from remote as well', {
           \   'type': s:A.types.value,
           \})
   endif
   return s:parser
 endfunction " }}}
-function! gista#command#patch#command(...) abort " {{{
+function! gista#command#delete#command(...) abort " {{{
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
@@ -77,25 +75,38 @@ function! gista#command#patch#command(...) abort " {{{
   endif
   " extend default options
   let options = extend(
-        \ deepcopy(g:gista#command#patch#default_options),
+        \ deepcopy(g:gista#command#post#default_options),
         \ options,
         \)
-  " get filenames
-  " not like post, patch only support a current buffer
-  let options.filenames = [expand('%:t')]
-  let options.contents = [
-        \ call('getline', options.__range__)
-        \]
-  call gista#command#patch#call(options)
+  if empty(options.__unknown__)
+    " Get content from the current buffer
+    let filenames = [expand('%')]
+    let contents = [
+          \ call('getline', options.__range__)
+          \]
+  else
+    let filenames = filter(
+          \ map(options.__unknown__, 'expand(v:val)'),
+          \ 'bufexists(v:val) || filereadable(v:val)',
+          \)
+    let contents = map(
+          \ copy(filenames),
+          \ 'bufexists(v:val) ? getbufline(v:val, 1, "$") : readfile(v:val)',
+          \)
+  endif
+  let options.filenames = map(filenames, 'fnamemodify(v:val, ":t")')
+  let options.contents = contents
+  call gista#command#post#call(options)
 endfunction " }}}
-function! gista#command#patch#complete(...) abort " {{{
+function! gista#command#delete#complete(...) abort " {{{
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
 endfunction " }}}
 
-call gista#define_variables('command#patch', {
+call gista#define_variables('command#delete', {
       \ 'default_options': {},
       \})
+
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo

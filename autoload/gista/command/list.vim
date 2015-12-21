@@ -44,10 +44,12 @@ function! s:get_entry(index, ...) abort " {{{
 endfunction " }}}
 function! s:set_content(content) abort " {{{
   let client = gista#api#get_current_client()
+  let apiname = client.apiname
   call gista#util#buffer#edit_content(map(
         \ copy(a:content.entries),
-        \ 's:format_entry(client.apiname, v:val)')
+        \ 's:format_entry(apiname, v:val)')
         \)
+  redraw
   let b:gista = {
         \ 'winwidth': winwidth(0),
         \ 'apiname': client.apiname,
@@ -95,10 +97,7 @@ function! gista#command#list#call(...) abort " {{{
         \}, get(a:000, 0, {}),
         \)
   try
-    let content = gista#api#gists#list(
-          \ options.lookup, options
-          \)
-    return content
+    return gista#api#gists#list(options.lookup, options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return []
@@ -111,9 +110,7 @@ function! gista#command#list#open(...) abort " {{{
         \}, get(a:000, 0, {})
         \)
   try
-    let content = gista#api#gists#list(
-          \ options.lookup, options
-          \)
+    let content = gista#api#gists#list(options.lookup, options)
     let client = gista#api#get_current_client()
     if !len(content.entries)
       redraw
@@ -296,12 +293,14 @@ endfunction " }}}
 function! s:action_update(...) range abort " {{{
   let fresh = get(a:000, 0)
   let options = {
+        \ 'verbose': 1,
         \ 'apiname': b:gista.apiname,
         \ 'username': b:gista.username,
         \ 'lookup': b:gista.lookup,
         \ 'fresh': fresh,
         \}
-  call s:set_content(gista#command#list#call(options))
+  let content = gista#command#list#call(options)
+  call s:set_content(content)
 endfunction " }}}
 function! s:action_toggle_datetime(...) range abort " {{{
   let datetime = s:get_current_datetime()
@@ -317,13 +316,20 @@ function! s:get_parser() abort " {{{
   if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
           \ 'name': 'Gista[!] list',
-          \ 'description': 'List gists of a paricular lookup',
+          \ 'description': [
+          \   'List gists of a paricular lookup.',
+          \   'A bang (!) is a short form of "--fresh --no-since".',
+          \ ],
           \})
     call s:parser.add_argument(
           \ 'lookup',
           \ 'Gists lookup', {
           \   'complete': function('gista#api#gists#complete_lookup'), 
           \})
+    call s:parser.add_argument(
+          \ 'fresh',
+          \ 'Request new/updated gists from API',
+          \)
     call s:parser.add_argument(
           \ '--since', [
           \   'Request gists created/updated later than a paricular timestamp',
@@ -355,7 +361,10 @@ function! gista#command#list#command(...) abort " {{{
         \ deepcopy(g:gista#command#list#default_options),
         \ options,
         \)
-  let options.fresh = options.__bang__
+  if options.__bang__
+    let options.fresh = 1
+    let options.since = ''
+  endif
   call gista#command#list#open(options)
 endfunction " }}}
 function! gista#command#list#complete(...) abort " {{{

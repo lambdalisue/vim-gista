@@ -47,7 +47,7 @@ function! gista#util#buffer#read_content(content, ...) abort " {{{
   endtry
 endfunction " }}}
 function! gista#util#buffer#edit_content(content, ...) abort " {{{
-  let saved_cursor = gista#util#compat#getcurpos()
+  let saved_cursor = getpos('.')
   let saved_modifiable = &l:modifiable
   let saved_undolevels = &l:undolevels
   let &l:modifiable=1

@@ -66,7 +66,11 @@ function! s:_authorize(client, username, password, ...) abort " {{{
       echo 'Requesting an authorization token ...'
     endif
   endif
-  return a:client.post(url, params, headers, {
+  return a:client.request({
+        \ 'method': 'POST',
+        \ 'url': url,
+        \ 'data': s:J.encode(params),
+        \ 'headers': headers,
         \ 'username': a:username,
         \ 'password': a:password,
         \ 'authMethod': 'basic',
@@ -199,14 +203,16 @@ function! s:_build_rate_limit_message(rate_limit, ...) abort " {{{
         \)
 endfunction " }}}
 
-function! s:_retrieve_vim_partial(client, url, params, headers, settings, indicator, page) abort " {{{
+function! s:_retrieve_vim_partial(client, settings, indicator, page) abort " {{{
   if a:settings.verbose
     redraw | echo substitute(a:indicator, '%(page)d', a:page, 'g')
   endif
-  let params = extend(copy(a:params), {
-        \ 'page': a:page,
-        \})
-  let res = a:client.get(a:url, params, a:headers, a:settings)
+  let res = a:client.get(
+        \ a:settings.url,
+        \ extend(copy(a:settings.param), {
+        \  'page': a:page,
+        \ })
+        \)
   if res.status != 200
     call s:_throw(s:build_exception_message(res))
   endif
@@ -214,15 +220,19 @@ function! s:_retrieve_vim_partial(client, url, params, headers, settings, indica
   let res.content = empty(res.content) ? [] : s:J.decode(res.content)
   return res.content
 endfunction " }}}
-function! s:_retrieve_vim(client, url, params, headers, settings) abort " {{{
+function! s:_retrieve_vim(client, settings) abort " {{{
   let page_start = a:settings.page_start
   if a:settings.page_end
     let page_end = a:settings.page_end
   else
     if a:settings.verbose
-      redraw | echo 'Requesting the total number of pages ...'
+      redraw
+      echo 'Requesting the total number of pages ...'
     endif
-    let response = a:client.head(a:url, a:params)
+    let response = a:client.head(
+          \ a:settings.url,
+          \ a:settings.param
+          \)
     let page_count_str = matchstr(
           \ get(s:parse_response_link(response), 'last', ''),
           \ '.*[&?]page=\zs\d\+\ze'
@@ -230,41 +240,42 @@ function! s:_retrieve_vim(client, url, params, headers, settings) abort " {{{
     let page_end = empty(page_count_str) ? 1 : str2nr(page_count_str)
   endif
   " retrieve pages
-  let indicator = a:settings.indicator
-  let indicator = substitute(indicator, '%(url)s', a:url, 'g')
-  let indicator = substitute(indicator, '%(page_count)d', page_end - page_start + 1, 'g')
-  let indicator = substitute(indicator, '%%', '%', 'g')
+  let ir = a:settings.indicator
+  let ir = substitute(ir, '%(url)s', a:settings.url, 'g')
+  let ir = substitute(ir, '%(page_count)d', page_end - page_start + 1, 'g')
+  let ir = substitute(ir, '%%', '%', 'g')
   let entries = []
-  for page in range(page_start, page_end)
-    let partial_entries = s:_retrieve_vim_partial(
-          \ a:client, a:url, a:params, a:headers, a:settings,
-          \ indicator, page
-          \)
-    call extend(entries, partial_entries)
-  endfor
+  call map(
+        \ range(page_start, page_end), join([
+        \   'extend(entries,',
+        \   '  s:_retrieve_vim_partial(a:client, a:settings, ir, v:val)',
+        \   ')',
+        \ ])
+        \)
   return entries
 endfunction " }}}
-function! s:_retrieve_python(client, url, params, headers, settings) abort " {{{
-  let filename = s:P.join(s:root, 'github.py')
-  let kwargs = extend(copy(a:params), {
+" @vimlint(EVL102, 1, l:kwargs)
+function! s:_retrieve_python(client, settings) abort " {{{
+  let kwargs = extend(copy(a:settings.param), {
         \ 'verbose': a:settings.verbose,
-        \ 'url': a:client.get_absolute_url(a:url),
+        \ 'url': a:client.get_absolute_url(a:settings.url),
         \ 'token': a:client.get_token(),
         \ 'indicator': a:settings.indicator,
-        \ 'nprocess': a:client.retrieve_python_nprocess,
+        \ 'nprocess': a:settings.python_nprocess,
         \ 'page_start': a:settings.page_start,
         \ 'page_end': a:settings.page_end,
         \})
   let namespace = {}
   execute s:Y.exec_file(
         \ s:P.join(s:root, 'github.py'),
-        \ a:client.retrieve_python == 1 ? 0 : a:client.retrieve_python
+        \ a:settings.python == 1 ? 0 : a:settings.python
         \)
   if has_key(namespace, 'exception')
-    throw namespace.exception
+    call s:_throw(namespace.exception)
   endif
   return namespace.entries
 endfunction " }}}
+" @vimlint(EVL102, 0, l:kwargs)
 
 " Public functions
 function! s:new(...) abort " {{{
@@ -481,93 +492,106 @@ endfunction " }}}
 function! s:client.head(url, ...) abort " {{{
   let params   = get(a:000, 0, {})
   let headers  = get(a:000, 1, {})
-  let settings = extend({
+  let settings = {
         \ 'method': 'HEAD',
         \ 'url': a:url,
         \ 'param': params,
         \ 'headers': headers,
-        \}, get(a:000, 2, {}),
-        \)
+        \}
   return self.request(settings)
 endfunction " }}}
 function! s:client.get(url, ...) abort " {{{
   let params   = get(a:000, 0, {})
   let headers  = get(a:000, 1, {})
-  let settings = extend({
+  let settings = {
         \ 'method': 'GET',
         \ 'url': a:url,
         \ 'param': params,
         \ 'headers': headers,
-        \}, get(a:000, 2, {}),
-        \)
+        \}
   return self.request(settings)
 endfunction " }}}
 function! s:client.post(url, ...) abort " {{{
-  let params   = get(a:000, 0, {})
+  let data     = get(a:000, 0, {})
   let headers  = get(a:000, 1, {})
-  let settings = extend({
+  let settings = {
         \ 'method': 'POST',
         \ 'url': a:url,
-        \ 'data': s:J.encode(params),
+        \ 'data': s:J.encode(data),
         \ 'headers': headers,
-        \}, get(a:000, 2, {}),
-        \)
+        \}
   return self.request(settings)
 endfunction " }}}
 function! s:client.put(url, ...) abort " {{{
-  let params   = get(a:000, 0, {})
+  let data     = get(a:000, 0, {})
   let headers  = get(a:000, 1, {})
-  let settings = extend({
+  let settings = {
         \ 'method': 'PUT',
         \ 'url': a:url,
-        \ 'data': s:J.encode(params),
+        \ 'data': s:J.encode(data),
         \ 'headers': headers,
-        \}, get(a:000, 2, {}),
-        \)
+        \}
   return self.request(settings)
 endfunction " }}}
 function! s:client.patch(url, ...) abort " {{{
-  let params   = get(a:000, 0, {})
+  let data     = get(a:000, 0, {})
   let headers  = get(a:000, 1, {})
-  let settings = extend({
+  let settings = {
         \ 'method': 'PATCH',
         \ 'url': a:url,
-        \ 'data': s:J.encode(params),
+        \ 'data': s:J.encode(data),
         \ 'headers': headers,
-        \}, get(a:000, 2, {}),
-        \)
+        \}
   return self.request(settings)
 endfunction " }}}
 function! s:client.delete(url, ...) abort " {{{
   let params   = get(a:000, 0, {})
   let headers  = get(a:000, 1, {})
-  let settings = extend({
+  let settings = {
         \ 'method': 'DELETE',
         \ 'url': a:url,
-        \ 'data': s:J.encode(params),
+        \ 'param': params,
         \ 'headers': headers,
-        \}, get(a:000, 2, {}),
-        \)
+        \}
   return self.request(settings)
 endfunction " }}}
 
-function! s:client.retrieve(url, ...) abort " {{{
-  let params = extend({
-        \ 'per_page': self.retrieve_per_page,
-        \}, get(a:000, 0, {})
-        \)
-  let headers = get(a:000, 1, {})
+function! s:client.retrieve(...) abort " {{{
+  if a:0 == 3
+    let settings = a:3
+    let settings.method = get(settings, 'method', a:1)
+    let settings.url = get(settings, 'url', a:2)
+  elseif a:0 == 2
+    if type(a:2) == type({})
+      let settings = a:2
+      let settings.method = get(settings, 'method', 'GET')
+      let settings.url = get(settings, 'url', a:1)
+    else
+      let settings = {}
+      let settings.method = get(settings, 'method', a:1)
+      let settings.url = get(settings, 'url', a:2)
+    endif
+  else
+    let settings = a:1
+  endif
+  " fill required default settings
   let settings = extend({
         \ 'verbose': 1,
-        \ 'indicator': self.retrieve_indicator,
-        \ 'python': self.retrieve_python,
         \ 'page_start': 1,
         \ 'page_end': 0,
-        \}, get(a:000, 2, {}),
+        \ 'indicator': self.retrieve_indicator,
+        \ 'python': self.retrieve_python,
+        \ 'python_nprocess': self.retrieve_python_nprocess,
+        \}, settings
+        \)
+  " fill required default param
+  let settings.param = extend({
+        \ 'per_page': self.retrieve_per_page,
+        \}, copy(get(settings, 'param', {}))
         \)
   return settings.python
-        \ ? s:_retrieve_python(self, a:url, params, headers, settings)
-        \ : s:_retrieve_vim(self, a:url, params, headers, settings)
+        \ ? s:_retrieve_python(self, settings)
+        \ : s:_retrieve_vim(self, settings)
 endfunction " }}}
 
 let &cpoptions = s:save_cpo

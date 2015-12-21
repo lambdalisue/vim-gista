@@ -179,7 +179,7 @@ def _vim_vital_web_api_github_main():
         entries = request_entries(**kwargs)
         namespace['entries'] = entries
     except:
-        namespace['exception'] = "vital: Web.API.GitHub: python: %s" % (
+        namespace['exception'] = "python: %s" % (
             format_exception(),
         )
 
