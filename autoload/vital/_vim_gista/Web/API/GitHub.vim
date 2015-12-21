@@ -1,6 +1,8 @@
 let s:save_cpo = &cpoptions
 set cpoptions&vim
 
+let s:root = expand('<sfile>:p:h')
+
 " default config
 let s:config = {}
 let s:config.baseurl = 'https://api.github.com/'
@@ -8,20 +10,28 @@ let s:config.authorize_scopes = []
 let s:config.authorize_note = printf('vim@%s:%s', hostname(), localtime())
 let s:config.authorize_note_url = ''
 let s:config.skip_authentication = 0
+let s:config.retrieve_python = has('python') || has('python3')
+let s:config.retrieve_python_nprocess = 50
+let s:config.retrieve_per_page = 100
+let s:config.retrieve_indicator =
+      \ 'Requesting entries from %(url)s [%%(page)d/%(page_count)d]'
 
 function! s:_vital_loaded(V) abort " {{{
   let s:C = a:V.import('System.Cache')
   let s:J = a:V.import('Web.JSON')
   let s:H = a:V.import('Web.HTTP')
   let s:T = a:V.import('DateTime')
+  let s:P = a:V.import('System.Filepath')
+  let s:Y = a:V.import('Vim.Python')
 endfunction " }}}
 function! s:_vital_depends() abort " {{{
-  return [
-        \ 'System.Cache',
-        \ 'Web.JSON',
-        \ 'Web.HTTP',
-        \ 'DateTime',
-        \]
+  return {
+        \ 'modules': [
+        \   'System.Cache', 'Web.JSON', 'Web.HTTP',
+        \   'DateTime', 'System.Filepath', 'Vim.Python'
+        \ ],
+        \ 'files': ['./github.py'],
+        \}
 endfunction " }}}
 
 function! s:_throw(msgs) abort " {{{
@@ -141,6 +151,7 @@ function! s:_authenticate(client, username, token, ...) abort " {{{
           \])
   endif
 endfunction " }}}
+
 function! s:_build_error_message(errors) abort " {{{
   let error_message = []
   for error in a:errors
@@ -188,16 +199,79 @@ function! s:_build_rate_limit_message(rate_limit, ...) abort " {{{
         \)
 endfunction " }}}
 
+function! s:_retrieve_vim_partial(client, url, params, headers, settings, indicator, page) abort " {{{
+  if a:settings.verbose
+    redraw | echo substitute(a:indicator, '%(page)d', a:page, 'g')
+  endif
+  let params = extend(copy(a:params), {
+        \ 'page': a:page,
+        \})
+  let res = a:client.get(a:url, params, a:headers, a:settings)
+  if res.status != 200
+    call s:_throw(s:build_exception_message(res))
+  endif
+  let res.content = get(res, 'content', '')
+  let res.content = empty(res.content) ? [] : s:J.decode(res.content)
+  return res.content
+endfunction " }}}
+function! s:_retrieve_vim(client, url, params, headers, settings) abort " {{{
+  let page_start = a:settings.page_start
+  if a:settings.page_end
+    let page_end = a:settings.page_end
+  else
+    if a:settings.verbose
+      redraw | echo 'Requesting the total number of pages ...'
+    endif
+    let response = a:client.head(a:url, a:params)
+    let page_count_str = matchstr(
+          \ get(s:parse_response_link(response), 'last', ''),
+          \ '.*[&?]page=\zs\d\+\ze'
+          \)
+    let page_end = empty(page_count_str) ? 1 : str2nr(page_count_str)
+  endif
+  " retrieve pages
+  let indicator = a:settings.indicator
+  let indicator = substitute(indicator, '%(url)s', a:url, 'g')
+  let indicator = substitute(indicator, '%(page_count)d', page_end - page_start + 1, 'g')
+  let indicator = substitute(indicator, '%%', '%', 'g')
+  let entries = []
+  for page in range(page_start, page_end)
+    let partial_entries = s:_retrieve_vim_partial(
+          \ a:client, a:url, a:params, a:headers, a:settings,
+          \ indicator, page
+          \)
+    call extend(entries, partial_entries)
+  endfor
+  return entries
+endfunction " }}}
+function! s:_retrieve_python(client, url, params, headers, settings) abort " {{{
+  let filename = s:P.join(s:root, 'github.py')
+  let kwargs = extend(copy(a:params), {
+        \ 'verbose': a:settings.verbose,
+        \ 'url': a:client.get_absolute_url(a:url),
+        \ 'token': a:client.get_token(),
+        \ 'indicator': a:settings.indicator,
+        \ 'nprocess': a:client.retrieve_python_nprocess,
+        \ 'page_start': a:settings.page_start,
+        \ 'page_end': a:settings.page_end,
+        \})
+  let namespace = {}
+  execute s:Y.exec_file(
+        \ s:P.join(s:root, 'github.py'),
+        \ a:client.retrieve_python == 1 ? 0 : a:client.retrieve_python
+        \)
+  if has_key(namespace, 'exception')
+    throw namespace.exception
+  endif
+  return namespace.entries
+endfunction " }}}
+
 " Public functions
 function! s:new(...) abort " {{{
+  let options = extend(deepcopy(s:config), get(a:000, 0, {}))
   let options = extend({
-        \ 'baseurl': s:config.baseurl,
-        \ 'authorize_scopes': s:config.authorize_scopes,
-        \ 'authorize_note': s:config.authorize_note,
-        \ 'authorize_note_url': s:config.authorize_note_url,
         \ 'token_cache': s:C.new('memory'),
-        \ 'skip_authentication': s:config.skip_authentication,
-        \}, get(a:000, 0, {}),
+        \}, options,
         \)
   return extend(deepcopy(s:client), options)
 endfunction " }}}
@@ -291,18 +365,6 @@ endfunction " }}}
 
 " Instance
 let s:client = {}
-function! s:client.get_authorize_scopes() abort " {{{
-  " See available scopes at
-  " https://developer.github.com/v3/oauth/#scopes
-  return self.authorize_scopes
-endfunction " }}}
-function! s:client.get_authorize_note() abort " {{{
-  return self.authorize_note
-endfunction " }}}
-function! s:client.get_authorize_note_url() abort " {{{
-  return self.authorize_note_url
-endfunction " }}}
-
 function! s:client._set_token(username, token) abort " {{{
   if empty(a:token)
     return self.token_cache.remove(a:username)
@@ -314,18 +376,35 @@ function! s:client._set_authorized_username(username) abort " {{{
   let self._authorized_username = a:username
 endfunction " }}}
 
-function! s:client.is_authorized() abort " {{{
-  return !empty(self.get_authorized_username())
+function! s:client.get_authorize_scopes() abort " {{{
+  " See available scopes at
+  " https://developer.github.com/v3/oauth/#scopes
+  return self.authorize_scopes
+endfunction " }}}
+function! s:client.get_authorize_note() abort " {{{
+  return self.authorize_note
+endfunction " }}}
+function! s:client.get_authorize_note_url() abort " {{{
+  return self.authorize_note_url
 endfunction " }}}
 function! s:client.get_absolute_url(relative_url) abort " {{{
   let baseurl = substitute(self.baseurl, '/$', '', '')
   let partial = substitute(a:relative_url, '^/', '', '')
   return baseurl . '/' . partial
 endfunction " }}}
+
+function! s:client.is_authorized() abort " {{{
+  return !empty(self.get_authorized_username())
+endfunction " }}}
 function! s:client.get_token(...) abort " {{{
   let username = get(a:000, 0, '')
   let username = empty(username) ? self.get_authorized_username() : username
   return empty(username) ? '' : self.token_cache.get(username)
+endfunction " }}}
+function! s:client.get_header(...) abort " {{{
+  let username = get(a:000, 0, '')
+  let token = self.get_token(username)
+  return s:_get_header(token)
 endfunction " }}}
 function! s:client.get_authorized_username() abort " {{{
   return get(self, '_authorized_username', '')
@@ -333,7 +412,7 @@ endfunction " }}}
 function! s:client.login(username, ...) abort " {{{
   let options = extend({
         \ 'force': 0,
-        \ 'verbose': 2,
+        \ 'verbose': 1,
         \ 'skip_authentication': self.skip_authentication,
         \}, get(a:000, 0, {})
         \)
@@ -371,6 +450,7 @@ function! s:client.logout(...) abort " {{{
   endif
   return self._set_authorized_username('')
 endfunction " }}}
+
 function! s:client.request(...) abort " {{{
   if a:0 == 3
     let settings = a:3
@@ -469,6 +549,25 @@ function! s:client.delete(url, ...) abort " {{{
         \}, get(a:000, 2, {}),
         \)
   return self.request(settings)
+endfunction " }}}
+
+function! s:client.retrieve(url, ...) abort " {{{
+  let params = extend({
+        \ 'per_page': self.retrieve_per_page,
+        \}, get(a:000, 0, {})
+        \)
+  let headers = get(a:000, 1, {})
+  let settings = extend({
+        \ 'verbose': 1,
+        \ 'indicator': self.retrieve_indicator,
+        \ 'python': self.retrieve_python,
+        \ 'page_start': 1,
+        \ 'page_end': 0,
+        \}, get(a:000, 2, {}),
+        \)
+  return settings.python
+        \ ? s:_retrieve_python(self, a:url, params, headers, settings)
+        \ : s:_retrieve_vim(self, a:url, params, headers, settings)
 endfunction " }}}
 
 let &cpoptions = s:save_cpo

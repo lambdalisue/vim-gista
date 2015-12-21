@@ -118,6 +118,39 @@ function! s:get_lookup(lookup) abort " {{{
   return s:get_valid_lookup(lookup)
 endfunction " }}}
 
+
+function! s:pick_necessary_params_of_content(content) abort " {{{
+  return {
+        \ 'size': a:content.size,
+        \ 'type': a:content.type,
+        \ 'language': a:content.language,
+        \}
+endfunction " }}}
+function! s:pick_necessary_params_of_entry(gist) abort " {{{
+  return {
+        \ 'id': a:gist.id,
+        \ 'description': a:gist.description,
+        \ 'public': a:gist.public,
+        \ 'files': map(
+        \   copy(a:gist.files),
+        \   's:pick_necessary_params_of_content(v:val)'
+        \ ),
+        \ 'created_at': a:gist.created_at,
+        \ 'updated_at': a:gist.updated_at,
+        \ '_gista_partial': get(a:gist, '_gista_partial', 1),
+        \ '_gista_modified': get(a:gist, '_gista_modified', 0),
+        \}
+endfunction " }}}
+function! s:merge_entries(lhs, rhs) abort " {{{
+  let known_gistids = map(copy(a:lhs), 'v:val.id')
+  return extend(
+        \ copy(a:lhs),
+        \ filter(
+        \   copy(a:rhs),
+        \   'index(known_gistids, v:val.id) == -1',
+        \ ),
+        \)
+endfunction " }}}
 function! s:remove_unmodified(content_cache, gistid) abort " {{{
   if !a:content_cache.has(a:gistid)
     return
@@ -251,22 +284,17 @@ function! gista#api#gists#list(lookup, ...) abort " {{{
 
   " fetch entries
   let indicator = printf(
-        \ 'Requesting gists of "%s" in %s as %s %%%%d/%%d ...',
+        \ 'Requesting gists of "%s" in %s as %s %%%%(page)d/%%(page_count)d ...',
         \ lookup,
         \ client.apiname,
         \ empty(username)
         \   ? 'an anonymous user'
         \   : username,
         \)
-  if options.python
-    let fetched_entries = gista#util#fetcher#python(url, indicator, {
-          \ 'since': since,
-          \})
-  else
-    let fetched_entries = gista#util#fetcher#vim(url, indicator, {
-          \ 'since': since,
-          \})
-  endif
+  let fetched_entries = client.retrieve(url, { 'since': since }, {}, {
+        \ 'python': options.python,
+        \ 'indicator': indicator,
+        \})
   redraw
   call gista#util#prompt#echo('Removing unnecessary params ...')
   call map(
@@ -478,6 +506,37 @@ function! gista#api#gists#patch(gistid, ...) abort " {{{
         \ function('gista#gist#unmark_modified'),
         \)
   return gist
+endfunction " }}}
+function! gista#api#gists#delete(gistid, ...) abort " {{{
+  let options = extend({
+        \ 'verbose': 1,
+        \}, get(a:000, 0, {})
+        \)
+  let client = gista#api#get_current_client()
+  let username = client.get_authorized_username()
+  if empty(username)
+    call gista#util#prompt#throw(
+          \ 'Deleting a gist cannot be performed as an anonymous user',
+          \)
+  endif
+
+  let gistid = s:get_gistid(a:gistid)
+
+  if options.verbose
+    redraw
+    call gista#util#prompt#echo(printf(
+          \ 'Deleting a gist "%s" in %s as %s...',
+          \ gistid,
+          \ client.apiname,
+          \ username,
+          \))
+  endif
+  let res = client.delete('gists/' . gistid, {}, {}, {
+        \ 'verbose': options.verbose,
+        \})
+  if res.status != 204
+    call gista#api#throw_api_exception(res)
+  endif
 endfunction " }}}
 
 " Utility function
