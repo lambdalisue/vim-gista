@@ -6,37 +6,33 @@ let s:V = gista#vital()
 let s:S = s:V.import('Data.String')
 let s:A = s:V.import('ArgumentParser')
 
-function! s:format_entry(apiname, entry) abort " {{{
+let s:PRIVATE_GISTID = repeat('*', 20)
+let s:LABEL_MODES = [
+      \ 'created_at',
+      \ 'updated_at',
+      \]
+
+function! s:truncate(str, width) abort " {{{
+  let suffix = strdisplaywidth(a:str) > a:width ? '...' : '   '
+  return s:S.truncate(a:str, a:width - 4) . suffix
+endfunction " }}}
+function! s:format_entry(entry) abort " {{{
   let gistid = a:entry.public
-        \ ? printf('gistid:%s', a:entry.id)
-        \ : printf('gistid:%s', repeat('*', 20))
+        \ ? 'gistid:' . a:entry.id
+        \ : 'gistid:' . s:PRIVATE_GISTID
+  let fetched  = gista#gist#is_fetched(a:entry)  ? '=' : '-'
+  let modified = gista#gist#is_modified(a:entry) ? '*' : ' '
+  let label    = s:get_current_label(a:entry)
+  let prefix = fetched . ' ' . label . ' ' . modified . ' '
+  let suffix = ' ' . gistid
+  let width = winwidth(0) - strdisplaywidth(prefix . suffix)
   let description = empty(a:entry.description)
         \ ? join(keys(a:entry.files), ', ')
         \ : a:entry.description
-  let description = substitute(description, "\r\\?\n", ' ', 'g')
-  let description = substitute(description, "\r", ' ', 'g')
-  let description = substitute(description, "\n", ' ', 'g')
+  let description = substitute(description, "[\r\n]", ' ', 'g')
   let description = printf('[%d] %s', len(a:entry.files), description)
-  let fetched = gista#gist#is_fetched(a:entry) ? '=' : '-'
-  let modified = gista#gist#is_modified(a:entry) ? '*' : ' '
-  let datetime = substitute(
-        \ a:entry[s:get_current_datetime()],
-        \ '\v\d{2}(\d{2})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):\d{2}Z',
-        \ '\1/\2/\3(\4:\5)',
-        \ ''
-        \)
-  let const = join([
-        \ datetime,
-        \ gistid, fetched, modified,
-        \], ' ')
-  let width = winwidth(0) - len(const) - 3
-  return printf('%s %s %s %s   %s',
-        \ fetched,
-        \ datetime,
-        \ modified,
-        \ s:S.truncate_skipping(description, width, 3, '...'),
-        \ gistid,
-        \)
+  let description = s:truncate(description, width)
+  return prefix . description . suffix
 endfunction " }}}
 function! s:get_entry(index, ...) abort " {{{
   let offset = get(a:000, 0, 0)
@@ -45,11 +41,10 @@ endfunction " }}}
 function! s:set_content(content) abort " {{{
   let client = gista#api#get_current_client()
   let apiname = client.apiname
-  call gista#util#buffer#edit_content(map(
-        \ copy(a:content.entries),
-        \ 's:format_entry(apiname, v:val)')
-        \)
   redraw
+  call gista#util#prompt#echo('Formatting gist entries to display...')
+  let content = map(copy(a:content.entries), 's:format_entry(v:val)')
+  call gista#util#buffer#edit_content(content)
   let b:gista = {
         \ 'winwidth': winwidth(0),
         \ 'apiname': client.apiname,
@@ -73,6 +68,36 @@ function! s:set_current_datetime(datetime) abort " {{{
     let s:current_datetime = get(s:, 'current_datetime', 'updated_at')
   else
     let s:current_datetime = a:datetime
+  endif
+endfunction " }}}
+
+function! s:get_current_label_index() abort " {{{
+  if !exists('s:current_label_index')
+    let index = index(s:LABEL_MODES, g:gista#command#list#default_label)
+    if index == -1
+      call gista#util#prompt#throw(printf(
+            \ 'An invalid label "%s" is specified to g:gista#command#list#default_label',
+            \ g:gista#command#list#default_label,
+            \))
+    endif
+    let s:current_label_index = index
+  endif
+  return s:current_label_index
+endfunction " }}}
+function! s:set_current_label_index(index) abort " {{{
+  let s:current_label_index = a:index
+endfunction " }}}
+function! s:get_current_label(entry) abort " {{{
+  let lmode = s:LABEL_MODES[s:get_current_label_index()]
+  if lmode ==# 'created_at' || lmode ==# 'updated_at'
+    let datetime = a:entry[lmode]
+    let label = substitute(
+          \ datetime,
+          \ '\v\d{2}(\d{2})-(\d{2})-(\d{2})T(\d{2}:\d{2}:\d{2})Z',
+          \ '\1/\2/\3(\4)',
+          \ ''
+          \)
+    return label
   endif
 endfunction " }}}
 
@@ -140,8 +165,10 @@ function! gista#command#list#open(...) abort " {{{
         \ :call <SID>action('update')<CR>
   noremap <buffer><silent> <Plug>(gista-UPDATE)
         \ :call <SID>action('update', 1)<CR>
-  noremap <buffer><silent> <Plug>(gista-toggle-datetime)
-        \ :call <SID>action('toggle_datetime')<CR>
+  noremap <buffer><silent> <Plug>(gista-next-label)
+        \ :call <SID>action('next_label')<CR>
+  noremap <buffer><silent> <Plug>(gista-prev-label)
+        \ :call <SID>action('prev_label')<CR>
   noremap <buffer><silent> <Plug>(gista-edit)
         \ :call <SID>action('edit')<CR>
   noremap <buffer><silent> <Plug>(gista-edit-above)
@@ -171,7 +198,8 @@ function! gista#command#list#open(...) abort " {{{
   noremap <buffer><silent> <Plug>(gista-json-preview)
         \ :call <SID>action('json', 'preview')<CR>
   map <buffer> q <Plug>(gista-quit)
-  map <buffer> <C-t> <Plug>(gista-toggle-datetime)
+  map <buffer> <C-n> <Plug>(gista-next-label)
+  map <buffer> <C-p> <Plug>(gista-prev-label)
   map <buffer> <C-l> <Plug>(gista-update)
   map <buffer> <Return> <Plug>(gista-edit)
   map <buffer> ee <Plug>(gista-edit)
@@ -302,13 +330,16 @@ function! s:action_update(...) range abort " {{{
   let content = gista#command#list#call(options)
   call s:set_content(content)
 endfunction " }}}
-function! s:action_toggle_datetime(...) range abort " {{{
-  let datetime = s:get_current_datetime()
-  call s:set_current_datetime(
-        \ datetime ==# 'updated_at'
-        \   ? 'created_at'
-        \   : 'updated_at'
-        \)
+function! s:action_next_label(...) range abort " {{{
+  let index = s:get_current_label_index() + 1
+  let index = index >= len(s:LABEL_MODES) ? 0 : index
+  call s:set_current_label_index(index)
+  call s:action_update()
+endfunction " }}}
+function! s:action_prev_label(...) range abort " {{{
+  let index = s:get_current_label_index() - 1
+  let index = index < 0 ? len(s:LABEL_MODES) - 1 : index
+  call s:set_current_label_index(index)
   call s:action_update()
 endfunction " }}}
 
@@ -388,13 +419,13 @@ function! gista#command#list#define_syntax() abort " {{{
         \ display contained containedin=GistaLine
   syntax match GistaGistIDPrivate /gistid:\*\{20}$/
         \ display contained containedin=GistaLine
-  syntax match GistaMeta /^[=\-] \d\{2}\/\d\{2}\/\d\{2}(\d\{2}:\d\{2}) [ \*]/
+  syntax match GistaMeta /^[=\-] \d\{2}\/\d\{2}\/\d\{2}(\d\{2}:\d\{2}:\d\{2}) [ \*]/
         \ display contained containedin=GistaLine
   syntax match GistaPartialMarker /^-/
         \ display contained containedin=GistaMeta
   syntax match GistaDownloadedMarker /^=/
         \ display contained containedin=GistaMeta
-  syntax match GistaLastModified /\d\{2}\/\d\{2}\/\d\{2}(\d\{2}:\d\{2})/
+  syntax match GistaLastModified /\d\{2}\/\d\{2}\/\d\{2}(\d\{2}:\d\{2}:\d\{2})/
         \ display contained containedin=GistaMeta
   syntax match GistaModifiedMarker /[ \*]/
         \ display contained containedin=GistaMeta
@@ -402,17 +433,15 @@ endfunction " }}}
 function! gista#command#list#get_status_string(...) abort " {{{
   let lookup = get(a:000, 0, '')
   if empty(lookup)
-    return printf('gista:%s:%s [%s]',
-          \ b:gista.apiname,
+    return printf('Gist entries of %s in %s (Mode: %s)',
           \ b:gista.lookup,
-          \ s:get_current_datetime(),
+          \ b:gista.apiname,
+          \ s:LABEL_MODES[s:get_current_label_index()]
           \)
   elseif lookup ==# 'apiname'
     return b:gista.apiname
   elseif lookup ==# 'lookup'
     return b:gista.lookup
-  elseif lookup ==# 'datetime_mode'
-    return s:get_current_datetime()
   else
     return printf('Invalid lookup "%s" is specified', lookup)
   endif
@@ -420,6 +449,7 @@ endfunction " }}}
 
 call gista#define_variables('command#list', {
       \ 'default_options': {},
+      \ 'default_label': 'updated_at',
       \ 'default_datetime': 'updated_at',
       \ 'default_opener': 'topleft 15 split',
       \ 'default_entry_opener': 'edit',
