@@ -115,6 +115,9 @@ function! s:get_lookup(lookup) abort " {{{
         \     : username
         \   : g:gista#api#gists#list_default_lookup
         \ : a:lookup
+  let lookup = !empty(username) && lookup ==# 'starred'
+        \ ? username . '/starred'
+        \ : lookup
   return s:get_valid_lookup(lookup)
 endfunction " }}}
 

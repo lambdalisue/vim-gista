@@ -358,9 +358,10 @@ function! s:get_parser() abort " {{{
           \   'complete': function('gista#api#gists#complete_lookup'), 
           \})
     call s:parser.add_argument(
-          \ 'fresh',
-          \ 'Request new/updated gists from API',
-          \)
+          \ '--fresh',
+          \ 'Request new/updated gists from API', {
+          \   'deniable': 1,
+          \})
     call s:parser.add_argument(
           \ '--since', [
           \   'Request gists created/updated later than a paricular timestamp',

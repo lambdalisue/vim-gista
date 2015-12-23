@@ -163,6 +163,10 @@ call gista#command#register('json',
       \ 'gista#command#json#command',
       \ 'gista#command#json#complete',
       \)
+call gista#command#register('browse',
+      \ 'gista#command#browse#command',
+      \ 'gista#command#browse#complete',
+      \)
 call gista#command#register('list',
       \ 'gista#command#list#command',
       \ 'gista#command#list#complete',
@@ -174,6 +178,18 @@ call gista#command#register('post',
 call gista#command#register('patch',
       \ 'gista#command#patch#command',
       \ 'gista#command#patch#complete',
+      \)
+call gista#command#register('star',
+      \ 'gista#command#star#command',
+      \ 'gista#command#star#complete',
+      \)
+call gista#command#register('unstar',
+      \ 'gista#command#unstar#command',
+      \ 'gista#command#unstar#complete',
+      \)
+call gista#command#register('fork',
+      \ 'gista#command#fork#command',
+      \ 'gista#command#fork#complete',
       \)
 
 let &cpo = s:save_cpo
