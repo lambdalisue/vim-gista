@@ -25,7 +25,7 @@ function! gista#command#logout#call(...) abort " {{{
         \}, get(a:000, 0, {}),
         \)
   try
-    call gista#api#switch({
+    call gista#api#switch_client({
           \ 'verbose': options.verbose,
           \ 'apiname': options.apiname,
           \})

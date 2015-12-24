@@ -8,8 +8,7 @@ function! s:handle_exception(exception) abort " {{{
   redraw
   let canceled_by_user_patterns = [
         \ '^vim-gista: Login canceled',
-        \ '^vim-gista: ValidationError: An API name cannot be empty',
-        \ '^vim-gista: ValidationError: An API account username cannot be empty',
+        \ '^vim-gista: ValidationError:',
         \]
   for pattern in canceled_by_user_patterns
     if a:exception =~# pattern
@@ -38,15 +37,10 @@ function! gista#command#post#call(...) abort " {{{
               \ 'username': client.get_authorized_username(),
               \ 'gistid': gist.id,
               \ 'filename': fnamemodify(expand(filename), ':t'),
+              \ 'content_type': 'raw',
               \})
       endif
     endfor
-    redraw
-    call gista#command#list#update_if_necessary()
-    call gista#util#prompt#info(printf(
-          \ 'The content(s) has posted to a gist "%s"',
-          \ gist.id,
-          \))
     return gist
   catch /^vim-gista:/
     call s:handle_exception(v:exception)

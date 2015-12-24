@@ -111,12 +111,13 @@ function! gista#command#command(...) abort " {{{
             \ s:D.pick(options, ['apiname']),
             \)
     elseif gista#command#is_registered(name)
+      let session = gista#api#session(options)
       try
-        call gista#api#session_enter(options)
+        call session.enter()
         " perform a specified command
         call s:registry[name].command(bang, range, args)
       finally
-        call gista#api#session_exit()
+        call session.exit()
       endtry
     else
       echo parser.help()
@@ -142,12 +143,13 @@ function! gista#command#complete(arglead, cmdline, cursorpos, ...) abort " {{{
             \ s:D.pick(options, ['apiname']),
             \)
     elseif gista#command#is_registered(name)
+      let session = gista#api#session(options)
       try
-        call gista#api#session_enter(options)
+        call session.enter()
         " perform a specified command
         return s:registry[name].complete(a:arglead, cmdline, a:cursorpos)
       finally
-        call gista#api#session_exit()
+        call session.exit()
       endtry
     endif
   endif

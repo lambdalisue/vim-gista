@@ -13,9 +13,9 @@ It provide the following features:
 - [x] Patch a content of the current buffer to a gist
 - [ ] Rename files in a gist
 - [ ] Remove files in a gist
-- [ ] Delete a gist
-- [ ] Star/Unstar a gist
-- [ ] Folk a gist
+- [x] Delete a gist
+- [x] Star/Unstar a gist
+- [x] Folk a gist
 - [ ] List folks of a gist
 - [ ] List commits of a gist
 

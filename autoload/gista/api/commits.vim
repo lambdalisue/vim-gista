@@ -11,8 +11,7 @@ function! gista#api#commit#list(gistid, ...) abort " {{{
 endfunction " }}}
 
 " Configure variables
-call gista#define_variables('api#commit', {
-      \})
+call gista#define_variables('api#commit', {})
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo

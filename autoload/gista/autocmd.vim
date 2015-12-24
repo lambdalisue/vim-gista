@@ -1,7 +1,9 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! s:on_SourceCmd(gistid, filename) abort " {{{
+function! s:on_SourceCmd(gista) abort " {{{
+  " TODO
+  " Check if the file is Vim script or not
   let content = getbufline(expand('<amatch>'), 1, '$')
   try
     let tempfile = tempname()
@@ -13,100 +15,64 @@ function! s:on_SourceCmd(gistid, filename) abort " {{{
     endif
   endtry
 endfunction " }}}
-function! s:on_BufReadCmd(gistid, filename) abort " {{{
-  call gista#command#open#edit({
-        \ 'gistid': a:gistid,
-        \ 'filename': a:filename,
-        \ 'fresh': v:cmdbang,
-        \ 'opener': 'inplace',
-        \})
+function! s:on_BufReadCmd(gista) abort " {{{
+  let content_type = get(a:gista, 'content_type', '')
+  if content_type ==# 'raw'
+    call gista#command#open#edit({
+          \ 'gistid': a:gista.gistid,
+          \ 'filename': a:gista.filename,
+          \ 'cache': !v:cmdbang,
+          \})
+  elseif content_type ==# 'json'
+    call gista#command#json#edit({
+          \ 'gistid': a:gista.gistid,
+          \ 'cache': !v:cmdbang,
+          \})
+  elseif content_type ==# 'list'
+    call gista#command#list#edit({
+          \ 'lookup': a:gista.lookup,
+          \ 'cache': !v:cmdbang,
+          \})
+  else
+    call gista#util#prompt#throw(printf(
+          \ 'Unknown content_type "%s" is specified',
+          \ content_type,
+          \))
+  endif
 endfunction " }}}
-function! s:on_FileReadCmd(gistid, filename) abort " {{{
-  call gista#command#open#read({
-        \ 'gistid': a:gistid,
-        \ 'filename': a:filename,
-        \ 'fresh': v:cmdbang,
-        \})
+function! s:on_FileReadCmd(gista) abort " {{{
+  let content_type = get(a:gista, 'content_type', '')
+  if content_type ==# 'raw'
+    call gista#command#open#read({
+          \ 'gistid': a:gista.gistid,
+          \ 'filename': a:gista.filename,
+          \ 'cache': !v:cmdbang,
+          \})
+  elseif content_type ==# 'json'
+    call gista#command#json#read({
+          \ 'gistid': a:gista.gistid,
+          \ 'cache': !v:cmdbang,
+          \})
+  elseif content_type ==# 'list'
+    call gista#command#list#read({
+          \ 'lookup': a:gista.lookup,
+          \ 'cache': !v:cmdbang,
+          \})
+  else
+    call gista#util#prompt#throw(printf(
+          \ 'Unknown content_type "%s" is specified',
+          \ content_type,
+          \))
+  endif
 endfunction " }}}
 
-function! s:on_BufWriteCmd(gistid, filename) abort " {{{
+function! s:on_BufWriteCmd(gista) abort " {{{
   let content = getbufline(expand('<amatch>'), 1, '$')
-  if g:gista#autocmd#patch_on_write || v:cmdbang
-    call gista#command#patch#call({
-          \ 'gistid': a:gistid,
-          \ 'filenames': [a:filename],
-          \ 'contents': [content],
-          \})
-    setlocal nomodified
-  else
-    let client = gista#api#get_current_client()
-    let gist = client.content_cache.get(a:gistid, {})
-    if empty(gist)
-      call gista#util#prompt#warn(
-            \ 'Use ":w!" to patch the content to API.',
-            \ 'See ":h g:gista#autoload#patch_on_write" if you prefer to patch',
-            \ 'a content on ":w" command',
-            \)
-    else
-      call extend(gist.files[a:filename], {
-            \ 'content': content,
-            \})
-      call client.content_cache.set(
-            \ a:gistid, 
-            \ gista#gist#mark_modified(gist),
-            \)
-      call gista#gist#apply_to_entry_cache(
-            \ client, a:gistid,
-            \ function('gista#gist#mark_modified'),
-            \)
-      call gista#command#list#update_if_necessary()
-      call gista#util#prompt#warn(
-            \ 'The content is saved on a corresponding cache.',
-            \ 'Use ":w!" to patch the content to API as well.',
-            \ 'See ":h g:gista#autoload#patch_on_write" if you prefer to patch',
-            \ 'a content on ":w" command',
-            \)
-      setlocal nomodified
-    endif
-  endif
+  echo content
 endfunction " }}}
-function! s:on_FileWriteCmd(gistid, filename) abort " {{{
+function! s:on_FileWriteCmd(gista) abort " {{{
   let content = getbufline(expand('<amatch>'), line("'["), line("']"))
-  if g:gista#autocmd#patch_on_write || v:cmdbang
-    call gista#command#patch#call({
-          \ 'gistid': a:gistid,
-          \ 'filenames': [a:filename],
-          \ 'contents': [content],
-          \})
-  else
-    let client = gista#api#get_current_client()
-    let gist = client.content_cache.get(a:gistid, {})
-    if empty(gist)
-      call gista#util#prompt#warn(
-            \ 'Use ":w!" to post the content to API.',
-            \ 'See ":h g:gista#autoload#patch_on_write" if you prefer to patch',
-            \ 'a content on ":w" command',
-            \)
-    else
-      call extend(gist.files[a:filename], {
-            \ 'content': content,
-            \})
-      call client.content_cache.set(
-            \ a:gistid, 
-            \ gista#gist#mark_modified(gist),
-            \)
-      call gista#gist#apply_to_entry_cache(
-            \ client, a:gistid,
-            \ function('gista#gist#mark_modified'),
-            \)
-      call gista#util#prompt#warn(
-            \ 'The content is saved on a corresponding cache.',
-            \ 'Use ":w!" to post the content to API as well.',
-            \ 'See ":h g:gista#autoload#patch_on_write" if you prefer to patch',
-            \ 'a content on ":w" command',
-            \)
-    endif
-  endif
+  echo content
 endfunction " }}}
 
 function! gista#autocmd#call(name) abort " {{{
@@ -116,25 +82,64 @@ function! gista#autocmd#call(name) abort " {{{
           \ 'No autocmd function "%s" is found.', fname
           \))
   endif
-  let meta = gista#gist#get_meta('<afile>')
-  if empty(meta)
-    return
-  endif
+  let filename = expand('<afile>')
+  echomsg bufnr('<afile>')
+  let gista = gista#util#compat#getbufvar('<afile>', 'gista', {})
+  let gista = empty(gista)
+        \ ? s:parse_filename(filename)
+        \ : gista
+  let session = gista#api#session({
+        \ 'apiname':  get(gista, 'apiname', ''),
+        \ 'username': get(gista, 'username', 0),
+        \})
   try
-    call gista#api#session_enter({
-          \ 'apiname': meta.apiname,
-          \ 'username': get(meta, 'username', 0),
-          \})
-    call call(fname, [meta.gistid, meta.filename])
+    call session.enter()
+    call call(fname, [gista])
   finally
-    call gista#api#session_exit()
+    call session.exit()
   endtry
 endfunction " }}}
 
+let s:schemes = [
+      \ ['^gista:\(.*\):\(.*\):\(.*\)$', {
+      \   'apiname': 1,
+      \   'gistid': 2,
+      \   'filename': 3,
+      \   'content_type': 'raw',
+      \ }],
+      \ ['^gista:\(.*\):\(.*\)\.json$', {
+      \   'apiname': 1,
+      \   'gistid': 2,
+      \   'content_type': 'json',
+      \ }],
+      \ ['^gista-list:\(.*\):\(.*\)$', {
+      \   'apiname': 1,
+      \   'lookup': 2,
+      \   'content_type': 'list',
+      \ }],
+      \]
+function! s:parse_filename(filename) abort " {{{
+  for scheme in s:schemes
+    if a:filename !~# scheme[0]
+      continue
+    endif
+    let m = matchlist(a:filename, scheme[0])
+    let o = {}
+    for [key, value] in items(scheme[1])
+      if type(value) == type(0)
+        let o[key] = m[value]
+      else
+        let o[key] = value
+      endif
+      unlet value
+    endfor
+    return o
+  endfor
+  return {}
+endfunction " }}}
+
 " Configure variables
-call gista#define_variables('autocmd', {
-      \ 'patch_on_write': 0,
-      \})
+call gista#define_variables('autocmd', {})
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo

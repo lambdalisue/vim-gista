@@ -5,14 +5,18 @@ let s:V = gista#vital()
 let s:F = s:V.import('System.File')
 let s:A = s:V.import('ArgumentParser')
 
+function! s:get_absolute_url(gistid, filename) abort " {{{
+    let gistid = gista#meta#get_valid_gistid(a:gistid)
+    let gist   = gista#api#gists#get(gistid)
+    let filename = tolower(substitute(a:filename, '\.', '-', 'g'))
+    return gist.html_url . (empty(filename) ? '' : '#file-' . filename)
+endfunction " }}}
+
 function! s:handle_exception(exception) abort " {{{
   redraw
   let canceled_by_user_patterns = [
         \ '^vim-gista: Login canceled',
-        \ '^vim-gista: ValidationError: An API name cannot be empty',
-        \ '^vim-gista: ValidationError: An API account username cannot be empty',
-        \ '^vim-gista: ValidationError: A gist ID cannot be empty',
-        \ '^vim-gista: ValidationError: A filename cannot be empty',
+        \ '^vim-gista: ValidationError:',
         \]
   for pattern in canceled_by_user_patterns
     if a:exception =~# pattern
@@ -23,19 +27,41 @@ function! s:handle_exception(exception) abort " {{{
   " else
   call gista#util#prompt#error(a:exception)
 endfunction " }}}
-function! gista#command#browse#call(...) abort " {{{
+function! gista#command#browse#open(...) abort " {{{
   let options = extend({
         \ 'gistid': '',
         \ 'filename': '',
         \}, get(a:000, 0, {}),
         \)
   try
-    let gist = gista#api#gists#get(
-          \ options.gistid, options
-          \)
-    let filename = tolower(substitute(options.filename, '\.', '-', 'g'))
-    let url = gist.html_url . (empty(filename) ? '' : '#file-' . filename)
+    let url = s:get_absolute_url(options.gistid, options.filename)
     call s:F.open(url)
+  catch /^vim-gista:/
+    call s:handle_exception(v:exception)
+  endtry
+endfunction " }}}
+function! gista#command#browse#yank(...) abort " {{{
+  let options = extend({
+        \ 'gistid': '',
+        \ 'filename': '',
+        \}, get(a:000, 0, {}),
+        \)
+  try
+    let url = s:get_absolute_url(options.gistid, options.filename)
+    call gista#util#clip(url)
+  catch /^vim-gista:/
+    call s:handle_exception(v:exception)
+  endtry
+endfunction " }}}
+function! gista#command#browse#echo(...) abort " {{{
+  let options = extend({
+        \ 'gistid': '',
+        \ 'filename': '',
+        \}, get(a:000, 0, {}),
+        \)
+  try
+    let url = s:get_absolute_url(options.gistid, options.filename)
+    echo url
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
   endtry
@@ -50,15 +76,18 @@ function! s:get_parser() abort " {{{
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#api#gists#complete_gistid'),
-          \   'type': s:A.types.value,
+          \   'complete': function('g:gista#meta#complete_gistid'),
           \})
     call s:parser.add_argument(
-          \ 'filename',
+          \ '--filename',
           \ 'A filename', {
-          \   'complete': function('g:gista#api#gists#complete_filename'),
-          \   'type': s:A.types.value,
-          \   'required': 0,
+          \   'complete': function('g:gista#meta#complete_filename'),
+          \})
+    call s:parser.add_argument(
+          \ '--action',
+          \ 'An action', {
+          \   'choices': ['open', 'yank', 'echo'],
+          \   'default': 'open',
           \})
   endif
   return s:parser
@@ -74,7 +103,13 @@ function! gista#command#browse#command(...) abort " {{{
         \ deepcopy(g:gista#command#browse#default_options),
         \ options,
         \)
-  call gista#command#browse#call(options)
+  if options.action ==# 'open'
+    call gista#command#browse#open(options)
+  elseif options.action ==# 'yank'
+    call gista#command#browse#yank(options)
+  elseif options.action ==# 'echo'
+    call gista#command#browse#echo(options)
+  endif
 endfunction " }}}
 function! gista#command#browse#complete(...) abort " {{{
   let parser = s:get_parser()

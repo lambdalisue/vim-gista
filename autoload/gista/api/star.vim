@@ -21,23 +21,20 @@ function! gista#api#star#get(gistid, ...) abort " {{{
   if options.verbose
     redraw
     call gista#util#prompt#echo(printf(
-          \ 'Requesting if a gist "%s" in %s is starred ...',
+          \ 'Requesting if a gist %s in %s is starred ...',
           \ gist.id,
           \ client.apiname,
           \))
   endif
 
   let url = printf('gists/%s/star', gist.id)
-  let res = client.get(url, {}, {}, {
-        \ 'verbose': options.verbose,
-        \})
+  let res = client.get(url)
   if res.status == 204
     return 1
   elseif res.status == 404
     return 0
-  else
-    call gista#api#throw_api_exception(res)
   endif
+  call gista#api#throw_api_exception(res)
 endfunction " }}}
 function! gista#api#star#put(gistid, ...) abort " {{{
   let options = extend({
@@ -56,7 +53,7 @@ function! gista#api#star#put(gistid, ...) abort " {{{
   if options.verbose
     redraw
     call gista#util#prompt#echo(printf(
-          \ 'Star a gist "%s" in %s ...',
+          \ 'Star a gist %s in %s ...',
           \ gist.id,
           \ client.apiname,
           \))
@@ -64,9 +61,7 @@ function! gista#api#star#put(gistid, ...) abort " {{{
 
   let url = printf('gists/%s/star', gist.id)
   let headers = { 'Content-Length': 0 }
-  let res = client.put(url, {}, headers, {
-        \ 'verbose': options.verbose,
-        \})
+  let res = client.put(url, {}, headers)
   if res.status == 204
     return
   else
@@ -90,26 +85,22 @@ function! gista#api#star#delete(gistid, ...) abort " {{{
   if options.verbose
     redraw
     call gista#util#prompt#echo(printf(
-          \ 'Unstar a gist "%s" in %s ...',
+          \ 'Unstar a gist %s in %s ...',
           \ gist.id,
           \ client.apiname,
           \))
   endif
 
   let url = printf('gists/%s/star', gist.id)
-  let res = client.delete(url, {}, {}, {
-        \ 'verbose': options.verbose,
-        \})
+  let res = client.delete(url)
   if res.status == 204
     return
-  else
-    call gista#api#throw_api_exception(res)
   endif
+  call gista#api#throw_api_exception(res)
 endfunction " }}}
 
 " Configure variables
-call gista#define_variables('api#star', {
-      \})
+call gista#define_variables('api#star', {})
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo

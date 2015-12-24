@@ -8,8 +8,7 @@ function! s:handle_exception(exception) abort " {{{
   redraw
   let canceled_by_user_patterns = [
         \ '^vim-gista: Login canceled',
-        \ '^vim-gista: ValidationError: An API name cannot be empty',
-        \ '^vim-gista: ValidationError: An API account username cannot be empty',
+        \ '^vim-gista: ValidationError:',
         \]
   for pattern in canceled_by_user_patterns
     if a:exception =~# pattern
@@ -26,26 +25,11 @@ function! gista#command#delete#call(...) abort " {{{
         \}, get(a:000, 0, {}),
         \)
   try
-    let gist = gista#api#gists#delete_cache(
-          \ options.gistid, options,
-          \)
+    let gistid = gista#meta#get_valid_gistid(options.gistid)
+    let gist   = gista#api#gists#delete(gistid, options)
     let client = gista#api#get_current_client()
-    for filename in options.filenames
-      if bufexists(filename)
-        call setbufvar(bufnr(filename), 'gista', {
-              \ 'apiname': client.apiname,
-              \ 'username': client.get_authorized_username(),
-              \ 'gistid': gist.id,
-              \ 'filename': fnamemodify(expand(filename), ':t'),
-              \})
-      endif
-    endfor
-    redraw
-    call gista#command#list#update_if_necessary()
-    call gista#util#prompt#info(printf(
-          \ 'The content(s) has posted to a gist "%s"',
-          \ gist.id,
-          \))
+    " TODO
+    " Handle existing buffer which open a file content of the deleted gist
     return gist
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
@@ -64,6 +48,12 @@ function! s:get_parser() abort " {{{
           \ 'Delete a gist from remote as well', {
           \   'type': s:A.types.value,
           \})
+    call s:parser.add_argument(
+          \ '--cache',
+          \ 'Delete a gist only from the cache', {
+          \   'default': 0,
+          \   'deniable': 1,
+          \})
   endif
   return s:parser
 endfunction " }}}
@@ -75,28 +65,10 @@ function! gista#command#delete#command(...) abort " {{{
   endif
   " extend default options
   let options = extend(
-        \ deepcopy(g:gista#command#post#default_options),
+        \ deepcopy(g:gista#command#delete#default_options),
         \ options,
         \)
-  if empty(options.__unknown__)
-    " Get content from the current buffer
-    let filenames = [expand('%')]
-    let contents = [
-          \ call('getline', options.__range__)
-          \]
-  else
-    let filenames = filter(
-          \ map(options.__unknown__, 'expand(v:val)'),
-          \ 'bufexists(v:val) || filereadable(v:val)',
-          \)
-    let contents = map(
-          \ copy(filenames),
-          \ 'bufexists(v:val) ? getbufline(v:val, 1, "$") : readfile(v:val)',
-          \)
-  endif
-  let options.filenames = map(filenames, 'fnamemodify(v:val, ":t")')
-  let options.contents = contents
-  call gista#command#post#call(options)
+  call gista#command#delete#call(options)
 endfunction " }}}
 function! gista#command#delete#complete(...) abort " {{{
   let parser = s:get_parser()

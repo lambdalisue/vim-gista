@@ -1,6 +1,5 @@
 let s:save_cpo = &cpo
 set cpo&vim
-scriptencoding utf-8
 
 let s:V = gista#vital()
 let s:S = s:V.import('Data.String')
@@ -20,8 +19,8 @@ function! s:format_entry(entry) abort " {{{
   let gistid = a:entry.public
         \ ? 'gistid:' . a:entry.id
         \ : 'gistid:' . s:PRIVATE_GISTID
-  let fetched  = gista#gist#is_fetched(a:entry)  ? '=' : '-'
-  let modified = gista#gist#is_modified(a:entry) ? '*' : ' '
+  let fetched  = a:entry._gista_fetched  ? '=' : '-'
+  let modified = a:entry._gista_modified ? '*' : ' '
   let label    = s:get_current_label(a:entry)
   let prefix = fetched . ' ' . label . ' ' . modified . ' '
   let suffix = ' ' . gistid
@@ -36,39 +35,18 @@ function! s:format_entry(entry) abort " {{{
 endfunction " }}}
 function! s:get_entry(index, ...) abort " {{{
   let offset = get(a:000, 0, 0)
-  return get(b:gista.entries, a:index + offset, {})
+  return get(b:gista.content.entries, a:index + offset, {})
 endfunction " }}}
-function! s:set_content(content) abort " {{{
-  let client = gista#api#get_current_client()
-  let apiname = client.apiname
-  redraw
-  call gista#util#prompt#echo('Formatting gist entries to display...')
-  let content = map(copy(a:content.entries), 's:format_entry(v:val)')
-  call gista#util#buffer#edit_content(content)
-  let b:gista = {
-        \ 'winwidth': winwidth(0),
-        \ 'apiname': client.apiname,
-        \ 'username': client.get_authorized_username(),
-        \ 'lookup': a:content.lookup,
-        \ 'since': a:content.since,
-        \ 'entries': a:content.entries,
-        \}
-endfunction " }}}
-function! s:get_current_datetime() abort " {{{
-  if !exists('s:current_datetime')
-    call s:set_current_datetime(g:gista#command#list#default_datetime)
-  endif
-  return s:current_datetime
-endfunction " }}}
-function! s:set_current_datetime(datetime) abort " {{{
-  if a:datetime !~# '^\%(updated_at\|created_at\)$'
-    call gista#util#prompt#warn(
-          \ '"%s" is not available datetime for g:gista#command#list#default_datetime'
-          \)
-    let s:current_datetime = get(s:, 'current_datetime', 'updated_at')
-  else
-    let s:current_datetime = a:datetime
-  endif
+function! s:update_if_necessary() abort " {{{
+  let saved_winnum = winnr()
+  for winnum in range(1, winnr('$'))
+    if gista#util#compat#getbufvar(winbufnr(winnum), '&filetype') ==# 'gista-list'
+      silent execute printf('keepjumps %dwincmd w', winnum)
+      call s:action_update()
+      silent execute printf('keepjumps %dwincmd w', saved_winnum)
+      return
+    endif
+  endfor
 endfunction " }}}
 
 function! s:get_current_label_index() abort " {{{
@@ -101,70 +79,13 @@ function! s:get_current_label(entry) abort " {{{
   endif
 endfunction " }}}
 
-function! s:handle_exception(exception) abort " {{{
-  redraw
-  let canceled_by_user_patterns = [
-        \ '^vim-gista: Login canceled',
-        \ '^vim-gista: Canceled',
-        \]
-  for pattern in canceled_by_user_patterns
-    if a:exception =~# pattern
-      call gista#util#prompt#warn('Canceled')
-      return
-    endif
-  endfor
-  " else
-  call gista#util#prompt#error(a:exception)
-endfunction " }}}
-function! gista#command#list#call(...) abort " {{{
-  let options = extend({
-        \ 'lookup': '',
-        \}, get(a:000, 0, {}),
-        \)
-  try
-    return gista#api#gists#list(options.lookup, options)
-  catch /^vim-gista:/
-    call s:handle_exception(v:exception)
-    return []
-  endtry
-endfunction " }}}
-function! gista#command#list#open(...) abort " {{{
-  let options = extend({
-        \ 'lookup': '',
-        \ 'opener': '',
-        \}, get(a:000, 0, {})
-        \)
-  try
-    let content = gista#api#gists#list(options.lookup, options)
-    let client = gista#api#get_current_client()
-    if !len(content.entries)
-      redraw
-      call gista#util#prompt#warn(printf(
-            \ 'No gist entries are exists for a lookup "%s" on "%s".',
-            \ content.lookup, client.apiname,
-            \))
-      return
-    endif
-  catch /^vim-gista:/
-    call s:handle_exception(v:exception)
-    return
-  endtry
-  " Open a list window
-  let opener = empty(options.opener)
-        \ ? g:gista#command#list#default_opener
-        \ : options.opener
-  let bufname = printf('gista-list:%s:%s', client.apiname, content.lookup)
-  let ret = gista#util#buffer#open(bufname, {
-        \ 'group': 'manipulation_panel',
-        \ 'opener': opener,
-        \})
-  call s:set_content(content)
+function! s:define_plugin_mappings() abort " {{{
   noremap <buffer><silent> <Plug>(gista-quit)
         \ :<C-u>q<CR>
   noremap <buffer><silent> <Plug>(gista-update)
-        \ :call <SID>action('update')<CR>
-  noremap <buffer><silent> <Plug>(gista-UPDATE)
         \ :call <SID>action('update', 1)<CR>
+  noremap <buffer><silent> <Plug>(gista-UPDATE)
+        \ :call <SID>action('update', 0)<CR>
   noremap <buffer><silent> <Plug>(gista-next-label)
         \ :call <SID>action('next_label')<CR>
   noremap <buffer><silent> <Plug>(gista-prev-label)
@@ -197,10 +118,27 @@ function! gista#command#list#open(...) abort " {{{
         \ :call <SID>action('json', 'tab')<CR>
   noremap <buffer><silent> <Plug>(gista-json-preview)
         \ :call <SID>action('json', 'preview')<CR>
+  noremap <buffer><silent> <Plug>(gista-browse-open)
+        \ :call <SID>action('browse', 'open')<CR>
+  noremap <buffer><silent> <Plug>(gista-browse-yank)
+        \ :call <SID>action('browse', 'yank')<CR>
+  noremap <buffer><silent> <Plug>(gista-browse-echo)
+        \ :call <SID>action('browse', 'echo')<CR>
+  noremap <buffer><silent> <Plug>(gista-delete)
+        \ :call <SID>action('delete', 1)<CR>
+  noremap <buffer><silent> <Plug>(gista-DELETE)
+        \ :call <SID>action('delete', 0)<CR>
+  noremap <buffer><silent> <Plug>(gista-star)
+        \ :call <SID>action('star')<CR>
+  noremap <buffer><silent> <Plug>(gista-unstar)
+        \ :call <SID>action('unstar')<CR>
+endfunction " }}}
+function! s:define_default_mappings() abort " {{{
   map <buffer> q <Plug>(gista-quit)
   map <buffer> <C-n> <Plug>(gista-next-label)
   map <buffer> <C-p> <Plug>(gista-prev-label)
   map <buffer> <C-l> <Plug>(gista-update)
+  map <buffer> <S-l> <Plug>(gista-UPDATE)
   map <buffer> <Return> <Plug>(gista-edit)
   map <buffer> ee <Plug>(gista-edit)
   map <buffer> EE <Plug>(gista-edit-right)
@@ -210,38 +148,128 @@ function! gista#command#list#open(...) abort " {{{
   map <buffer> Ej <Plug>(gista-json-right)
   map <buffer> tj <Plug>(gista-json-tab)
   map <buffer> pj <Plug>(gista-json-preview)
+  map <buffer> bb <Plug>(gista-browse-open)
+  map <buffer> yy <Plug>(gista-browse-yank)
+  map <buffer> dd <Plug>(gista-delete)
+  map <buffer> DD <Plug>(gista-DELETE)
+  map <buffer> ++ <Plug>(gista-star)
+  map <buffer> -- <Plug>(gista-unstar)
+endfunction " }}}
+
+function! s:handle_exception(exception) abort " {{{
+  redraw
+  let canceled_by_user_patterns = [
+        \ '^vim-gista: Login canceled',
+        \ '^vim-gista: ValidationError:',
+        \]
+  for pattern in canceled_by_user_patterns
+    if a:exception =~# pattern
+      call gista#util#prompt#warn('Canceled')
+      return
+    endif
+  endfor
+  " else
+  call gista#util#prompt#error(a:exception)
+endfunction " }}}
+function! gista#command#list#call(...) abort " {{{
+  let options = extend({
+        \ 'lookup': '',
+        \}, get(a:000, 0, {}),
+        \)
+  try
+    let lookup = gista#meta#get_valid_lookup(options.lookup)
+    let content = gista#api#gists#list(lookup, options)
+    return content
+  catch /^vim-gista:/
+    call s:handle_exception(v:exception)
+    return []
+  endtry
+endfunction " }}}
+function! gista#command#list#edit(...) abort " {{{
+  let options = extend({
+        \ 'lookup': '',
+        \}, get(a:000, 0, {}),
+        \)
+  try
+    let lookup  = gista#meta#get_valid_lookup(options.lookup)
+    let content = gista#api#gists#list(lookup, options)
+  catch /^vim-gista:/
+    call s:handle_exception(v:exception)
+    return []
+  endtry
+  let client = gista#api#get_current_client()
+  let apiname = client.apiname
+  let username = client.get_authorized_username()
+  let b:gista = {
+        \ 'winwidth': winwidth(0),
+        \ 'apiname': apiname,
+        \ 'username': username,
+        \ 'content': content,
+        \ 'content_type': 'list',
+        \}
+  redraw
+  call gista#util#prompt#echo('Formatting gist entries to display ...')
+  call gista#util#buffer#edit_content(
+        \ map(copy(content.entries), 's:format_entry(v:val)')
+        \)
+  call s:define_plugin_mappings()
+  if g:gista#command#list#enable_default_mappings
+    call s:define_default_mappings()
+  endif
   augroup vim_gista_list
     autocmd! * <buffer>
     autocmd VimResized <buffer> call s:on_VimResized()
-    autocmd WinEnter <buffer> call s:on_WinEnter()
+    autocmd WinEnter   <buffer> call s:on_WinEnter()
   augroup END
   setlocal nonumber nolist nowrap nospell nofoldenable textwidth=0
   setlocal foldcolumn=0 colorcolumn=0
   setlocal cursorline
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
-  setlocal isfname& isfname+=:
+  silent execute printf('file gista-list:%s:%s',
+        \ apiname,
+        \ lookup,
+        \)
   setlocal filetype=gista-list
 endfunction " }}}
-function! gista#command#list#update_if_necessary(...) abort " {{{
-  let fresh = get(a:000, 0)
-  let saved_winnum = winnr()
-  for winnum in range(1, winnr('$'))
-    if gista#util#compat#getbufvar(winbufnr(winnum), '&filetype') ==# 'gista-list'
-      silent execute printf('keepjumps %dwincmd w', winnum)
-      call s:action_update(fresh)
-      silent execute printf('keepjumps %dwincmd w', saved_winnum)
-      return
-    endif
-  endfor
+function! gista#command#list#open(...) abort " {{{
+  let options = extend({
+        \ 'lookup': '',
+        \ 'opener': '',
+        \ 'cache': 1,
+        \}, get(a:000, 0, {})
+        \)
+  try
+    let lookup  = gista#meta#get_valid_lookup(options.lookup)
+  catch /^vim-gista:/
+    call s:handle_exception(v:exception)
+    return
+  endtry
+  let client = gista#api#get_current_client()
+  let apiname = client.apiname
+  let opener = empty(options.opener)
+        \ ? g:gista#command#list#default_opener
+        \ : options.opener
+  let bufname = printf('gista-list:%s:%s',
+        \ client.apiname, lookup,
+        \)
+  call gista#util#buffer#open(bufname, {
+        \ 'opener': opener . (options.cache ? '' : '!'),
+        \ 'group': 'manipulation_panel',
+        \})
+  " BufReadCmd will execute gista#command#open#edit()
 endfunction " }}}
 
 function! s:on_VimResized() abort " {{{
-  call s:action_update()
+  call gista#util#buffer#edit_content(
+        \ map(copy(b:gista.content.entries), 's:format_entry(v:val)')
+        \)
 endfunction " }}}
 function! s:on_WinEnter() abort " {{{
   if b:gista.winwidth != winwidth(0)
-    call s:action_update()
+    call gista#util#buffer#edit_content(
+          \ map(copy(b:gista.content.entries), 's:format_entry(v:val)')
+          \)
   endif
 endfunction " }}}
 
@@ -265,11 +293,12 @@ function! s:action_edit(...) range abort " {{{
         \ g:gista#command#list#entry_openers,
         \ opener, ['edit', 1],
         \)
+  let session = gista#api#session({
+        \ 'apiname': b:gista.apiname,
+        \ 'username': b:gista.username,
+        \})
   try
-    call gista#api#session_enter({
-          \ 'apiname': b:gista.apiname,
-          \ 'username': b:gista.username,
-          \})
+    call session.enter()
     for n in range(a:firstline, a:lastline)
       let entry = s:get_entry(n - 1)
       if empty(entry)
@@ -278,13 +307,13 @@ function! s:action_edit(...) range abort " {{{
       if anchor
         call gista#util#anchor#focus()
       endif
-      call gista#command#open#edit({
-            \ 'gistid': entry.id,
+      call gista#command#open#open({
+            \ 'gist': entry,
             \ 'opener': opener,
             \})
     endfor
   finally
-    call gista#api#session_exit()
+    call session.exit()
   endtry
 endfunction " }}}
 function! s:action_json(...) range abort " {{{
@@ -296,11 +325,12 @@ function! s:action_json(...) range abort " {{{
         \ g:gista#command#list#entry_openers,
         \ opener, ['edit', 1],
         \)
+  let session = gista#api#session({
+        \ 'apiname': b:gista.apiname,
+        \ 'username': b:gista.username,
+        \})
   try
-    call gista#api#session_enter({
-          \ 'apiname': b:gista.apiname,
-          \ 'username': b:gista.username,
-          \})
+    call session.enter()
     for n in range(a:firstline, a:lastline)
       let entry = s:get_entry(n - 1)
       if empty(entry)
@@ -309,26 +339,110 @@ function! s:action_json(...) range abort " {{{
       if anchor
         call gista#util#anchor#focus()
       endif
-      call gista#command#json#edit({
+      call gista#command#json#open({
             \ 'gistid': entry.id,
             \ 'opener': opener,
             \})
     endfor
   finally
-    call gista#api#session_exit()
+    call session.exit()
+  endtry
+endfunction " }}}
+function! s:action_browse(...) range abort " {{{
+  let action = get(a:000, 0, 'open')
+  let session = gista#api#session({
+        \ 'apiname': b:gista.apiname,
+        \ 'username': b:gista.username,
+        \})
+  try
+    call session.enter()
+    for n in range(a:firstline, a:lastline)
+      let entry = s:get_entry(n - 1)
+      if empty(entry)
+        continue
+      endif
+      call gista#command#browse#{action}({
+            \ 'gistid': entry.id,
+            \})
+    endfor
+  finally
+    call session.exit()
+  endtry
+endfunction " }}}
+function! s:action_delete(...) range abort " {{{
+  " TODO
+  " Show a prompt to ask
+  let cache = get(a:000, 0, 1)
+  let session = gista#api#session({
+        \ 'apiname': b:gista.apiname,
+        \ 'username': b:gista.username,
+        \})
+  try
+    call session.enter()
+    for n in range(a:firstline, a:lastline)
+      let entry = s:get_entry(n - 1)
+      if empty(entry)
+        continue
+      endif
+      call gista#command#delete#call({
+            \ 'gistid': entry.id,
+            \ 'cache': cache,
+            \})
+    endfor
+  finally
+    call session.exit()
+  endtry
+endfunction " }}}
+function! s:action_star(...) range abort " {{{
+  let session = gista#api#session({
+        \ 'apiname': b:gista.apiname,
+        \ 'username': b:gista.username,
+        \})
+  try
+    call session.enter()
+    for n in range(a:firstline, a:lastline)
+      let entry = s:get_entry(n - 1)
+      if empty(entry)
+        continue
+      endif
+      call gista#command#star#call({
+            \ 'gistid': entry.id,
+            \})
+    endfor
+  finally
+    call session.exit()
+  endtry
+endfunction " }}}
+function! s:action_unstar(...) range abort " {{{
+  let session = gista#api#session({
+        \ 'apiname': b:gista.apiname,
+        \ 'username': b:gista.username,
+        \})
+  try
+    call session.enter()
+    for n in range(a:firstline, a:lastline)
+      let entry = s:get_entry(n - 1)
+      if empty(entry)
+        continue
+      endif
+      call gista#command#unstar#call({
+            \ 'gistid': entry.id,
+            \})
+    endfor
+  finally
+    call session.exit()
   endtry
 endfunction " }}}
 function! s:action_update(...) range abort " {{{
-  let fresh = get(a:000, 0)
+  let cache = get(a:000, 0, 1)
   let options = {
         \ 'verbose': 1,
         \ 'apiname': b:gista.apiname,
         \ 'username': b:gista.username,
-        \ 'lookup': b:gista.lookup,
-        \ 'fresh': fresh,
+        \ 'lookup': b:gista.content.lookup,
+        \ 'cache': cache,
         \}
-  let content = gista#command#list#call(options)
-  call s:set_content(content)
+  call gista#command#list#edit(options)
 endfunction " }}}
 function! s:action_next_label(...) range abort " {{{
   let index = s:get_current_label_index() + 1
@@ -349,17 +463,18 @@ function! s:get_parser() abort " {{{
           \ 'name': 'Gista[!] list',
           \ 'description': [
           \   'List gists of a paricular lookup.',
-          \   'A bang (!) is a short form of "--fresh --no-since".',
+          \   'A bang (!) is a short form of "--no-cache --no-since".',
           \ ],
           \})
     call s:parser.add_argument(
           \ 'lookup',
           \ 'Gists lookup', {
-          \   'complete': function('gista#api#gists#complete_lookup'), 
+          \   'complete': function('gista#meta#complete_lookup'), 
           \})
     call s:parser.add_argument(
-          \ '--fresh',
-          \ 'Request new/updated gists from API', {
+          \ '--cache',
+          \ 'Use cached entries whenever possible', {
+          \   'default': 1,
           \   'deniable': 1,
           \})
     call s:parser.add_argument(
@@ -394,7 +509,7 @@ function! gista#command#list#command(...) abort " {{{
         \ options,
         \)
   if options.__bang__
-    let options.fresh = 1
+    let options.cache = 0
     let options.since = ''
   endif
   call gista#command#list#open(options)
@@ -431,22 +546,22 @@ function! gista#command#list#define_syntax() abort " {{{
   syntax match GistaModifiedMarker /[ \*]/
         \ display contained containedin=GistaMeta
 endfunction " }}}
+
 function! gista#command#list#get_status_string(...) abort " {{{
   let lookup = get(a:000, 0, '')
   if empty(lookup)
     return printf('Gist entries of %s in %s (Mode: %s)',
-          \ b:gista.lookup,
+          \ b:gista.content.lookup,
           \ b:gista.apiname,
           \ s:LABEL_MODES[s:get_current_label_index()]
           \)
-  elseif lookup ==# 'apiname'
-    return b:gista.apiname
-  elseif lookup ==# 'lookup'
-    return b:gista.lookup
-  else
-    return printf('Invalid lookup "%s" is specified', lookup)
   endif
 endfunction " }}}
+
+augroup vim_gista_list_update
+  autocmd!
+  autocmd User vim_gista_update call s:update_if_necessary()
+augroup END
 
 call gista#define_variables('command#list', {
       \ 'default_options': {},
@@ -463,6 +578,7 @@ call gista#define_variables('command#list', {
       \   'tab':     ['tabnew', 0],
       \   'preview': ['pedit', 0],
       \ },
+      \ 'enable_default_mappings': 1,
       \})
 
 let &cpo = s:save_cpo

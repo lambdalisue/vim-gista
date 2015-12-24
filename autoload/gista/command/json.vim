@@ -9,9 +9,7 @@ function! s:handle_exception(exception) abort " {{{
   redraw
   let canceled_by_user_patterns = [
         \ '^vim-gista: Login canceled',
-        \ '^vim-gista: ValidationError: An API name cannot be empty',
-        \ '^vim-gista: ValidationError: An API account username cannot be empty',
-        \ '^vim-gista: ValidationError: A gist ID cannot be empty',
+        \ '^vim-gista: ValidationError:',
         \]
   for pattern in canceled_by_user_patterns
     if a:exception =~# pattern
@@ -28,32 +26,28 @@ function! gista#command#json#read(...) abort " {{{
         \}, get(a:000, 0, {}),
         \)
   try
-    let gist = gista#api#gists#get(
-          \ options.gistid, options
-          \)
+    let gistid = gista#meta#get_valid_gistid(options.gistid)
+    let gist   = gista#api#gists#get(gistid, options)
     let content = split(
           \ s:J.encode(gist, { 'indent': 2 }),
           \ "\r\\?\n"
           \)
-    call gista#util#buffer#read_content(
-          \ content,
-          \ printf('%s.json', tempname()),
-          \)
-    call gista#command#list#update_if_necessary()
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
   endtry
+  call gista#util#buffer#read_content(
+        \ content,
+        \ printf('%s.json', tempname()),
+        \)
 endfunction " }}}
 function! gista#command#json#edit(...) abort " {{{
   let options = extend({
         \ 'gistid': '',
-        \ 'opener': '',
         \}, get(a:000, 0, {})
         \)
   try
-    let gist = gista#api#gists#get(
-          \ options.gistid, options
-          \)
+    let gistid = gista#meta#get_valid_gistid(options.gistid)
+    let gist   = gista#api#gists#get(gistid, options)
     let content = split(
           \ s:J.encode(gist, { 'indent': 2 }),
           \ "\r\\?\n"
@@ -62,50 +56,51 @@ function! gista#command#json#edit(...) abort " {{{
     call s:handle_exception(v:exception)
     return
   endtry
-  let opener = empty(options.opener)
-        \ ? g:gista#command#json#default_opener
-        \ : options.opener
-  let is_pedit = opener =~# 'pedit'
-  let opener = substitute(
-        \ opener,
-        \ 'pedit',
-        \ printf('keepjumps topleft %d split', &previewheight),
-        \ '',
-        \)
   let client = gista#api#get_current_client()
   let apiname = client.apiname
   let username = client.get_authorized_username()
-  if opener !=# 'inplace'
-    let bufname = printf('gista:%s:%s.json',
-          \ client.apiname, gist.id,
-          \)
-    try
-      let saved_eventignore = &eventignore
-      set eventignore=BufReadCmd
-      call gista#util#buffer#open(bufname, {
-            \ 'opener': opener,
-            \})
-    finally
-      let &eventignore = saved_eventignore
-    endtry
-  endif
-  call gista#util#buffer#edit_content(
-        \ content,
-        \ printf('%s.json', tempname()),
-        \)
   let b:gista = {
         \ 'apiname': apiname,
         \ 'username': username,
         \ 'gistid': gist.id,
+        \ 'content_type': 'json',
         \}
-  setlocal buftype=nofile
+  call gista#util#buffer#edit_content(
+        \ content,
+        \ printf('%s.json', tempname()),
+        \)
+  setlocal buftype=nowrite
   setlocal nomodifiable
-  setlocal filetype=json
-  if is_pedit
-    setlocal previewwindow
-    silent keepjumps wincmd p
-  endif
-  call gista#command#list#update_if_necessary()
+  silent execute printf('file gista:%s:%s.json',
+        \ client.apiname, gist.id,
+        \)
+  filetype detect
+endfunction " }}}
+function! gista#command#json#open(...) abort " {{{
+  let options = extend({
+        \ 'gistid': '',
+        \ 'opener': '',
+        \ 'cache': 1,
+        \}, get(a:000, 0, {})
+        \)
+  try
+    let gistid = gista#meta#get_valid_gistid(options.gistid)
+  catch /^vim-gista:/
+    call s:handle_exception(v:exception)
+    return
+  endtry
+  let client = gista#api#get_current_client()
+  let apiname = client.apiname
+  let opener = empty(options.opener)
+        \ ? g:gista#command#json#default_opener
+        \ : options.opener
+  let bufname = printf('gista:%s:%s.json',
+        \ client.apiname, gistid,
+        \)
+  call gista#util#buffer#open(bufname, {
+        \ 'opener': opener . (options.cache ? '' : '!'),
+        \})
+  " BufReadCmd will execute gista#command#json#edit()
 endfunction " }}}
 
 function! s:get_parser() abort " {{{
@@ -117,13 +112,19 @@ function! s:get_parser() abort " {{{
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#api#gists#complete_gistid'),
+          \   'complete': function('g:gista#api#gists#cache#complete_gistid'),
           \   'type': s:A.types.value,
           \})
     call s:parser.add_argument(
-          \ '--opener',
+          \ '--opener', '-o',
           \ 'A way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:A.types.value,
+          \})
+    call s:parser.add_argument(
+          \ '--cache',
+          \ 'Use cached content whenever possible.', {
+          \   'default': 1,
+          \   'deniable': 1,
           \})
   endif
   return s:parser
@@ -139,7 +140,7 @@ function! gista#command#json#command(...) abort " {{{
         \ deepcopy(g:gista#command#json#default_options),
         \ options,
         \)
-  call gista#command#json#edit(options)
+  call gista#command#json#open(options)
 endfunction " }}}
 function! gista#command#json#complete(...) abort " {{{
   let parser = s:get_parser()

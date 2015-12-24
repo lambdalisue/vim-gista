@@ -9,9 +9,7 @@ function! s:handle_exception(exception) abort " {{{
   redraw
   let canceled_by_user_patterns = [
         \ '^vim-gista: Login canceled',
-        \ '^vim-gista: ValidationError: An API name cannot be empty',
-        \ '^vim-gista: ValidationError: An API account username cannot be empty',
-        \ '^vim-gista: ValidationError: A gist ID cannot be empty',
+        \ '^vim-gista: ValidationError:',
         \]
   for pattern in canceled_by_user_patterns
     if a:exception =~# pattern
@@ -28,18 +26,12 @@ function! gista#command#fork#call(...) abort " {{{
         \}, get(a:000, 0, {}),
         \)
   try
-    let gist = gista#api#fork#post(
-          \ options.gistid, options
-          \)
-    redraw
-    call gista#command#list#update_if_necessary()
-    call gista#util#prompt#info(printf(
-          \ 'The gist "%s" is forkred to a gist "%s"',
-          \ options.gistid, gist.id,
-          \))
+    let gistid = gista#meta#get_valid_gistid(options.gistid)
+    let gist = gista#api#fork#post(gistid, options)
+    return gist
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
-    return ''
+    return {}
   endtry
 endfunction " }}}
 
@@ -52,7 +44,7 @@ function! s:get_parser() abort " {{{
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#api#gists#complete_gistid'),
+          \   'complete': function('g:gista#meta#complete_gistid'),
           \})
   endif
   return s:parser
@@ -65,7 +57,7 @@ function! gista#command#fork#command(...) abort " {{{
   endif
   " extend default options
   let options = extend(
-        \ deepcopy(g:gista#command#patch#default_options),
+        \ deepcopy(g:gista#command#fork#default_options),
         \ options,
         \)
   call gista#command#fork#call(options)

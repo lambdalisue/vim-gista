@@ -21,35 +21,27 @@ function! gista#api#fork#post(gistid, ...) abort " {{{
   if options.verbose
     redraw
     call gista#util#prompt#echo(printf(
-          \ 'Forking a gist "%s" in %s ...',
+          \ 'Forking a gist %s in %s ...',
           \ gist.id,
           \ client.apiname,
           \))
   endif
 
   let url = printf('gists/%s/forks', gist.id)
-  let res = client.post(url, {}, {}, {
-        \ 'verbose': options.verbose,
-        \})
-  let res.content = get(res, 'content', '')
-  let res.content = empty(res.content) ? {} : s:J.decode(res.content)
-  if res.status != 201
-    call gista#api#throw_api_exception(res)
+  let res = client.post(url)
+  if res.status == 201
+    let res.content = get(res, 'content', '')
+    let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+    let gist = res.content
+    let gist._gista_fetched = 1
+    let gist._gista_modified = 0
+    let gist._last_modified = s:G.parse_response_last_modified(res)
+    call client.content_cache.set(gist.id, gist)
+    " TODO
+    " Update cached entries of the gist
+    return gist
   endif
-
-  let gist = gista#gist#mark_fetched(res.content)
-  call client.content_cache.set(gist.id, gist)
-  if !empty(username)
-    call gista#gist#apply_to_entry_cache(
-          \ client, gist.id,
-          \ function('gista#gist#mark_fetched'),
-          \)
-    call gista#gist#apply_to_entry_cache(
-          \ client, gist.id,
-          \ function('gista#gist#unmark_modified'),
-          \)
-  endif
-  return gist
+  call gista#api#throw_api_exception(res)
 endfunction " }}}
 function! gista#api#fork#list(gistid, ...) abort " {{{
   call gista#util#prompt#throw(
@@ -58,8 +50,7 @@ function! gista#api#fork#list(gistid, ...) abort " {{{
 endfunction " }}}
 
 " Configure variables
-call gista#define_variables('api#fork', {
-      \})
+call gista#define_variables('api#fork', {})
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo

@@ -8,9 +8,7 @@ function! s:handle_exception(exception) abort " {{{
   redraw
   let canceled_by_user_patterns = [
         \ '^vim-gista: Login canceled',
-        \ '^vim-gista: ValidationError: An API name cannot be empty',
-        \ '^vim-gista: ValidationError: An API account username cannot be empty',
-        \ '^vim-gista: ValidationError: A gist ID cannot be empty',
+        \ '^vim-gista: ValidationError:',
         \]
   for pattern in canceled_by_user_patterns
     if a:exception =~# pattern
@@ -27,22 +25,18 @@ function! gista#command#patch#call(...) abort " {{{
         \}, get(a:000, 0, {}),
         \)
   try
-    let gist = gista#api#gists#patch(
-          \ options.gistid, options
-          \)
+
+    let gistid = gista#meta#get_valid_gistid(options.gistid)
+    let gist   = gista#api#gists#patch(gistid, options)
     let client = gista#api#get_current_client()
     let b:gista = {
           \ 'apiname': client.apiname,
           \ 'username': client.get_authorized_username(),
           \ 'gistid': gist.id,
           \ 'filename': expand('%:t'),
+          \ 'content_type': 'raw',
           \}
     redraw
-    call gista#command#list#update_if_necessary()
-    call gista#util#prompt#info(printf(
-          \ 'The content has patched to the gist "%s"',
-          \ gist.id,
-          \))
     return gist
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
@@ -65,6 +59,12 @@ function! s:get_parser() abort " {{{
           \ '--description', '-d',
           \ 'A description of a gist', {
           \   'type': s:A.types.value,
+          \})
+    call s:parser.add_argument(
+          \ '--cache',
+          \ 'Do not PATCH a content and save the content only to the cache', {
+          \   'default': 0,
+          \   'deniable': 1,
           \})
   endif
   return s:parser

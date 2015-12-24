@@ -8,9 +8,7 @@ function! s:handle_exception(exception) abort " {{{
   redraw
   let canceled_by_user_patterns = [
         \ '^vim-gista: Login canceled',
-        \ '^vim-gista: ValidationError: An API name cannot be empty',
-        \ '^vim-gista: ValidationError: An API account username cannot be empty',
-        \ '^vim-gista: ValidationError: A gist ID cannot be empty',
+        \ '^vim-gista: ValidationError:',
         \]
   for pattern in canceled_by_user_patterns
     if a:exception =~# pattern
@@ -18,7 +16,6 @@ function! s:handle_exception(exception) abort " {{{
       return
     endif
   endfor
-  " else
   call gista#util#prompt#error(a:exception)
 endfunction " }}}
 function! gista#command#star#call(...) abort " {{{
@@ -27,18 +24,10 @@ function! gista#command#star#call(...) abort " {{{
         \}, get(a:000, 0, {}),
         \)
   try
-    call gista#api#star#put(
-          \ options.gistid, options
-          \)
-    redraw
-    call gista#command#list#update_if_necessary()
-    call gista#util#prompt#info(printf(
-          \ 'The gist "%s" is starred',
-          \ options.gistid,
-          \))
+    let gistid = gista#meta#get_valid_gistid(options.gistid)
+    call gista#api#star#put(gistid, options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
-    return ''
   endtry
 endfunction " }}}
 
@@ -51,7 +40,7 @@ function! s:get_parser() abort " {{{
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#api#gists#complete_gistid'),
+          \   'complete': function('g:gista#meta#complete_gistid'),
           \})
   endif
   return s:parser
@@ -64,7 +53,7 @@ function! gista#command#star#command(...) abort " {{{
   endif
   " extend default options
   let options = extend(
-        \ deepcopy(g:gista#command#patch#default_options),
+        \ deepcopy(g:gista#command#star#default_options),
         \ options,
         \)
   call gista#command#star#call(options)
@@ -77,8 +66,6 @@ endfunction " }}}
 call gista#define_variables('command#star', {
       \ 'default_options': {},
       \})
-
-
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo
