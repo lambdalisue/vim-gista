@@ -71,7 +71,7 @@ function! gista#command#browse#command(...) abort " {{{
   endif
   " extend default options
   let options = extend(
-        \ deepcopy(g:gista#command#open#default_options),
+        \ deepcopy(g:gista#command#browse#default_options),
         \ options,
         \)
   call gista#command#browse#call(options)

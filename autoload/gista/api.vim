@@ -61,6 +61,55 @@ function! s:get_content_cache(apiname) abort " {{{
   return content_cache
 endfunction " }}}
 
+function! s:validate_apiname(apiname) abort " {{{
+  call gista#util#validate#not_empty(
+        \ a:apiname,
+        \ 'An API name cannot be empty',
+        \)
+  call gista#util#validate#exists(
+        \ a:apiname, keys(s:registry),
+        \ 'An API name "%value" has not been registered yet',
+        \)
+endfunction " }}}
+function! s:get_default_apiname() abort " {{{
+  let apiname = g:gista#api#default_apiname
+  try
+    call s:validate_apiname(apiname)
+    return apiname
+  catch /^vim-gista: ValidationError/
+    call gista#util#prompt#warn(v:exception)
+    call gista#util#prompt#warn(
+          \ '"GitHub" will be used as a default API name instead',
+          \)
+    return 'GitHub'
+  endtry
+endfunction " }}}
+function! s:validate_username(username) abort " {{{
+  call gista#util#validate#pattern(
+        \ a:username, '^[a-zA-Z0-9_\-]\+$',
+        \ 'An API username "%value" requires to follow "%pattern"'
+        \)
+endfunction " }}}
+function! s:get_default_username(apiname) abort " {{{
+  if type(g:gista#api#default_username) == type('')
+    let username = g:gista#api#default_username
+  else
+    let default = get(g:gista#api#default_username, '_', '')
+    let username = get(g:gista#api#default_username, a:apiname, default)
+  endif
+  if empty(username)
+    return ''
+  endif
+  try
+    call s:validate_username(username)
+    return username
+  catch /^vim-gista: ValidationError/
+    call gista#util#prompt#warn(v:exception)
+    call gista#util#prompt#warn('An anonymous user is used instead')
+    return ''
+  endtry
+endfunction " }}}
+
 function! s:login(client, username, options) abort " {{{
   let options = extend({
         \ 'verbose': 1,
@@ -114,59 +163,6 @@ function! s:get_client(apiname) abort " {{{
   let client = s:new_client(a:apiname)
   call client_cache.set(a:apiname, client)
   return client
-endfunction " }}}
-
-function! s:validate_apiname(apiname) abort " {{{
-  call gista#util#validate#not_empty(
-        \ a:apiname,
-        \ 'An API name cannot be empty',
-        \)
-  call gista#util#validate#exists(
-        \ a:apiname, keys(s:registry),
-        \ 'An API name "%value" has not been registered yet',
-        \)
-endfunction " }}}
-function! s:get_default_apiname() abort " {{{
-  let apiname = g:gista#api#default_apiname
-  try
-    call s:validate_apiname(apiname)
-    return apiname
-  catch /^vim-gista: ValidationError/
-    call gista#util#prompt#warn(v:exception)
-    call gista#util#prompt#warn(
-          \ '"GitHub" will be used as a default API name instead',
-          \)
-    return 'GitHub'
-  endtry
-endfunction " }}}
-function! s:validate_username(username) abort " {{{
-  call gista#util#validate#not_empty(
-        \ a:username,
-        \ 'An API username cannot be empty'
-        \)
-  call gista#util#validate#pattern(
-        \ a:username, '^[a-zA-Z0-9_\-]\+$',
-        \ 'An API username "%value" requires to follow "%pattern"'
-        \)
-endfunction " }}}
-function! s:get_default_username(apiname) abort " {{{
-  if type(g:gista#api#default_username) == type('')
-    let username = g:gista#api#default_username
-  else
-    let default = get(g:gista#api#default_username, '_', '')
-    let username = get(g:gista#api#default_username, a:apiname, default)
-  endif
-  if empty(username)
-    return ''
-  endif
-  try
-    call s:validate_username(username)
-    return username
-  catch /^vim-gista: ValidationError/
-    call gista#util#prompt#warn(v:exception)
-    call gista#util#prompt#warn('An anonymous user is used instead')
-    return ''
-  endtry
 endfunction " }}}
 
 function! gista#api#register(apiname, baseurl) abort " {{{
@@ -251,11 +247,9 @@ function! gista#api#session_enter(...) abort " {{{
         \}, get(a:000, 0, {}),
         \)
   if exists('s:previous_client')
-    call gista#util#prompt#error(
-          \ 'vim-gista: SessionError:',
-          \ 'gista#api#session_exit() has not been called',
+    call gista#util#prompt#throw(
+          \ 'SessionError: gista#api#session_exit() has not been called',
           \)
-    return
   endif
   let s:previous_client = deepcopy(
         \ gista#api#get_client(options.apiname)
@@ -264,9 +258,8 @@ function! gista#api#session_enter(...) abort " {{{
 endfunction " }}}
 function! gista#api#session_exit() abort " {{{
   if !exists('s:previous_client')
-    call gista#util#prompt#error(
-          \ 'vim-gista: SessionError:',
-          \ 'gista#api#session_enter() has not been called',
+    call gista#util#prompt#throw(
+          \ 'SessionError: gista#api#session_enter() has not been called',
           \)
     return
   endif
@@ -313,7 +306,6 @@ call gista#define_variables('api', {
       \ 'cache_dir': '~/.cache/vim-gista',
       \ 'default_apiname': 'GitHub',
       \ 'default_username': '',
-      \ 'fetch_python_nprocess': 50,
       \})
 
 let &cpo = s:save_cpo

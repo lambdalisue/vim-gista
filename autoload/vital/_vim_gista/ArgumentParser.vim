@@ -269,13 +269,13 @@ function! s:complete_files(arglead, cmdline, cursorpos, ...) dict abort " {{{
   " substitute 'root'
   call map(candidates, printf(
         \ 'substitute(v:val, ''^%s'', "", "")',
-        \ escape(root, '~.^$[]'),
+        \ escape(root, '\~.^$[]'),
         \))
   " substitute /home/<user> to ~/ if ~/ is specified
   if a:arglead =~# '^\~'
     call map(candidates, printf(
           \ 'substitute(v:val, ''^%s'', "~", "")',
-          \ escape(expand('~'), '~.^$[]'),
+          \ escape(expand('~'), '\~.^$[]'),
           \))
   endif
   call map(candidates, printf(
