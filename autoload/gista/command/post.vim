@@ -4,6 +4,27 @@ set cpo&vim
 let s:V = gista#vital()
 let s:A = s:V.import('ArgumentParser')
 
+function! s:ask_description(description) abort
+  " Description
+  let description = gist.description
+  if type(options.description) == type(0)
+    if options.description
+      let description = gista#util#prompt#ask(
+            \ 'Please input a description of a gist: ',
+            \ gist.description,
+            \)
+    endif
+  else
+    let description = options.description
+  endif
+  if empty(description) && !g:gista#api#gists#patch_allow_empty_description
+    call gista#util#prompt#throw(
+          \ 'An empty description is not allowed',
+          \ 'See ":help g:gista#api#gists#patch_allow_empty_description" for detail',
+          \)
+  endif
+endfunction
+
 function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [

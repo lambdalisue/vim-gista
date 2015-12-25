@@ -79,11 +79,11 @@ function! s:search(pattern) abort
   return s:_uniq(modules)
 endfunction
 
-function! s:expand_modules(entry, all) abort
-  if type(a:entry) == type([])
-    let candidates = s:_concat(map(copy(a:entry), 's:search(v:val)'))
+function! s:expand_modules(head, all) abort
+  if type(a:head) == type([])
+    let candidates = s:_concat(map(copy(a:head), 's:search(v:val)'))
     if empty(candidates)
-      throw printf('vital: Any of module %s is not found', string(a:entry))
+      throw printf('vital: Any of module %s is not found', string(a:head))
     endif
     if eval(join(map(copy(candidates), 'has_key(a:all, v:val)'), '+'))
       let modules = []
@@ -91,9 +91,9 @@ function! s:expand_modules(entry, all) abort
       let modules = [candidates[0]]
     endif
   else
-    let modules = s:search(a:entry)
+    let modules = s:search(a:head)
     if empty(modules)
-      throw printf('vital: Module %s is not found', a:entry)
+      throw printf('vital: Module %s is not found', a:head)
     endif
   endif
   call filter(modules, '!has_key(a:all, v:val)')

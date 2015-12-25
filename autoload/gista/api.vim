@@ -33,33 +33,33 @@ function! s:get_token_cache(apiname) abort
   call s:token_cache.set(a:apiname, token_cache)
   return token_cache
 endfunction 
-function! s:get_entry_cache(apiname) abort
-  if !exists('s:entry_cache')
-    let s:entry_cache = s:C.new('memory')
+function! s:get_index_cache(apiname) abort
+  if !exists('s:index_cache')
+    let s:index_cache = s:C.new('memory')
   endif
-  if s:entry_cache.has(a:apiname)
-    return s:entry_cache.get(a:apiname)
+  if s:index_cache.has(a:apiname)
+    return s:index_cache.get(a:apiname)
   endif
-  let cache_dir = expand(s:P.join(g:gista#api#cache_dir, 'entry', a:apiname))
-  let entry_cache = s:C.new('file', {
+  let cache_dir = expand(s:P.join(g:gista#api#cache_dir, 'indexes', a:apiname))
+  let index_cache = s:C.new('file', {
         \ 'cache_dir': cache_dir,
         \})
-  call s:entry_cache.set(a:apiname, entry_cache)
-  return entry_cache
+  call s:index_cache.set(a:apiname, index_cache)
+  return index_cache
 endfunction
-function! s:get_content_cache(apiname) abort
-  if !exists('s:content_cache')
-    let s:content_cache = s:C.new('memory')
+function! s:get_gist_cache(apiname) abort
+  if !exists('s:gist_cache')
+    let s:gist_cache = s:C.new('memory')
   endif
-  if s:content_cache.has(a:apiname)
-    return s:content_cache.get(a:apiname)
+  if s:gist_cache.has(a:apiname)
+    return s:gist_cache.get(a:apiname)
   endif
-  let cache_dir = expand(s:P.join(g:gista#api#cache_dir, 'content', a:apiname))
-  let content_cache = s:C.new('file', {
+  let cache_dir = expand(s:P.join(g:gista#api#cache_dir, 'bodies', a:apiname))
+  let gist_cache = s:C.new('file', {
         \ 'cache_dir': cache_dir,
         \})
-  call s:content_cache.set(a:apiname, content_cache)
-  return content_cache
+  call s:gist_cache.set(a:apiname, gist_cache)
+  return gist_cache
 endfunction
 
 function! s:validate_apiname(apiname) abort
@@ -144,8 +144,8 @@ function! s:new_client(apiname) abort
         \})
   " extend client
   let client.apiname = a:apiname
-  let client.entry_cache = s:get_entry_cache(a:apiname)
-  let client.content_cache = s:get_content_cache(a:apiname)
+  let client.index_cache = s:get_index_cache(a:apiname)
+  let client.gist_cache = s:get_gist_cache(a:apiname)
   " login if default_username of apiname exists
   let default_username = s:get_default_username(a:apiname)
   if !empty(default_username)

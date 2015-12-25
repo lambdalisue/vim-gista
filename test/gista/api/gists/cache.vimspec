@@ -1,0 +1,252 @@
+let s:V = vital#of('vital')
+let s:F = s:V.import('System.File')
+let s:P = s:V.import('System.Filepath')
+let s:S = s:V.import('Vim.ScriptLocal')
+
+" To prevent 'E121: Undefined variable:'
+call eval('g:gista#api#cache_dir')
+
+Describe gista#api#gists#cache
+  Before
+    let sfile = s:P.realpath('autoload/gista/api/gists/cache.vim')
+    let sf = s:S.sfuncs(sfile)
+    let sv = s:S.svars(sfile)
+    let Guard = gista#vital().import('Vim.Guard')
+    let guard = Guard.new(
+          \ 'g:gista#api#cache_dir',
+          \)
+    let g:gista#api#cache_dir = tempname()
+  End
+  After
+    call guard.restore()
+  End
+  After all
+    if isdirectory(g:gista#api#cache_dir)
+      call s:F.rmdir(g:gista#api#cache_dir, 'r')
+    endif
+  End
+  Context [PRIVATE] s:pick_necessary_params_of_content({content})
+    It returns a reduced {content}
+      let content = {
+            \ 'size': 10,
+            \ 'type': 'foo',
+            \ 'language': 'bar',
+            \ 'unknown': '',
+            \}
+      let ret = sf.pick_necessary_params_of_content(content)
+      Assert Equals(ret, {
+            \ 'size': 10,
+            \ 'type': 'foo',
+            \ 'language': 'bar',
+            \})
+    End
+  End
+  Context [PRIVATE] s:pick_necessary_params_of_entry({entry})
+    It returns a reduced {entry} with '_gista_XXX'
+      let entry = {
+            \ 'id': 0,
+            \ 'description': 'foo',
+            \ 'public': 1,
+            \ 'files': {
+            \   'foo.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \     'content': [],
+            \   },
+            \   'bar.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \     'content': [],
+            \   },
+            \ },
+            \ 'created_at': 'today',
+            \ 'updated_at': 'today',
+            \ '_gista_fetched': 1,
+            \ '_gista_modified': 1,
+            \ 'unknown': 'unknown',
+            \}
+      let ret = sf.pick_necessary_params_of_entry(entry)
+      Assert Equals(ret, {
+            \ 'id': 0,
+            \ 'description': 'foo',
+            \ 'public': 1,
+            \ 'files': {
+            \   'foo.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \   },
+            \   'bar.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \   },
+            \ },
+            \ 'created_at': 'today',
+            \ 'updated_at': 'today',
+            \ '_gista_fetched': 1,
+            \ '_gista_modified': 1,
+            \})
+    End
+    It returns a reduced {entry} with default '_gista_XXX' if missing
+      let entry = {
+            \ 'id': 0,
+            \ 'description': 'foo',
+            \ 'public': 1,
+            \ 'files': {
+            \   'foo.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \     'content': [],
+            \   },
+            \   'bar.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \     'content': [],
+            \   },
+            \ },
+            \ 'created_at': 'today',
+            \ 'updated_at': 'today',
+            \ 'unknown': 'unknown',
+            \}
+      let ret = sf.pick_necessary_params_of_entry(entry)
+      Assert Equals(ret, {
+            \ 'id': 0,
+            \ 'description': 'foo',
+            \ 'public': 1,
+            \ 'files': {
+            \   'foo.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \   },
+            \   'bar.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \   },
+            \ },
+            \ 'created_at': 'today',
+            \ 'updated_at': 'today',
+            \ '_gista_fetched': 0,
+            \ '_gista_modified': 0,
+            \})
+    End
+  End
+
+  Context [PRIVATE] s:get_pseudo_entry({gistid})
+    It returns a pseudo (index) entry
+      let ret = sf.get_pseudo_entry('100')
+      Assert Equals(ret, {
+            \ 'id': '100',
+            \ 'description': '',
+            \ 'public': 0,
+            \ 'files': {},
+            \ '_gista_fetched': 0,
+            \ '_gista_modified': 0,
+            \})
+    End
+  End
+  Context [PRIVATE] s:get_pseudo_gist({gistid})
+    It returns a pseudo gist
+      let ret = sf.get_pseudo_gist('100')
+      Assert Equals(ret, {
+            \ 'id': '100',
+            \ 'description': '',
+            \ 'public': 0,
+            \ 'files': {},
+            \ '_gista_fetched': 0,
+            \ '_gista_modified': 0,
+            \ '_gista_last_modified': '',
+            \})
+    End
+  End
+  Context [PRIVATE] s:get_pseudo_index({gistid})
+    It returns a pseudo index
+      let ret = sf.get_pseudo_index()
+      Assert Equals(ret, {
+            \ 'entries': [],
+            \ '_gista_fetched': 0,
+            \})
+    End
+  End
+
+  Context #get({gistid}[, {options}])
+    It returns a pseudo gist when no cached gist of {gistid} exist
+      let ret = gista#api#gists#cache#get('100', { 'verbose': 0 })
+      Assert Equals(ret, {
+            \ 'id': '100',
+            \ 'description': '',
+            \ 'public': 0,
+            \ 'files': {},
+            \ '_gista_fetched': 0,
+            \ '_gista_modified': 0,
+            \ '_gista_last_modified': '',
+            \})
+    End
+    It return a gist when cached gist of {gistid} exist
+      let client = gista#api#get_current_client()
+      let g = Guard.new(
+            \ ['gist_cache', client],
+            \)
+      call client.gist_cache.set('100', {
+            \ 'id': '100',
+            \ 'description': 'Foo',
+            \ 'public': 1,
+            \ 'files': {
+            \   'foo.txt': {
+            \     'size': 10,
+            \   },
+            \ },
+            \ '_gista_fetched': 1,
+            \ '_gista_modified': 1,
+            \ '_gista_last_modified': 'today',
+            \})
+      let ret = gista#api#gists#cache#get('100', { 'verbose': 0 })
+      Assert Equals(ret, {
+            \ 'id': '100',
+            \ 'description': 'Foo',
+            \ 'public': 1,
+            \ 'files': {
+            \   'foo.txt': {
+            \     'size': 10,
+            \   },
+            \ },
+            \ '_gista_fetched': 1,
+            \ '_gista_modified': 1,
+            \ '_gista_last_modified': 'today',
+            \})
+      call g.restore()
+    End
+  End
+  Context #list({lookup}[, {options}])
+    It returns a pseudo index when no cached index of {lookup} exist
+      let ret = gista#api#gists#cache#list('public', { 'verbose': 0 })
+      Assert Equals(ret, {
+            \ 'entries': [],
+            \ '_gista_fetched': 0,
+            \})
+    End
+    It return an index when cached index of {lookup} exist
+      let client = gista#api#get_current_client()
+      let g = Guard.new(
+            \ ['index_cache', client],
+            \)
+      call client.index_cache.set('public', {
+            \ 'entries': [ 'A', 'B', 'C' ],
+            \ '_gista_fetched': 1,
+            \})
+      let ret = gista#api#gists#cache#list('public', { 'verbose': 0 })
+      Assert Equals(ret, {
+            \ 'entries': [ 'A', 'B', 'C' ],
+            \ '_gista_fetched': 1,
+            \})
+      call g.restore()
+    End
+  End
+End
+

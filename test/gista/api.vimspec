@@ -77,17 +77,17 @@ Describe gista#api
         Assert NotSame(ret, ret3)
       End
     End
-    Context s:get_content_cache({apiname})
+    Context s:get_gist_cache({apiname})
       It returns a unique cache system of {apiname}
-        let ret = sf.get_content_cache('A')
+        let ret = sf.get_gist_cache('A')
         Assert KeyExists(ret, 'has')
         Assert KeyExists(ret, 'get')
         Assert KeyExists(ret, 'set')
         Assert KeyExists(ret, 'remove')
         Assert KeyExists(ret, 'clear')
-        let ret2 = sf.get_content_cache('A')
+        let ret2 = sf.get_gist_cache('A')
         Assert Same(ret, ret2)
-        let ret3 = sf.get_content_cache('B')
+        let ret3 = sf.get_gist_cache('B')
         Assert NotSame(ret, ret3)
       End
     End
@@ -248,8 +248,8 @@ Describe gista#api
         Assert KeyExists(client, 'retrieve')
         " Extended interface
         Assert KeyExists(client, 'apiname')
-        Assert KeyExists(client, 'entry_cache')
-        Assert KeyExists(client, 'content_cache')
+        Assert KeyExists(client, 'index_cache')
+        Assert KeyExists(client, 'gist_cache')
         " it always return a fresh instance
         let client2 = sf.new_client('A')
         Assert NotSame(client, client2)
@@ -293,8 +293,8 @@ Describe gista#api
         Assert KeyExists(client, 'retrieve')
         " Extended interface
         Assert KeyExists(client, 'apiname')
-        Assert KeyExists(client, 'entry_cache')
-        Assert KeyExists(client, 'content_cache')
+        Assert KeyExists(client, 'index_cache')
+        Assert KeyExists(client, 'gist_cache')
         " it always return an unique instance
         let client2 = sf.get_client('A')
         Assert Same(client, client2)

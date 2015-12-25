@@ -63,8 +63,8 @@ function! gista#api#gists#get(gistid, ...) abort
             \ gist.id, client.apiname,
             \))
     endif
-    call client.content_cache.set(gist.id, gist)
-    call gista#api#gists#cache#update_entry(gist)
+    call client.gist_cache.set(gist.id, gist)
+    call gista#api#gists#cache#update_head(gist)
     return gist
   endif
   call gista#api#throw_api_exception(res)
@@ -77,18 +77,18 @@ function! gista#api#gists#list(lookup, ...) abort
         \ 'verbose': 1,
         \}, get(a:000, 0, {})
         \)
-  let content = gista#api#gists#cache#list(a:lookup, options)
-  if options.cache && content._gista_fetched
-    return content
+  let gist = gista#api#gists#cache#list(a:lookup, options)
+  if options.cache && gist._gista_fetched
+    return gist
   endif
   " assign page/since/last_page
   let client = gista#api#get_current_client()
-  let lookup = content.lookup
+  let lookup = gist.lookup
   let since = type(options.since) == type(0)
         \ ? options.since
-        \   ? empty(content.entries)
+        \   ? empty(gist.entries)
         \     ? ''
-        \     : content.entries[0].updated_at
+        \     : gist.entries[0].updated_at
         \   : ''
         \ : options.since
   " find a corresponding url
@@ -126,17 +126,17 @@ function! gista#api#gists#list(lookup, ...) abort
         \})
   if options.verbose
     redraw
-    call gista#util#prompt#echo('Updating entry/content caches of gists ...')
+    call gista#util#prompt#echo('Updating head/gist caches of gists ...')
   endif
   call gista#api#gists#cache#add_entries(fetched_entries, {
         \ 'lookups': [lookup],
         \ 'replace': empty(since) || lookup ==# 'public',
         \})
-  call gista#api#gists#cache#delete_contents(fetched_entries)
+  call gista#api#gists#cache#delete_gists(fetched_entries)
   " TODO
   " Assign 'Last-Modified' correctly to handle 304 Not Modified
-  let content = client.entry_cache.get(lookup)
-  return content
+  let gist = client.head_cache.get(lookup)
+  return gist
 endfunction
 function! gista#api#gists#post(filenames, contents, ...) abort
   let options = extend({
@@ -195,8 +195,8 @@ function! gista#api#gists#post(filenames, contents, ...) abort
     let gist._gista_fetched = 1
     let gist._gista_modified = 0
     let gist._gista_last_modified = s:G.parse_response_last_modified(res)
-    call client.content_cache.set(gist.id, gist)
-    call gista#api#gists#cache#add_entry(gist, { 'replace': 0 })
+    call client.gist_cache.set(gist.id, gist)
+    call gista#api#gists#cache#add_head(gist, { 'replace': 0 })
     return gist
   endif
   call gista#api#throw_api_exception(res)
@@ -255,8 +255,8 @@ function! gista#api#gists#patch(gistid, ...) abort
     let gist._gista_fetched = 1
     let gist._gista_modified = 0
     let gist._gista_last_modified = s:G.parse_response_last_modified(res)
-    call client.content_cache.set(gist.id, gist)
-    call gista#api#gists#cache#add_entry(gist)
+    call client.gist_cache.set(gist.id, gist)
+    call gista#api#gists#cache#add_head(gist)
     return gist
   endif
   call gista#api#throw_api_exception(res)
@@ -288,8 +288,8 @@ function! gista#api#gists#delete(gistid, ...) abort
   endif
   let res = client.delete('gists/' . gist.id)
   if res.status == 204
-    call client.content_cache.remove(gist.id)
-    call gista#api#gists#cache#delete_entry(gist)
+    call client.gist_cache.remove(gist.id)
+    call gista#api#gists#cache#delete_head(gist)
   endif
   call gista#api#throw_api_exception(res)
 endfunction
@@ -312,7 +312,7 @@ function! gista#api#gists#content(gist, filename, ...) abort
     let file.truncated = 0
     let file.content = res.content
     let a:gist.files[filename] = file
-    call client.content_cache.set(a:gist.id, a:gist)
+    call client.gist_cache.set(a:gist.id, a:gist)
     return {
           \ 'filename': filename,
           \ 'content': split(file.content, '\r\?\n'),

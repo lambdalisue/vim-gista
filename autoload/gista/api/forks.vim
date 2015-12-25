@@ -36,7 +36,7 @@ function! gista#api#fork#post(gistid, ...) abort
     let gist._gista_fetched = 1
     let gist._gista_modified = 0
     let gist._last_modified = s:G.parse_response_last_modified(res)
-    call client.content_cache.set(gist.id, gist)
+    call client.gist_cache.set(gist.id, gist)
     " TODO
     " Update cached entries of the gist
     return gist

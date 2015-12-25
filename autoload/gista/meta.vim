@@ -55,7 +55,7 @@ function! gista#meta#get_valid_filename(gist_or_gistid, filename) abort
     let client = gista#api#get_current_client()
     if type(a:gist_or_gistid) == type('')
       let gistid = gista#meta#get_valid_gistid(a:gist_or_gistid)
-      let gist   = client.content_cache.get(gistid, {})
+      let gist   = client.gist_cache.get(gistid, {})
     else
       let gist = a:gist_or_gistid
     endif
@@ -109,7 +109,7 @@ function! gista#meta#get_available_gistids() abort
   let client = gista#api#get_current_client()
   let lookup = client.get_authorized_username()
   let lookup = empty(lookup) ? 'public' : lookup
-  let content = client.entry_cache.get(lookup, [])
+  let content = client.head_cache.get(lookup, [])
   return map(copy(content.entries), 'v:val.id')
 endfunction
 function! gista#meta#get_available_filenames(gist) abort
@@ -155,7 +155,7 @@ function! gista#meta#complete_filename(arglead, cmdline, cursorpos, ...) abort
     let clinet = gista#api#get_current_client()
     let gist = gista#api#gists#cache#get(options.gistid)
     if gist._gista_fetched == 0
-      let gist = gista#api#gists#cache#retrieve_entry(options.gistid)
+      let gist = gista#api#gists#cache#retrieve_head(options.gistid)
     endif
     let filenames = gista#meta#get_available_filenames(gist)
     return filter(filenames, 'v:val =~# "^" . a:arglead')

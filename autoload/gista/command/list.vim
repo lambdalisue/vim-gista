@@ -16,25 +16,25 @@ function! s:truncate(str, width) abort
   let suffix = strdisplaywidth(a:str) > a:width ? '...' : '   '
   return s:S.truncate(a:str, a:width - 4) . suffix
 endfunction
-function! s:format_entry(entry) abort
-  let gistid = a:entry.public
-        \ ? 'gistid:' . a:entry.id
+function! s:format_head(head) abort
+  let gistid = a:head.public
+        \ ? 'gistid:' . a:head.id
         \ : 'gistid:' . s:PRIVATE_GISTID
-  let fetched  = a:entry._gista_fetched  ? '=' : '-'
-  let modified = a:entry._gista_modified ? '*' : ' '
-  let label    = s:get_current_label(a:entry)
+  let fetched  = a:head._gista_fetched  ? '=' : '-'
+  let modified = a:head._gista_modified ? '*' : ' '
+  let label    = s:get_current_label(a:head)
   let prefix = fetched . ' ' . label . ' ' . modified . ' '
   let suffix = ' ' . gistid
   let width = winwidth(0) - strdisplaywidth(prefix . suffix)
-  let description = empty(a:entry.description)
-        \ ? join(keys(a:entry.files), ', ')
-        \ : a:entry.description
+  let description = empty(a:head.description)
+        \ ? join(keys(a:head.files), ', ')
+        \ : a:head.description
   let description = substitute(description, "[\r\n]", ' ', 'g')
-  let description = printf('[%d] %s', len(a:entry.files), description)
+  let description = printf('[%d] %s', len(a:head.files), description)
   let description = s:truncate(description, width)
   return prefix . description . suffix
 endfunction
-function! s:get_entry(index, ...) abort
+function! s:get_head(index, ...) abort
   let offset = get(a:000, 0, 0)
   return get(b:gista.content.entries, a:index + offset, {})
 endfunction
@@ -55,10 +55,10 @@ endfunction
 function! s:set_current_label_index(index) abort
   let s:current_label_index = a:index
 endfunction
-function! s:get_current_label(entry) abort
+function! s:get_current_label(head) abort
   let lmode = s:LABEL_MODES[s:get_current_label_index()]
   if lmode ==# 'created_at' || lmode ==# 'updated_at'
-    let datetime = a:entry[lmode]
+    let datetime = a:head[lmode]
     let label = substitute(
           \ datetime,
           \ '\v\d{2}(\d{2})-(\d{2})-(\d{2})T(\d{2}:\d{2}:\d{2})Z',
@@ -200,7 +200,7 @@ function! gista#command#list#edit(...) abort
   redraw
   call gista#util#prompt#echo('Formatting gist entries to display ...')
   call gista#util#buffer#edit_content(
-        \ map(copy(content.entries), 's:format_entry(v:val)')
+        \ map(copy(content.entries), 's:format_head(v:val)')
         \)
   call s:define_plugin_mappings()
   if g:gista#command#list#enable_default_mappings
@@ -255,13 +255,13 @@ endfunction
 
 function! s:on_VimResized() abort
   call gista#util#buffer#edit_content(
-        \ map(copy(b:gista.content.entries), 's:format_entry(v:val)')
+        \ map(copy(b:gista.content.entries), 's:format_head(v:val)')
         \)
 endfunction
 function! s:on_WinEnter() abort
   if b:gista.winwidth != winwidth(0)
     call gista#util#buffer#edit_content(
-          \ map(copy(b:gista.content.entries), 's:format_entry(v:val)')
+          \ map(copy(b:gista.content.entries), 's:format_head(v:val)')
           \)
   endif
 endfunction
@@ -280,10 +280,10 @@ endfunction
 function! s:action_edit(...) range abort
   let opener = get(a:000, 0, '')
   let opener = empty(opener)
-        \ ? g:gista#command#list#default_entry_opener
+        \ ? g:gista#command#list#default_head_opener
         \ : opener
   let [opener, anchor] = get(
-        \ g:gista#command#list#entry_openers,
+        \ g:gista#command#list#head_openers,
         \ opener, ['edit', 1],
         \)
   let session = gista#api#session({
@@ -293,15 +293,15 @@ function! s:action_edit(...) range abort
   try
     call session.enter()
     for n in range(a:firstline, a:lastline)
-      let entry = s:get_entry(n - 1)
-      if empty(entry)
+      let head = s:get_head(n - 1)
+      if empty(head)
         continue
       endif
       if anchor
         call gista#util#anchor#focus()
       endif
       call gista#command#open#open({
-            \ 'gist': entry,
+            \ 'gist': head,
             \ 'opener': opener,
             \})
     endfor
@@ -312,10 +312,10 @@ endfunction
 function! s:action_json(...) range abort
   let opener = get(a:000, 0, '')
   let opener = empty(opener)
-        \ ? g:gista#command#list#default_entry_opener
+        \ ? g:gista#command#list#default_head_opener
         \ : opener
   let [opener, anchor] = get(
-        \ g:gista#command#list#entry_openers,
+        \ g:gista#command#list#head_openers,
         \ opener, ['edit', 1],
         \)
   let session = gista#api#session({
@@ -325,15 +325,15 @@ function! s:action_json(...) range abort
   try
     call session.enter()
     for n in range(a:firstline, a:lastline)
-      let entry = s:get_entry(n - 1)
-      if empty(entry)
+      let head = s:get_head(n - 1)
+      if empty(head)
         continue
       endif
       if anchor
         call gista#util#anchor#focus()
       endif
       call gista#command#json#open({
-            \ 'gistid': entry.id,
+            \ 'gistid': head.id,
             \ 'opener': opener,
             \})
     endfor
@@ -350,12 +350,12 @@ function! s:action_browse(...) range abort
   try
     call session.enter()
     for n in range(a:firstline, a:lastline)
-      let entry = s:get_entry(n - 1)
-      if empty(entry)
+      let head = s:get_head(n - 1)
+      if empty(head)
         continue
       endif
       call gista#command#browse#{action}({
-            \ 'gistid': entry.id,
+            \ 'gistid': head.id,
             \})
     endfor
   finally
@@ -373,12 +373,12 @@ function! s:action_delete(...) range abort
   try
     call session.enter()
     for n in range(a:firstline, a:lastline)
-      let entry = s:get_entry(n - 1)
-      if empty(entry)
+      let head = s:get_head(n - 1)
+      if empty(head)
         continue
       endif
       call gista#command#delete#call({
-            \ 'gistid': entry.id,
+            \ 'gistid': head.id,
             \ 'cache': cache,
             \})
     endfor
@@ -394,12 +394,12 @@ function! s:action_star(...) range abort
   try
     call session.enter()
     for n in range(a:firstline, a:lastline)
-      let entry = s:get_entry(n - 1)
-      if empty(entry)
+      let head = s:get_head(n - 1)
+      if empty(head)
         continue
       endif
       call gista#command#star#call({
-            \ 'gistid': entry.id,
+            \ 'gistid': head.id,
             \})
     endfor
   finally
@@ -414,12 +414,12 @@ function! s:action_unstar(...) range abort
   try
     call session.enter()
     for n in range(a:firstline, a:lastline)
-      let entry = s:get_entry(n - 1)
-      if empty(entry)
+      let head = s:get_head(n - 1)
+      if empty(head)
         continue
       endif
       call gista#command#unstar#call({
-            \ 'gistid': entry.id,
+            \ 'gistid': head.id,
             \})
     endfor
   finally
@@ -561,8 +561,8 @@ call gista#define_variables('command#list', {
       \ 'default_label': 'updated_at',
       \ 'default_datetime': 'updated_at',
       \ 'default_opener': 'topleft 15 split',
-      \ 'default_entry_opener': 'edit',
-      \ 'entry_openers': {
+      \ 'default_head_opener': 'edit',
+      \ 'head_openers': {
       \   'edit':    ['edit', 1],
       \   'above':   ['leftabove new', 1],
       \   'below':   ['rightbelow new', 1],

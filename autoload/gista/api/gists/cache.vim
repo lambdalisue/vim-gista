@@ -27,22 +27,25 @@ function! s:pick_necessary_params_of_entry(gist) abort
         \}
 endfunction
 
-function! s:get_pseudo_gist(gistid) abort
+function! s:get_pseudo_entry(gistid) abort
   return {
         \ 'id': a:gistid,
         \ 'description': '',
+        \ 'public': 0,
+        \ 'files': {},
         \ '_gista_fetched': 0,
         \ '_gista_modified': 0,
-        \ '_gista_last_modified': '',
         \}
 endfunction
-function! s:get_pseudo_content(lookup) abort
+function! s:get_pseudo_gist(gistid) abort
+  return extend(s:get_pseudo_entry(a:gistid), {
+        \ '_gista_last_modified': '',
+        \})
+endfunction
+function! s:get_pseudo_index() abort
   return {
-        \ 'lookup': a:lookup,
         \ 'entries': [],
         \ '_gista_fetched': 0,
-        \ '_gista_modified': 0,
-        \ '_gista_last_modified': '',
         \}
 endfunction
 
@@ -55,13 +58,13 @@ function! gista#api#gists#cache#get(gistid, ...) abort
   if options.verbose
     redraw
     call gista#util#prompt#echo(printf(
-          \ 'Trying to load a gist %s in %s from the local cache ...',
+          \ 'Loading a gist %s in %s from the local cache ...',
           \ a:gistid, client.apiname,
           \))
   endif
   return extend(
         \ s:get_pseudo_gist(a:gistid),
-        \ client.content_cache.get(a:gistid, {})
+        \ client.gist_cache.get(a:gistid, {})
         \)
 endfunction
 function! gista#api#gists#cache#list(lookup, ...) abort
@@ -73,45 +76,26 @@ function! gista#api#gists#cache#list(lookup, ...) abort
   if options.verbose
     redraw
     call gista#util#prompt#echo(printf(
-          \ 'Loading gists of %s in %s from the cache ...',
+          \ 'Loading gists of %s in %s from the local cache ...',
           \ a:lookup, client.apiname,
           \))
   endif
   return extend(
-        \ s:get_pseudo_content(a:lookup),
-        \ client.entry_cache.get(a:lookup, {})
+        \ s:get_pseudo_index(),
+        \ client.index_cache.get(a:lookup, {})
         \)
 endfunction
 function! gista#api#gists#cache#patch(gistid, ...) abort
   let options = extend({
         \ 'verbose': 1,
-        \ 'description': g:gista#api#gists#patch_interactive_description,
+        \ 'description': '',
         \ 'filenames': [],
         \ 'contents': [],
         \ 'cache': 1,
         \}, get(a:000, 0, {})
         \)
   let client = gista#api#get_current_client()
-  let gist = gista#api#gists#cache#get(a:gistid, options)
-
-  " Description
-  let description = gist.description
-  if type(options.description) == type(0)
-    if options.description
-      let description = gista#util#prompt#ask(
-            \ 'Please input a description of a gist: ',
-            \ gist.description,
-            \)
-    endif
-  else
-    let description = options.description
-  endif
-  if empty(description) && !g:gista#api#gists#patch_allow_empty_description
-    call gista#util#prompt#throw(
-          \ 'An empty description is not allowed',
-          \ 'See ":help g:gista#api#gists#patch_allow_empty_description" for detail',
-          \)
-  endif
+  let gist   = gista#api#gists#cache#get(a:gistid, options)
   " Update a gist instance
   let gist._gista_modified = 1
   let gist.description = description
@@ -129,8 +113,8 @@ function! gista#api#gists#cache#patch(gistid, ...) abort
             \ gist.id, client.apiname,
             \))
     endif
-    call client.content_cache.set(gist.id, gist)
-    call gista#api#gists#cache#add_entry(gist)
+    call client.gist_cache.set(gist.id, gist)
+    call gista#api#gists#cache#add_index(gist)
   endif
   return gist
 endfunction
@@ -150,8 +134,8 @@ function! gista#api#gists#cache#delete(gistid, ...) abort
             \ gist.id, client.apiname,
             \))
     endif
-    call client.content_cache.remove(gist.id)
-    call gista#api#gists#cache#delete_entry(gist)
+    call client.gist_cache.remove(gist.id)
+    call gista#api#gists#cache#delete_index(gist)
   endif
   return gist
 endfunction
@@ -177,7 +161,7 @@ function! gista#api#gists#cache#content(gist, filename, ...) abort
         \}
 endfunction
 
-function! gista#api#gists#cache#retrieve_entry(gistid, ...) abort
+function! gista#api#gists#cache#retrieve_index(gistid, ...) abort
   let options = extend({
         \ 'lookups': [],
         \}, get(a:000, 0, {})
@@ -192,21 +176,21 @@ function! gista#api#gists#cache#retrieve_entry(gistid, ...) abort
   endif
   let client = gista#api#get_current_client()
   for lookup in options.lookups
-    if client.entry_cache.has(lookup)
-      let content = client.entry_cache.get(lookup)
-      let entry_ids = map(
-            \ copy(content.entries),
+    if client.index_cache.has(lookup)
+      let gist = client.index_cache.get(lookup)
+      let index_ids = map(
+            \ copy(gist.entries),
             \ 'v:val.id',
             \)
-      let found = index(entry_ids, a:gistid)
+      let found = index(index_ids, a:gistid)
       if found >= 0
-        return content.entries[found]
+        return gist.entries[found]
       endif
     endif
   endfor
   return s:get_pseudo_gist(a:gistid)
 endfunction
-function! gista#api#gists#cache#add_entry(entry, ...) abort
+function! gista#api#gists#cache#add_index(index, ...) abort
   let options = extend({
         \ 'lookups': [],
         \ 'modified': 0,
@@ -214,7 +198,7 @@ function! gista#api#gists#cache#add_entry(entry, ...) abort
         \}, get(a:000, 0, {})
         \)
   if empty(options.lookups)
-    let username = get(get(a:entry, 'owner', {}), 'login', '')
+    let username = get(get(a:index, 'owner', {}), 'login', '')
     if !empty(username) && options.replace
       let options.lookups = [username, username . '/starred', 'public']
     else
@@ -227,19 +211,19 @@ function! gista#api#gists#cache#add_entry(entry, ...) abort
   let client = gista#api#get_current_client()
   let entry = s:pick_necessary_params_of_entry(a:entry)
   for lookup in options.lookups
-    let content = extend(
-          \ s:get_pseudo_content(lookup),
-          \ client.entry_cache.get(lookup, {})
+    let gist = extend(
+          \ s:get_pseudo_gist(lookup),
+          \ client.index_cache.get(lookup, {})
           \)
     if options.replace
-      let content.entries = filter(
-            \ content.entries,
-            \ 'v:val.id != entry.id'
+      let gist.entries = filter(
+            \ gist.entries,
+            \ 'v:val.id != index.id'
             \)
     endif
-    let content.entries = extend([entry], content.entries)
-    let content._gista_modified = options.modified
-    call client.entry_cache.set(lookup, content)
+    let gist.entries = extend([index], gist.entries)
+    let gist._gista_modified = options.modified
+    call client.index_cache.set(lookup, gist)
   endfor
 endfunction
 function! gista#api#gists#cache#add_entries(entries, ...) abort
@@ -254,33 +238,33 @@ function! gista#api#gists#cache#add_entries(entries, ...) abort
         \ copy(a:entries),
         \ 's:pick_necessary_params_of_entry(v:val)'
         \)
-  let entry_ids = options.replace ? [] : map(copy(entries), 'v:val.id')
+  let index_ids = options.replace ? [] : map(copy(entries), 'v:val.id')
   for lookup in options.lookups
-    let content = extend(
-          \ s:get_pseudo_content(lookup),
-          \ client.entry_cache.get(lookup, {})
+    let gist = extend(
+          \ s:get_pseudo_gist(lookup),
+          \ client.index_cache.get(lookup, {})
           \)
     if options.replace
-      let content.entries = entries
+      let gist.entries = entries
     else
-      let content.entries = filter(
-            \ content.entries,
-            \ 'index(entry_ids, v:val.id) == -1'
+      let gist.entries = filter(
+            \ gist.entries,
+            \ 'index(index_ids, v:val.id) == -1'
             \)
-      let content.entries = extend(entries, content.entries)
+      let gist.entries = extend(entries, gist.entries)
     endif
-    let content._gista_modified = options.modified
-    call client.entry_cache.set(lookup, content)
+    let gist._gista_modified = options.modified
+    call client.index_cache.set(lookup, gist)
   endfor
 endfunction
-function! gista#api#gists#cache#update_entry(entry, ...) abort
+function! gista#api#gists#cache#update_index(index, ...) abort
   let options = extend({
         \ 'lookups': [],
         \ 'modified': 0,
         \}, get(a:000, 0, {})
         \)
   if empty(options.lookups)
-    let username = get(get(a:entry, 'owner', {}), 'login', '')
+    let username = get(get(a:index, 'owner', {}), 'login', '')
     if empty(username)
       let options.lookups = ['public']
     else
@@ -290,25 +274,25 @@ function! gista#api#gists#cache#update_entry(entry, ...) abort
   let client = gista#api#get_current_client()
   let entry = s:pick_necessary_params_of_entry(a:entry)
   for lookup in options.lookups
-    if client.entry_cache.has(lookup)
-      let content = client.entry_cache.get(lookup)
-      let content.entries = map(
-            \ content.entries,
-            \ 'v:val.id != entry.id ? v:val : entry'
+    if client.index_cache.has(lookup)
+      let gist = client.index_cache.get(lookup)
+      let gist.entries = map(
+            \ gist.entries,
+            \ 'v:val.id != index.id ? v:val : index'
             \)
-      let content._gista_modified = options.modified
-      call client.entry_cache.set(lookup, content)
+      let gist._gista_modified = options.modified
+      call client.index_cache.set(lookup, gist)
     endif
   endfor
 endfunction
-function! gista#api#gists#cache#delete_entry(entry, ...) abort
+function! gista#api#gists#cache#delete_index(index, ...) abort
   let options = extend({
         \ 'lookups': [],
         \ 'modified': 0,
         \}, get(a:000, 0, {})
         \)
   if empty(options.lookups)
-    let username = get(get(a:entry, 'owner', {}), 'login', '')
+    let username = get(get(a:index, 'owner', {}), 'login', '')
     let options.lookups = filter(
           \ [username, 'public'],
           \ '!empty(v:val)'
@@ -317,23 +301,23 @@ function! gista#api#gists#cache#delete_entry(entry, ...) abort
   let client = gista#api#get_current_client()
   let entry = s:pick_necessary_params_of_entry(a:entry)
   for lookup in options.lookups
-    if client.entry_cache.has(lookup)
-      let content = client.entry_cache.get(lookup)
-      let content.entries = filter(
-            \ content.entries,
-            \ 'v:val.id != entry.id'
+    if client.index_cache.has(lookup)
+      let gist = client.index_cache.get(lookup)
+      let gist.entries = filter(
+            \ gist.entries,
+            \ 'v:val.id != index.id'
             \)
-      let content._gista_modified = options.modified
-      call client.entry_cache.set(lookup, content)
+      let gist._gista_modified = options.modified
+      call client.index_cache.set(lookup, gist)
     endif
   endfor
 endfunction
 
-function! gista#api#gists#cache#delete_contents(entries) abort
+function! gista#api#gists#cache#delete_gists(entries) abort
   let client = gista#api#get_current_client()
-  let content_cache = client.content_cache
-  for entry in a:entries
-    call content_cache.remove(entry.id)
+  let gist_cache = client.gist_cache
+  for index in a:entries
+    call gist_cache.remove(index.id)
   endfor
 endfunction
 

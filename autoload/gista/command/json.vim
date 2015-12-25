@@ -23,13 +23,13 @@ endfunction
 function! gista#command#json#read(...) abort
   let options = extend({
         \ 'gistid': '',
-        \ 'entry': 0,
+        \ 'head': 0,
         \}, get(a:000, 0, {}),
         \)
   try
     let gistid = gista#meta#get_valid_gistid(options.gistid)
-    let gist   = options.entry
-          \ ? gista#api#gists#cache#retrieve_entry(gistid)
+    let gist   = options.head
+          \ ? gista#api#gists#cache#retrieve_head(gistid)
           \ : gista#api#gists#get(gistid, options)
     let content = split(
           \ s:J.encode(gist, { 'indent': 2 }),
@@ -47,13 +47,13 @@ function! gista#command#json#edit(...) abort
   silent doautocmd BufReadPre
   let options = extend({
         \ 'gistid': '',
-        \ 'entry': 0,
+        \ 'head': 0,
         \}, get(a:000, 0, {})
         \)
   try
     let gistid = gista#meta#get_valid_gistid(options.gistid)
-    let gist   = options.entry
-          \ ? gista#api#gists#cache#retrieve_entry(gistid)
+    let gist   = options.head
+          \ ? gista#api#gists#cache#retrieve_head(gistid)
           \ : gista#api#gists#get(gistid, options)
     let content = split(
           \ s:J.encode(gist, { 'indent': 2 }),
@@ -80,7 +80,7 @@ function! gista#command#json#edit(...) abort
   setlocal nomodifiable
   silent execute printf('file gista:%s:%s%s.json',
         \ client.apiname, gist.id,
-        \ options.entry ? '.entry' : '',
+        \ options.head ? '.head' : '',
         \)
   silent doautocmd BufReadPost
   call gista#util#doautocmd('CacheUpdatePost')
@@ -88,7 +88,7 @@ endfunction
 function! gista#command#json#open(...) abort
   let options = extend({
         \ 'gistid': '',
-        \ 'entry': 0,
+        \ 'head': 0,
         \ 'opener': '',
         \ 'cache': 1,
         \}, get(a:000, 0, {})
@@ -104,8 +104,8 @@ function! gista#command#json#open(...) abort
   let opener = empty(options.opener)
         \ ? g:gista#command#json#default_opener
         \ : options.opener
-  if options.entry
-    let bufname = printf('gista:%s:%s.entry.json',
+  if options.head
+    let bufname = printf('gista:%s:%s.head.json',
           \ client.apiname, gistid,
           \)
   else
@@ -143,8 +143,8 @@ function! s:get_parser() abort
           \   'deniable': 1,
           \})
     call s:parser.add_argument(
-          \ '--entry',
-          \ 'Use an entry cache instead of content cache',
+          \ '--head',
+          \ 'Use an head cache instead of content cache',
           \)
   endif
   return s:parser
