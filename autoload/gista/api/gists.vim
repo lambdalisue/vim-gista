@@ -46,6 +46,7 @@ function! gista#api#gists#get(gistid, ...) abort
         \ 'If-Modified-Since': gist._gista_last_modified,
         \}
   let res = client.get('gists/' . gistid, {}, headers)
+  redraw
   if res.status == 304
     " the content is not modified since the last request
     return gist
@@ -59,13 +60,35 @@ function! gista#api#gists#get(gistid, ...) abort
     if options.verbose
       redraw
       call gista#util#prompt#echo(printf(
-            \ 'Updating a cache of a gist %s in %s ...',
+            \ 'Updating cache of a gist %s in %s ...',
             \ gist.id, client.apiname,
             \))
     endif
-    call client.gist_cache.set(gist.id, gist)
-    call gista#api#gists#cache#update_head(gist)
+    call gista#api#gists#cache#add_gist(gist)
+    call gista#api#gists#cache#replace_index_entry(gist)
+    redraw
     return gist
+  endif
+  call gista#api#throw_api_exception(res)
+endfunction
+function! gista#api#gists#file(gist, filename, ...) abort
+  let options = extend({
+        \ 'verbose': 1,
+        \ 'cache': 1,
+        \}, get(a:000, 0, {})
+        \)
+  let file = gista#api#gists#cache#file(a:gist, a:filename)
+  if options.cache && !file.truncated
+    return file
+  endif
+  let client = gista#api#get_current_client()
+  let res = client.get(file.raw_url)
+  if res.status == 200
+    let file.truncated = 0
+    let file.content = res.content
+    let a:gist.files[a:filename] = file
+    call gista#api#gists#cache#add_gist(a:gist)
+    return file
   endif
   call gista#api#throw_api_exception(res)
 endfunction
@@ -77,37 +100,34 @@ function! gista#api#gists#list(lookup, ...) abort
         \ 'verbose': 1,
         \}, get(a:000, 0, {})
         \)
-  let gist = gista#api#gists#cache#list(a:lookup, options)
-  if options.cache && gist._gista_fetched
-    return gist
+  let index = gista#api#gists#cache#list(a:lookup, options)
+  if options.cache && index._gista_fetched
+    return index
   endif
   " assign page/since/last_page
   let client = gista#api#get_current_client()
-  let lookup = gist.lookup
   let since = type(options.since) == type(0)
         \ ? options.since
-        \   ? empty(gist.entries)
+        \   ? empty(index.entries)
         \     ? ''
-        \     : gist.entries[0].updated_at
+        \     : index.entries[0].updated_at
         \   : ''
         \ : options.since
   " find a corresponding url
   let username = client.get_authorized_username()
-  if lookup ==# 'public'
+  if a:lookup ==# 'public'
     let url = 'gists/public'
-  elseif !empty(username) && lookup ==# username
+  elseif !empty(username) && a:lookup ==# username
     let url = 'gists'
-  elseif !empty(username) && lookup ==# username . '/starred'
+  elseif !empty(username) && a:lookup ==# username . '/starred'
     let url = 'gists/starred'
-  elseif !empty(lookup)
-    let url = printf('users/%s/gists', lookup)
-  else
-    let url = 'gists/public'
+  elseif !empty(a:lookup)
+    let url = printf('users/%s/gists', a:lookup)
   endif
   " fetch entries
   let indicator = printf(
         \ 'Requesting gists of %s in %s as %s %%%%(page)d/%%(page_count)d ...',
-        \ lookup,
+        \ a:lookup,
         \ client.apiname,
         \ empty(username)
         \   ? 'an anonymous user'
@@ -126,49 +146,36 @@ function! gista#api#gists#list(lookup, ...) abort
         \})
   if options.verbose
     redraw
-    call gista#util#prompt#echo('Updating head/gist caches of gists ...')
+    call gista#util#prompt#echo('Updating entry/gist caches of gists ...')
   endif
-  call gista#api#gists#cache#add_entries(fetched_entries, {
-        \ 'lookups': [lookup],
-        \ 'replace': empty(since) || lookup ==# 'public',
-        \})
-  call gista#api#gists#cache#delete_gists(fetched_entries)
+  if empty(since) || a:lookup ==# 'public'
+    call gista#api#gists#cache#replace_index_entries(fetched_entries, a:lookup, {
+          \ 'fetched': 1,
+          \})
+  else
+    call gista#api#gists#cache#update_index_entries(fetched_entries, a:lookup, {
+          \ 'fetched': 1,
+          \})
+  endif
+  call gista#api#gists#cache#remove_gists(fetched_entries)
   " TODO
   " Assign 'Last-Modified' correctly to handle 304 Not Modified
-  let gist = client.head_cache.get(lookup)
-  return gist
+  redraw
+  return client.index_cache.get(a:lookup)
 endfunction
 function! gista#api#gists#post(filenames, contents, ...) abort
   let options = extend({
         \ 'verbose': 1,
-        \ 'description': g:gista#api#gists#post_interactive_description,
-        \ 'public': g:gista#api#gists#post_default_public,
+        \ 'description': '',
+        \ 'public': 0,
         \}, get(a:000, 0, {})
         \)
   let client = gista#api#get_current_client()
   let username = client.get_authorized_username()
 
-  " Description
-  let description = ''
-  if type(options.description) == type(0)
-    if options.description
-      let description = gista#util#prompt#ask(
-            \ 'Please input a description of a gist: ',
-            \)
-    endif
-  else
-    let description = options.description
-  endif
-  if empty(description) && !g:gista#api#gists#post_allow_empty_description
-    call gista#util#prompt#throw(
-          \ 'An empty description is not allowed',
-          \ 'See ":help g:gista#gists#post_allow_empty_description" for detail',
-          \)
-  endif
-
   " Create a gist instance
   let gist = {
-        \ 'description': description,
+        \ 'description': options.description,
         \ 'public': options.public ? s:J.true : s:J.false,
         \ 'files': {},
         \}
@@ -188,6 +195,7 @@ function! gista#api#gists#post(filenames, contents, ...) abort
   endif
 
   let res = client.post('gists', gist)
+  redraw
   if res.status == 201
     let res.content = get(res, 'content', '')
     let res.content = empty(res.content) ? {} : s:J.decode(res.content)
@@ -195,8 +203,8 @@ function! gista#api#gists#post(filenames, contents, ...) abort
     let gist._gista_fetched = 1
     let gist._gista_modified = 0
     let gist._gista_last_modified = s:G.parse_response_last_modified(res)
-    call client.gist_cache.set(gist.id, gist)
-    call gista#api#gists#cache#add_head(gist, { 'replace': 0 })
+    call gista#api#gists#cache#add_gist(gist)
+    call gista#api#gists#cache#add_index_entry(gist)
     return gist
   endif
   call gista#api#throw_api_exception(res)
@@ -205,7 +213,7 @@ function! gista#api#gists#patch(gistid, ...) abort
   let options = extend({
         \ 'verbose': 1,
         \ 'cache': 0,
-        \ 'description': g:gista#api#gists#patch_interactive_description,
+        \ 'description': '',
         \ 'filenames': [],
         \ 'contents': [],
         \}, get(a:000, 0, {})
@@ -248,6 +256,7 @@ function! gista#api#gists#patch(gistid, ...) abort
           \))
   endif
   let res = client.patch('gists/' . gist.id, partial_gist)
+  redraw
   if res.status == 200
     let res.content = get(res, 'content', '')
     let res.content = empty(res.content) ? {} : s:J.decode(res.content)
@@ -255,8 +264,8 @@ function! gista#api#gists#patch(gistid, ...) abort
     let gist._gista_fetched = 1
     let gist._gista_modified = 0
     let gist._gista_last_modified = s:G.parse_response_last_modified(res)
-    call client.gist_cache.set(gist.id, gist)
-    call gista#api#gists#cache#add_head(gist)
+    call gista#api#gists#cache#add_gist(gist)
+    call gista#api#gists#cache#update_index_entry(gist)
     return gist
   endif
   call gista#api#throw_api_exception(res)
@@ -287,51 +296,57 @@ function! gista#api#gists#delete(gistid, ...) abort
           \))
   endif
   let res = client.delete('gists/' . gist.id)
+  redraw
   if res.status == 204
-    call client.gist_cache.remove(gist.id)
-    call gista#api#gists#cache#delete_head(gist)
+    call gista#api#gists#cache#remove_gist(gist)
+    call gista#api#gists#cache#remove_index_entry(gist)
   endif
   call gista#api#throw_api_exception(res)
 endfunction
-function! gista#api#gists#content(gist, filename, ...) abort
-  let options = extend({
-        \ 'verbose': 1,
-        \ 'cache': 1,
-        \}, get(a:000, 0, {})
-        \)
-  let content = gista#api#gists#cache#content(a:gist, a:filename, options)
-  if options.cache && !content.truncated
-    return content
-  endif
-  " request the file content if the content is truncated
-  let filename = content.filename
-  let file = get(a:gist.files, filename, {})
-  let client = gista#api#get_current_client()
-  let res = client.get(file.raw_url)
-  if res.status == 200
-    let file.truncated = 0
-    let file.content = res.content
-    let a:gist.files[filename] = file
-    call client.gist_cache.set(a:gist.id, a:gist)
-    return {
-          \ 'filename': filename,
-          \ 'content': split(file.content, '\r\?\n'),
-          \ 'truncated': 0,
-          \}
-  endif
-  call gista#api#throw_api_exception(res)
+
+function! gista#api#gists#get_gist_owner(gist) abort
+  return get(get(a:gist, 'owner', {}), 'login', '')
+endfunction
+function! gista#api#gists#get_pseudo_entry_file() abort
+  return {
+        \ 'size': 0,
+        \ 'type': '',
+        \ 'language': '',
+        \}
+endfunction
+function! gista#api#gists#get_pseudo_gist_file() abort
+  return extend(gista#api#gists#get_pseudo_entry_file(), {
+        \ 'truncated': 1,
+        \ 'content': '',
+        \ 'raw_url': '',
+        \})
+endfunction
+function! gista#api#gists#get_pseudo_entry(gistid) abort
+  return {
+        \ 'id': a:gistid,
+        \ 'description': '',
+        \ 'public': 0,
+        \ 'files': {},
+        \ 'created_at': '',
+        \ 'updated_at': '',
+        \ '_gista_fetched': 0,
+        \ '_gista_modified': 0,
+        \}
+endfunction
+function! gista#api#gists#get_pseudo_gist(gistid) abort
+  return extend(gista#api#gists#get_pseudo_entry(a:gistid), {
+        \ '_gista_last_modified': '',
+        \})
+endfunction
+function! gista#api#gists#get_pseudo_index() abort
+  return {
+        \ 'entries': [],
+        \ '_gista_fetched': 0,
+        \}
 endfunction
 
 " Configure variables
-call gista#define_variables('api#gists', {
-      \ 'list_default_lookup': '',
-      \ 'post_default_public': 1,
-      \ 'post_interactive_description': 1,
-      \ 'post_allow_empty_description': 0,
-      \ 'patch_interactive_description': 1,
-      \ 'patch_allow_empty_description': 0,
-      \})
+call gista#define_variables('api#gists', {})
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

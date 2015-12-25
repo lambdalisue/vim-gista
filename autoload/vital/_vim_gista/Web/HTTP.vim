@@ -368,18 +368,18 @@ try:
 
                 st = status(res.code, res.msg)
                 response_headers = st + ''.join(res.info().headers)
-                response_gist = res.read()
+                response_body = res.read()
 
                 gzip_decompress = settings.get('gzipDecompress', False)
                 if gzip_decompress:
-                    buf = StringIO(response_gist)
+                    buf = StringIO(response_body)
                     f = gzip.GzipFile(fileobj=buf)
-                    response_gist = f.read()[:-1]
+                    response_body = f.read()[:-1]
 
-                return (response_headers, response_gist)
+                return (response_headers, response_body)
 
-            (header, gist) = access()
-            responses.extend([[header.split("\r\n"), gist]])
+            (header, body) = access()
+            responses.extend([[header.split("\r\n"), body]])
 
         main()
         raise RuntimeError("Exit from local scope")

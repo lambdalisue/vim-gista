@@ -47,7 +47,7 @@ function! gista#util#buffer#read_content(content, ...) abort
   endtry
 endfunction
 function! gista#util#buffer#edit_content(content, ...) abort
-  let saved_cursor = getpos('.')
+  let saved_view = winsaveview()
   let saved_modifiable = &l:modifiable
   let saved_undolevels = &l:undolevels
   let &l:modifiable=1
@@ -57,7 +57,7 @@ function! gista#util#buffer#edit_content(content, ...) abort
         \ a:content, get(a:000, 0, tempname()), 1
         \)
   silent keepjumps 1delete_
-  keepjumps call setpos('.', saved_cursor)
+  keepjump call winrestview(saved_view)
   let &l:modifiable = saved_modifiable
   let &l:undolevels = saved_undolevels
   setlocal nomodified

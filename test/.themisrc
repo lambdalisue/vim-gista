@@ -1,7 +1,6 @@
 let s:assert = themis#helper('assert')
 call themis#option('recursive', 1)
 call themis#helper('command').with(s:assert)
-call gista#util#prompt#disable_interactive()
 
 function! Capture(command) abort " {{{
   redir => contents
@@ -9,3 +8,7 @@ function! Capture(command) abort " {{{
   redir END
   return split(contents, '\v\r?\n')
 endfunction" }}}
+
+call gista#util#prompt#disable_interactive()
+let g:gista#api#cache_dir = tempname()
+

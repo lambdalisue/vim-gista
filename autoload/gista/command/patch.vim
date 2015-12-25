@@ -37,6 +37,10 @@ function! gista#command#patch#call(...) abort
           \ 'content_type': 'raw',
           \}
     redraw
+    call gista#util#prompt#echo(printf(
+          \ 'A gist %s is posted to %s',
+          \ gist.id, client.apiname,
+          \))
     return gist
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
@@ -84,7 +88,7 @@ function! gista#command#patch#command(...) abort
   " not like post, patch only support a current buffer
   let options.filenames = [expand('%:t')]
   let options.contents = [
-        \ call('getline', options.__range__)
+        \ { 'content': join(call('getline', options.__range__), "\n") },
         \]
   call gista#command#patch#call(options)
 endfunction

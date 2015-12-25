@@ -28,6 +28,12 @@ function! gista#command#fork#call(...) abort
   try
     let gistid = gista#meta#get_valid_gistid(options.gistid)
     let gist = gista#api#fork#post(gistid, options)
+    let client = gista#api#get_current_client()
+    redraw
+    call gista#util#prompt#echo(printf(
+          \ 'A gist %s in %s is forked to %s',
+          \ gistid, client.apiname, gist.id,
+          \))
     return gist
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
@@ -39,7 +45,7 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
           \ 'name': 'Gista fork',
-          \ 'description': 'Star an existing gist',
+          \ 'description': 'Fork an existing gist',
           \})
     call s:parser.add_argument(
           \ 'gistid',

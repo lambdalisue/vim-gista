@@ -162,20 +162,20 @@ endfunction "}}}
 "
 " NOTE _concat() is just a copy of Data.List.concat().
 " FIXME don't repeat yourself
-function! s:_split_by_wcswidth_once(gist, x) abort
-  let fst = s:strwidthpart(a:gist, a:x)
-  let snd = s:strwidthpart_reverse(a:gist, s:wcswidth(a:gist) - s:wcswidth(fst))
+function! s:_split_by_wcswidth_once(body, x) abort
+  let fst = s:strwidthpart(a:body, a:x)
+  let snd = s:strwidthpart_reverse(a:body, s:wcswidth(a:body) - s:wcswidth(fst))
   return [fst, snd]
 endfunction
 
-function! s:_split_by_wcswidth(gist, x) abort
+function! s:_split_by_wcswidth(body, x) abort
   let memo = []
-  let gist = a:gist
-  while s:wcswidth(gist) > a:x
-    let [tmp, gist] = s:_split_by_wcswidth_once(gist, a:x)
+  let body = a:body
+  while s:wcswidth(body) > a:x
+    let [tmp, body] = s:_split_by_wcswidth_once(body, a:x)
     call add(memo, tmp)
   endwhile
-  call add(memo, gist)
+  call add(memo, body)
   return memo
 endfunction
 

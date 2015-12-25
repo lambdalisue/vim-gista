@@ -3,6 +3,7 @@ set cpo&vim
 
 let s:V = gista#vital()
 let s:J = s:V.import('Web.JSON')
+let s:G = s:V.import('Web.API.GitHub')
 
 function! gista#api#fork#post(gistid, ...) abort
   let options = extend({
@@ -29,6 +30,7 @@ function! gista#api#fork#post(gistid, ...) abort
 
   let url = printf('gists/%s/forks', gist.id)
   let res = client.post(url)
+  redraw
   if res.status == 201
     let res.content = get(res, 'content', '')
     let res.content = empty(res.content) ? {} : s:J.decode(res.content)
@@ -36,9 +38,8 @@ function! gista#api#fork#post(gistid, ...) abort
     let gist._gista_fetched = 1
     let gist._gista_modified = 0
     let gist._last_modified = s:G.parse_response_last_modified(res)
-    call client.gist_cache.set(gist.id, gist)
-    " TODO
-    " Update cached entries of the gist
+    call gista#api#gists#cache#add_gist(gist)
+    call gista#api#gists#cache#add_index_entry(gist)
     return gist
   endif
   call gista#api#throw_api_exception(res)
@@ -54,4 +55,3 @@ call gista#define_variables('api#fork', {})
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

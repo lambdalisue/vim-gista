@@ -4,26 +4,26 @@ set cpo&vim
 let s:V = gista#vital()
 let s:A = s:V.import('ArgumentParser')
 
-function! s:ask_description(description) abort
-  " Description
-  let description = gist.description
-  if type(options.description) == type(0)
-    if options.description
-      let description = gista#util#prompt#ask(
+function! s:interactive_description(options) abort
+  if type(a:options.description) == type(0)
+    if a:options.description
+      unlet a:options.description
+      let a:options.description = gista#util#prompt#ask(
             \ 'Please input a description of a gist: ',
-            \ gist.description,
             \)
+    else
+      unlet a:options.description
+      return
     endif
-  else
-    let description = options.description
   endif
-  if empty(description) && !g:gista#api#gists#patch_allow_empty_description
+  if empty(a:options.description) && !g:gista#command#post#allow_empty_description
     call gista#util#prompt#throw(
           \ 'An empty description is not allowed',
           \ 'See ":help g:gista#api#gists#patch_allow_empty_description" for detail',
           \)
   endif
 endfunction
+
 
 function! s:handle_exception(exception) abort
   redraw
@@ -44,8 +44,11 @@ function! gista#command#post#call(...) abort
   let options = extend({
         \ 'filenames': [],
         \ 'contents': [],
+        \ 'description': g:gista#command#post#interactive_description,
+        \ 'public': g:gista#command#post#default_public,
         \}, get(a:000, 0, {}),
         \)
+  call s:interactive_description(options)
   try
     let gist = gista#api#gists#post(
           \ options.filenames, options.contents, options,
@@ -62,6 +65,11 @@ function! gista#command#post#call(...) abort
               \})
       endif
     endfor
+    redraw
+    call gista#util#prompt#echo(printf(
+          \ 'A gist %s is posted to %s',
+          \ gist.id, client.apiname,
+          \))
     return gist
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
@@ -127,7 +135,7 @@ function! gista#command#post#command(...) abort
           \)
   endif
   let options.filenames = map(filenames, 'fnamemodify(v:val, ":t")')
-  let options.contents = contents
+  let options.contents = map(contents, '{ "content": join(v:val, "\n") }')
   call gista#command#post#call(options)
 endfunction
 function! gista#command#post#complete(...) abort
@@ -137,6 +145,9 @@ endfunction
 
 call gista#define_variables('command#post', {
       \ 'default_options': {},
+      \ 'default_public': 1,
+      \ 'interactive_description': 1,
+      \ 'allow_empty_description': 1,
       \})
 
 let &cpo = s:save_cpo

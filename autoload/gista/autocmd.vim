@@ -28,10 +28,10 @@ function! s:on_BufReadCmd(gista) abort
           \ 'gistid': a:gista.gistid,
           \ 'cache': !v:cmdbang,
           \})
-  elseif content_type ==# 'json_head'
+  elseif content_type ==# 'json_entry'
     call gista#command#json#edit({
           \ 'gistid': a:gista.gistid,
-          \ 'head': 1,
+          \ 'entry': 1,
           \ 'cache': !v:cmdbang,
           \})
   elseif content_type ==# 'list'
@@ -59,10 +59,10 @@ function! s:on_FileReadCmd(gista) abort
           \ 'gistid': a:gista.gistid,
           \ 'cache': !v:cmdbang,
           \})
-  elseif content_type ==# 'json_head'
+  elseif content_type ==# 'json_entry'
     call gista#command#json#read({
           \ 'gistid': a:gista.gistid,
-          \ 'head': 1,
+          \ 'entry': 1,
           \ 'cache': !v:cmdbang,
           \})
   elseif content_type ==# 'list'
@@ -118,10 +118,10 @@ let s:schemes = [
       \   'filename': 3,
       \   'content_type': 'raw',
       \ }],
-      \ ['^gista:\(.*\):\(.*\)\.head\.json$', {
+      \ ['^gista:\(.*\):\(.*\)\.entry\.json$', {
       \   'apiname': 1,
       \   'gistid': 2,
-      \   'content_type': 'json_head',
+      \   'content_type': 'json_entry',
       \ }],
       \ ['^gista:\(.*\):\(.*\)\.json$', {
       \   'apiname': 1,

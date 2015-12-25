@@ -40,7 +40,7 @@ function! s:get_index_cache(apiname) abort
   if s:index_cache.has(a:apiname)
     return s:index_cache.get(a:apiname)
   endif
-  let cache_dir = expand(s:P.join(g:gista#api#cache_dir, 'indexes', a:apiname))
+  let cache_dir = expand(s:P.join(g:gista#api#cache_dir, 'index', a:apiname))
   let index_cache = s:C.new('file', {
         \ 'cache_dir': cache_dir,
         \})
@@ -54,7 +54,7 @@ function! s:get_gist_cache(apiname) abort
   if s:gist_cache.has(a:apiname)
     return s:gist_cache.get(a:apiname)
   endif
-  let cache_dir = expand(s:P.join(g:gista#api#cache_dir, 'bodies', a:apiname))
+  let cache_dir = expand(s:P.join(g:gista#api#cache_dir, 'gist', a:apiname))
   let gist_cache = s:C.new('file', {
         \ 'cache_dir': cache_dir,
         \})

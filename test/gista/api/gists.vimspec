@@ -1,0 +1,200 @@
+let s:V = vital#of('vital')
+let s:F = s:V.import('System.File')
+let s:P = s:V.import('System.Filepath')
+let s:C = s:V.import('System.Cache.Memory')
+let s:J = s:V.import('Web.JSON')
+let s:S = s:V.import('Vim.ScriptLocal')
+
+Describe gista#api#gists
+  Before all
+    let sfile = s:P.realpath('autoload/gista/api/gists.vim')
+    let sf = s:S.sfuncs(sfile)
+    let sv = s:S.svars(sfile)
+    let Guard = gista#vital().import('Vim.Guard')
+  End
+  Before
+    let client = gista#api#get_current_client()
+    let guard = Guard.new(
+          \ ['gist_cache', client],
+          \ ['index_cache', client],
+          \ ['request', client],
+          \ ['retrieve', client],
+          \)
+    let client.gist_cache = s:C.new()
+    let client.index_cache = s:C.new()
+    function! client.request(...) abort
+      let self._request_args = a:000
+      return self._request_response
+    endfunction
+    function! client.retrieve(...) abort
+      let self._retrieve_args = a:000
+      return self._retrieve_response
+    endfunction
+  End
+  After
+    call guard.restore()
+  End
+
+  Context gista#api#gists#get_gist_owner({gist})
+    It returns an empty string if {gist} does not have an information about it's owner
+      let gist = gista#api#gists#get_pseudo_gist('A')
+      let ret = gista#api#gists#get_gist_owner(gist)
+      Assert Equals(ret, '')
+    End
+    It returns an owner's login name if {gist} has an information about it's owner
+      let gist = extend({
+            \ 'owner': {
+            \   'login': 'lambdalisue',
+            \ }
+            \}, gista#api#gists#get_pseudo_gist('A')
+            \)
+      let ret = gista#api#gists#get_gist_owner(gist)
+      Assert Equals(ret, 'lambdalisue')
+    End
+  End
+
+  Context gista#api#gists#get_pseudo_entry_file()
+    It returns a pseudo entry file
+      let ret = gista#api#gists#get_pseudo_entry_file()
+      Assert Equals(ret, {
+            \ 'size': 0,
+            \ 'type': '',
+            \ 'language': '',
+            \})
+    End
+  End
+  Context gista#api#gists#get_pseudo_gist_file()
+    It returns a pseudo gist file
+      let ret = gista#api#gists#get_pseudo_gist_file()
+      Assert Equals(ret, {
+            \ 'size': 0,
+            \ 'type': '',
+            \ 'language': '',
+            \ 'truncated': 1,
+            \ 'content': '',
+            \ 'raw_url': '',
+            \})
+    End
+  End
+  Context gista#api#gists#get_pseudo_entry({gistid})
+    It returns a pseudo (index) entry
+      let ret = gista#api#gists#get_pseudo_entry('100')
+      Assert Equals(ret, {
+            \ 'id': '100',
+            \ 'description': '',
+            \ 'public': 0,
+            \ 'files': {},
+            \ 'created_at': '',
+            \ 'updated_at': '',
+            \ '_gista_fetched': 0,
+            \ '_gista_modified': 0,
+            \})
+    End
+  End
+  Context gista#api#gists#get_pseudo_gist({gistid})
+    It returns a pseudo gist
+      let ret = gista#api#gists#get_pseudo_gist('A')
+      Assert Equals(ret, {
+            \ 'id': 'A',
+            \ 'description': '',
+            \ 'public': 0,
+            \ 'files': {},
+            \ 'created_at': '',
+            \ 'updated_at': '',
+            \ '_gista_fetched': 0,
+            \ '_gista_modified': 0,
+            \ '_gista_last_modified': '',
+            \})
+    End
+  End
+  Context gista#api#gists#get_pseudo_index({gistid})
+    It returns a pseudo index
+      let ret = gista#api#gists#get_pseudo_index()
+      Assert Equals(ret, {
+            \ 'entries': [],
+            \ '_gista_fetched': 0,
+            \})
+    End
+  End
+
+
+  Context #get({gistid}[, {options})
+    Before
+      let gist = extend(gista#api#gists#get_pseudo_gist('A'), {
+            \ 'description': 'HELLO',
+            \})
+      let header = [
+            \ 'Status: 200 OK',
+            \ 'Last-Modified: Thu, 05 Jul 2012 15:31:30 GMT',
+            \]
+      let client._request_response = {
+            \ 'status': 200,
+            \ 'header': header,
+            \ 'content': s:J.encode(gist),
+            \}
+    End
+    It returns a cached gist when a cached gist is found
+      let pseudo_gist = extend(gista#api#gists#get_pseudo_gist('A'), {
+            \ '_gista_fetched': 1,
+            \ '_gista_modified': 1,
+            \})
+      call gista#api#gists#cache#add_gist(pseudo_gist)
+      call gista#api#gists#cache#add_index_entry(pseudo_gist)
+
+      let ret = gista#api#gists#get('A', { 'verbose': 0 })
+      Assert Equals(ret, pseudo_gist)
+    End
+    It throw a Cancel exception when a cached gist is modified and cache: 0 is specified
+      let pseudo_gist = extend(gista#api#gists#get_pseudo_gist('A'), {
+            \ '_gista_fetched': 1,
+            \ '_gista_modified': 1,
+            \})
+      call gista#api#gists#cache#add_gist(pseudo_gist)
+      call gista#api#gists#cache#add_index_entry(pseudo_gist)
+
+      Throw /Cancel/
+            \ gista#api#gists#get('A', { 'verbose': 0, 'cache': 0 })
+    End
+    It request a gist to API if no cached gist is found
+      let ret = gista#api#gists#get('A', { 'verbose': 0 })
+      Assert Equals(ret._gista_fetched, 1)
+      Assert Equals(ret._gista_modified, 0)
+      Assert Equals(ret._gista_last_modified, 'Thu, 05 Jul 2012 15:31:30 GMT')
+      Assert Equals(ret.description, 'HELLO')
+
+      " Gist should be added
+      let gist = gista#api#gists#cache#get('A')
+      Assert Equals(gist._gista_fetched, 1)
+      Assert Equals(gist, ret)
+      " Entry should not be added while the entry of the gist did not exist
+      let entry = gista#api#gists#cache#retrieve_index_entry('A')
+      Assert Equals(entry._gista_fetched, 0)
+    End
+    It request a gist to API and overwrite the existing one if cache: 0 is specified
+      let pseudo_gist = extend(gista#api#gists#get_pseudo_gist('A'), {
+            \ '_gista_fetched': 1,
+            \ '_gista_modified': 0,
+            \})
+      call gista#api#gists#cache#add_gist(pseudo_gist)
+      call gista#api#gists#cache#add_index_entry(pseudo_gist)
+
+      let ret = gista#api#gists#get('A', { 'verbose': 0, 'cache': 0 })
+      Assert Equals(ret._gista_fetched, 1)
+      Assert Equals(ret._gista_modified, 0)
+      Assert Equals(ret._gista_last_modified, 'Thu, 05 Jul 2012 15:31:30 GMT')
+      Assert Equals(ret.description, 'HELLO')
+
+      " Gist should be updated
+      let gist = gista#api#gists#cache#get('A')
+      Assert Equals(gist._gista_fetched, 1)
+      Assert Equals(gist.description, 'HELLO')
+      Assert Equals(gist, ret)
+      " Entry should be updated
+      let entry = gista#api#gists#cache#retrieve_index_entry('A')
+      Assert Equals(entry._gista_fetched, 1)
+      Assert Equals(entry.description, 'HELLO')
+    End
+  End
+  Context #file({gist}, {filename}[, {options}])
+  End
+End

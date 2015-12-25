@@ -36,13 +36,17 @@ endfunction
 
 function! gista#meta#get_valid_gistid(gistid) abort
   if empty(a:gistid)
-    redraw
-    let gistid = gista#util#prompt#ask(
-          \ 'Please input a gist id: ', '',
-          \ 'customlist,gista#meta#complete_gistid',
-          \)
-    if empty(gistid)
-      call gista#util#prompt#throw('Cancel')
+    if has_key(b:, 'gista') && has_key(b:gista, 'gistid')
+      let gistid = b:gista.gistid
+    else
+      redraw
+      let gistid = gista#util#prompt#ask(
+            \ 'Please input a gist id: ', '',
+            \ 'customlist,gista#meta#complete_gistid',
+            \)
+      if empty(gistid)
+        call gista#util#prompt#throw('Cancel')
+      endif
     endif
   else
     let gistid = a:gistid
@@ -52,34 +56,38 @@ function! gista#meta#get_valid_gistid(gistid) abort
 endfunction
 function! gista#meta#get_valid_filename(gist_or_gistid, filename) abort
   if empty(a:filename)
-    let client = gista#api#get_current_client()
-    if type(a:gist_or_gistid) == type('')
-      let gistid = gista#meta#get_valid_gistid(a:gist_or_gistid)
-      let gist   = client.gist_cache.get(gistid, {})
+    if has_key(b:, 'gista') && has_key(b:gista, 'filename')
+      let filename = b:gista.filename
     else
-      let gist = a:gist_or_gistid
-    endif
-    let filenames = gista#meta#get_available_filenames(gist)
-    if len(filenames) == 1
-      let filename = filenames[0]
-    elseif len(filenames) > 0
-      redraw
-      let ret = gista#util#prompt#inputlist(
-            \ 'Please select a filename: ',
-            \ filenames,
-            \)
-      if ret == 0
-        call gista#util#prompt#throw('Cancel')
+      let client = gista#api#get_current_client()
+      if type(a:gist_or_gistid) == type('')
+        let gistid = gista#meta#get_valid_gistid(a:gist_or_gistid)
+        let gist   = client.gist_cache.get(gistid, {})
+      else
+        let gist = a:gist_or_gistid
       endif
-      let filename = filenames[ret - 1]
-    else
-      redraw
-      let filename = gista#util#prompt#ask(
-            \ 'Please input a filename: ', '',
-            \ 'customlist,gista#meta#complete_filename',
-            \)
-      if empty(filename)
-        call gista#util#prompt#throw('Cancel')
+      let filenames = gista#meta#get_available_filenames(gist)
+      if len(filenames) == 1
+        let filename = filenames[0]
+      elseif len(filenames) > 0
+        redraw
+        let ret = gista#util#prompt#inputlist(
+              \ 'Please select a filename: ',
+              \ filenames,
+              \)
+        if ret == 0
+          call gista#util#prompt#throw('Cancel')
+        endif
+        let filename = filenames[ret - 1]
+      else
+        redraw
+        let filename = gista#util#prompt#ask(
+              \ 'Please input a filename: ', '',
+              \ 'customlist,gista#meta#complete_filename',
+              \)
+        if empty(filename)
+          call gista#util#prompt#throw('Cancel')
+        endif
       endif
     endif
   else
@@ -92,11 +100,11 @@ function! gista#meta#get_valid_lookup(lookup) abort
   let client = gista#api#get_current_client()
   let username = client.get_authorized_username()
   let lookup = empty(a:lookup)
-        \ ? empty(g:gista#api#gists#list_default_lookup)
+        \ ? empty(g:gista#command#list#default_lookup)
         \   ? empty(username)
         \     ? 'public'
         \     : username
-        \   : g:gista#api#gists#list_default_lookup
+        \   : g:gista#command#list#default_lookup
         \ : a:lookup
   let lookup = !empty(username) && lookup ==# 'starred'
         \ ? username . '/starred'
@@ -109,8 +117,8 @@ function! gista#meta#get_available_gistids() abort
   let client = gista#api#get_current_client()
   let lookup = client.get_authorized_username()
   let lookup = empty(lookup) ? 'public' : lookup
-  let content = client.head_cache.get(lookup, [])
-  return map(copy(content.entries), 'v:val.id')
+  let index = gista#api#gists#cache#list(lookup)
+  return map(copy(index.entries), 'v:val.id')
 endfunction
 function! gista#meta#get_available_filenames(gist) abort
   " Remove files more thant 10 MiB which cannot download with HTTP protocol
@@ -155,7 +163,7 @@ function! gista#meta#complete_filename(arglead, cmdline, cursorpos, ...) abort
     let clinet = gista#api#get_current_client()
     let gist = gista#api#gists#cache#get(options.gistid)
     if gist._gista_fetched == 0
-      let gist = gista#api#gists#cache#retrieve_head(options.gistid)
+      let gist = gista#api#gists#cache#retrieve_index_entry(options.gistid)
     endif
     let filenames = gista#meta#get_available_filenames(gist)
     return filter(filenames, 'v:val =~# "^" . a:arglead')

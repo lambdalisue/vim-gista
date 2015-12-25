@@ -35,17 +35,17 @@ function! gista#command#open#read(...) abort
       let gistid   = gista#meta#get_valid_gistid(options.gistid)
       let filename = gista#meta#get_valid_filename(gistid, options.filename)
     endif
-    let gist    = gista#api#gists#get(gistid, options)
-    let content = gista#api#gists#content(gist, filename, options)
-    redraw
-    call gista#util#doautocmd('post_update')
+    let gist = gista#api#gists#get(gistid, options)
+    let file = gista#api#gists#file(gist, filename, options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
   endtry
   call gista#util#buffer#read_content(
-        \ content.content,
-        \ printf('%s.%s', tempname(), fnamemodify(content.filename, ':e')),
+        \ split(file.content, '\r\?\n'),
+        \ printf('%s.%s', tempname(), fnamemodify(filename, ':e')),
         \)
+  redraw
+  call gista#util#doautocmd('post_update')
 endfunction
 function! gista#command#open#edit(...) abort
   silent doautocmd BufReadPre
@@ -63,8 +63,8 @@ function! gista#command#open#edit(...) abort
       let gistid   = gista#meta#get_valid_gistid(options.gistid)
       let filename = gista#meta#get_valid_filename(gistid, options.filename)
     endif
-    let gist    = gista#api#gists#get(gistid, options)
-    let content = gista#api#gists#content(gist, filename, options)
+    let gist = gista#api#gists#get(gistid, options)
+    let file = gista#api#gists#file(gist, filename, options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return
@@ -76,12 +76,12 @@ function! gista#command#open#edit(...) abort
         \ 'apiname': apiname,
         \ 'username': username,
         \ 'gistid': gist.id,
-        \ 'filename': content.filename,
+        \ 'filename': filename,
         \ 'content_type': 'raw',
         \}
   call gista#util#buffer#edit_content(
-        \ content.content,
-        \ printf('%s.%s', tempname(), fnamemodify(content.filename, ':e')),
+        \ split(file.content, '\r\?\n'),
+        \ printf('%s.%s', tempname(), fnamemodify(filename, ':e')),
         \)
   if get(get(gist, 'owner', {}), 'login', '') ==# username
     " TODO
@@ -95,7 +95,7 @@ function! gista#command#open#edit(...) abort
   silent execute printf('file gista:%s:%s:%s',
         \ apiname,
         \ gist.id,
-        \ content.filename,
+        \ filename,
         \)
   silent doautocmd BufReadPost
   call gista#util#doautocmd('CacheUpdatePost')
@@ -183,10 +183,6 @@ endfunction
 function! gista#command#open#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
-endfunction
-
-function! gista#command#open#parse_afile(afile) abort
-
 endfunction
 
 call gista#define_variables('command#open', {

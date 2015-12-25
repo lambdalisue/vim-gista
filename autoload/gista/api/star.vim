@@ -29,6 +29,7 @@ function! gista#api#star#get(gistid, ...) abort
 
   let url = printf('gists/%s/star', gist.id)
   let res = client.get(url)
+  redraw
   if res.status == 204
     return 1
   elseif res.status == 404
@@ -62,6 +63,7 @@ function! gista#api#star#put(gistid, ...) abort
   let url = printf('gists/%s/star', gist.id)
   let headers = { 'Content-Length': 0 }
   let res = client.put(url, {}, headers)
+  redraw
   if res.status == 204
     return
   else
@@ -93,6 +95,7 @@ function! gista#api#star#delete(gistid, ...) abort
 
   let url = printf('gists/%s/star', gist.id)
   let res = client.delete(url)
+  redraw
   if res.status == 204
     return
   endif

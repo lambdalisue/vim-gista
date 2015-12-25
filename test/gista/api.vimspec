@@ -4,37 +4,30 @@ let s:P = s:V.import('System.Filepath')
 let s:S = s:V.import('Vim.ScriptLocal')
 
 Describe gista#api
-  Before
+  Before all
     let sfile = s:P.realpath('autoload/gista/api.vim')
     let sf = s:S.sfuncs(sfile)
     let sv = s:S.svars(sfile)
     let Guard = gista#vital().import('Vim.Guard')
+  End
+  Before
     let guard = Guard.new(
-          \ 'g:gista#api#cache_dir',
           \ 'g:gista#api#default_apiname',
           \ 'g:gista#api#default_username',
           \ ['current_client', sv],
-          \ ['previous_client', sv],
           \ ['registry', sv],
           \ ['G', sv],
           \)
-    let g:gista#api#cache_dir = tempname()
     let g:gista#api#default_apiname = 'A'
     let g:gista#api#default_username = ''
+    let sv.current_client = {}
     let sv.registry = {
           \ 'A': 'http://A',
           \ 'B': 'http://B',
           \}
-    " unlock sv.G to mock (which is locked by Vital)
-    unlockvar sv.G
   End
   After
     call guard.restore()
-  End
-  After all
-    if isdirectory(g:gista#api#cache_dir)
-      call s:F.rmdir(g:gista#api#cache_dir, 'r')
-    endif
   End
   Context [PRIVATE]
     Context s:get_client_cache()
@@ -301,200 +294,198 @@ Describe gista#api
       End
     End
   End
-  Context [PROTECTED]
-    Context #_get_available_apinames()
-      It returns a list of keys of s:registry
-        let ret = gista#api#_get_available_apinames()
-        Assert Equals(ret, keys(sv.registry))
-      End
-    End
-    Context #_get_available_usernames({apiname})
-      It returns a list of keys of token_cache of a client
-        let client = gista#api#get_current_client()
-        let client.token_cache.set('foo', '')
-        let client.token_cache.set('bar', '')
-        let client.token_cache.set('hoge', '')
 
-        let ret = gista#api#_get_available_usernames(client.apiname)
-        Assert Equals(sort(ret), sort(['foo', 'bar', 'hoge']))
+  Context #_get_available_apinames()
+    It returns a list of keys of s:registry
+      let ret = gista#api#_get_available_apinames()
+      Assert Equals(ret, keys(sv.registry))
+    End
+  End
+  Context #_get_available_usernames({apiname})
+    It returns a list of keys of token_cache of a client
+      let client = gista#api#get_current_client()
+      let client.token_cache.set('foo', '')
+      let client.token_cache.set('bar', '')
+      let client.token_cache.set('hoge', '')
+
+      let ret = gista#api#_get_available_usernames(client.apiname)
+      Assert Equals(sort(ret), sort(['foo', 'bar', 'hoge']))
+    End
+  End
+
+  Context #register({apiname}, {baseurl})
+    It errors when an empty {apiname} is specified
+      redir => raw_content
+      call gista#api#register('', 'http://A')
+      redir END
+      let content = split(raw_content, "\r\\?\n")
+      Assert Match(content[0], 'An API name cannot be empty')
+    End
+    It errors when an {apiname} does not follow the pattern
+      redir => raw_content
+      call gista#api#register('{APINAME}', 'http://A')
+      redir END
+      let content = split(raw_content, "\r\\?\n")
+      Assert Match(content[0], 'An API name "{APINAME}" requires to follow')
+    End
+    It errors when an {apiname} exists in registry
+      redir => raw_content
+      call gista#api#register('A', 'http://A')
+      redir END
+      let content = split(raw_content, "\r\\?\n")
+      Assert Match(content[0], 'An API name "A" has been already registered')
+    End
+    It errors when an empty {baseurl} is specified
+      redir => raw_content
+      call gista#api#register('C', '')
+      redir END
+      let content = split(raw_content, "\r\\?\n")
+      Assert Match(content[0], 'An API baseurl cannot be empty')
+    End
+    It errors when a {baseurl} does not follow the pattern
+      redir => raw_content
+      call gista#api#register('C', 'CCC')
+      redir END
+      let content = split(raw_content, "\r\\?\n")
+      Assert Match(content[0], 'An API baseurl "CCC" requires to follow')
+    End
+    It register an {apiname} with a {baseurl}
+      call gista#api#register('C', 'http://C')
+      Assert Equals(sv.registry, {
+            \ 'A': 'http://A',
+            \ 'B': 'http://B',
+            \ 'C': 'http://C',
+            \})
+    End
+  End
+  Context #unregister({apiname})
+    It errors when an {apiname} has not registered yet
+      redir => raw_content
+      call gista#api#unregister('C')
+      redir END
+      let content = split(raw_content, "\r\\?\n")
+      Assert Match(content[0], 'An API name "C" has not been registered yet')
+    End
+    It unregister an {apiname}
+      call gista#api#unregister('A')
+      Assert Equals(sv.registry, {
+            \ 'B': 'http://B',
+            \})
+    End
+  End
+
+  Context #get_current_client()
+    It returns a client of g:gista#api#default_apiname for the first time
+      let g:gista#api#default_apiname = 'B'
+      let client = gista#api#get_current_client()
+      Assert Equals(client.apiname, 'B')
+    End
+    It returns a current client specified by #switch_client()
+      let g:gista#api#default_apiname = 'A'
+      let client = gista#api#get_current_client()
+      Assert Equals(client.apiname, 'A')
+
+      call gista#api#switch_client('B')
+      let client = gista#api#get_current_client()
+      Assert Equals(client.apiname, 'B')
+    End
+  End
+  Context #get_current_apiname()
+    It returns an apiname of the current client
+      let g:gista#api#default_apiname = 'A'
+      let apiname = gista#api#get_current_apiname()
+      Assert Equals(apiname, 'A')
+
+      call gista#api#switch_client('B')
+      let apiname = gista#api#get_current_apiname()
+      Assert Equals(apiname, 'B')
+    End
+  End
+  Context #get_current_username()
+    It returns an authorized username of the current client
+      let g:gista#api#default_apiname = 'A'
+      let username = gista#api#get_current_username()
+      Assert Equals(username, '')
+
+      " Mimic login
+      let client = gista#api#get_current_client()
+      let client._authorized_username = 'lambdalisue'
+      let username = gista#api#get_current_username()
+      Assert Equals(username, 'lambdalisue')
+    End
+  End
+  
+  Context #switch_client({apiname}[, {options}])
+    It returns a client of {apiname}
+      let client = gista#api#switch_client('B')
+      Assert Equals(client.apiname, 'B')
+    End
+    It call s:login() internally when {options}.username is specified
+      let client = gista#api#get_current_client()
+      function! client.login(...) abort
+        let self._login_args = a:000
+      endfunction
+
+      let client = gista#api#switch_client(client.apiname, {'username': 'lambdalisue'})
+      Assert Equals(client._login_args, ['lambdalisue', { 'verbose': 1 }])
+    End
+    It call s:logout() internally when {options}.username is specified but empty
+      let client = gista#api#get_current_client()
+      function! client.logout(...) abort
+        let self._logout_args = a:000
+      endfunction
+
+      let client = gista#api#switch_client(client.apiname, {'username': ''})
+      Assert Equals(client._logout_args, [{ 'verbose': 1, 'permanent': 0 }])
+
+      let client = gista#api#switch_client(client.apiname, {'username': '', 'permanent': 1})
+      Assert Equals(client._logout_args, [{ 'verbose': 1, 'permanent': 1 }])
+    End
+    It switch a current client
+      let client = gista#api#switch_client('B')
+      let current_client = gista#api#get_current_client()
+      Assert Same(client, current_client)
+    End
+  End
+  Context #session({options})
+    It returns a session instance
+      let session = gista#api#session({ 'apiname': 'A' })
+      Assert KeyExists(session, 'enter')
+      Assert KeyExists(session, 'exit')
+    End
+
+    Context A session instance
+      It enter/exit a session with .enter()/.exit()
+        let session = gista#api#session({ 'apiname': 'B' })
+        Assert Equals(gista#api#get_current_apiname(), 'A')
+        call session.enter()
+        Assert Equals(gista#api#get_current_apiname(), 'B')
+        call session.exit()
+        Assert Equals(gista#api#get_current_apiname(), 'A')
+      End
+      It throws an exception when .exit() called without .enter()
+        let session = gista#api#session({ 'apiname': 'A' })
+        Throw /session\.enter() has not been called yet/
+              \ session.exit()
+      End
+      It throws an exception when .enter() called twice or more
+        let session = gista#api#session({ 'apiname': 'A' })
+        call session.enter()
+        Throw /session\.exit() has not been called yet/
+              \ session.enter()
       End
     End
   End
-  Context [PUBLIC]
-    Context #register({apiname}, {baseurl})
-      It errors when an empty {apiname} is specified
-        redir => raw_content
-        call gista#api#register('', 'http://A')
-        redir END
-        let content = split(raw_content, "\r\\?\n")
-        Assert Match(content[0], 'An API name cannot be empty')
-      End
-      It errors when an {apiname} does not follow the pattern
-        redir => raw_content
-        call gista#api#register('{APINAME}', 'http://A')
-        redir END
-        let content = split(raw_content, "\r\\?\n")
-        Assert Match(content[0], 'An API name "{APINAME}" requires to follow')
-      End
-      It errors when an {apiname} exists in registry
-        redir => raw_content
-        call gista#api#register('A', 'http://A')
-        redir END
-        let content = split(raw_content, "\r\\?\n")
-        Assert Match(content[0], 'An API name "A" has been already registered')
-      End
-      It errors when an empty {baseurl} is specified
-        redir => raw_content
-        call gista#api#register('C', '')
-        redir END
-        let content = split(raw_content, "\r\\?\n")
-        Assert Match(content[0], 'An API baseurl cannot be empty')
-      End
-      It errors when a {baseurl} does not follow the pattern
-        redir => raw_content
-        call gista#api#register('C', 'CCC')
-        redir END
-        let content = split(raw_content, "\r\\?\n")
-        Assert Match(content[0], 'An API baseurl "CCC" requires to follow')
-      End
-      It register an {apiname} with a {baseurl}
-        call gista#api#register('C', 'http://C')
-        Assert Equals(sv.registry, {
-              \ 'A': 'http://A',
-              \ 'B': 'http://B',
-              \ 'C': 'http://C',
-              \})
-      End
-    End
-    Context #unregister({apiname})
-      It errors when an {apiname} has not registered yet
-        redir => raw_content
-        call gista#api#unregister('C')
-        redir END
-        let content = split(raw_content, "\r\\?\n")
-        Assert Match(content[0], 'An API name "C" has not been registered yet')
-      End
-      It unregister an {apiname}
-        call gista#api#unregister('A')
-        Assert Equals(sv.registry, {
-              \ 'B': 'http://B',
-              \})
-      End
-    End
 
-    Context #get_current_client()
-      It returns a client of g:gista#api#default_apiname for the first time
-        let g:gista#api#default_apiname = 'B'
-        let client = gista#api#get_current_client()
-        Assert Equals(client.apiname, 'B')
-      End
-      It returns a current client specified by #switch_client()
-        let g:gista#api#default_apiname = 'A'
-        let client = gista#api#get_current_client()
-        Assert Equals(client.apiname, 'A')
-
-        call gista#api#switch_client('B')
-        let client = gista#api#get_current_client()
-        Assert Equals(client.apiname, 'B')
-      End
-    End
-    Context #get_current_apiname()
-      It returns an apiname of the current client
-        let g:gista#api#default_apiname = 'A'
-        let apiname = gista#api#get_current_apiname()
-        Assert Equals(apiname, 'A')
-
-        call gista#api#switch_client('B')
-        let apiname = gista#api#get_current_apiname()
-        Assert Equals(apiname, 'B')
-      End
-    End
-    Context #get_current_username()
-      It returns an authorized username of the current client
-        let g:gista#api#default_apiname = 'A'
-        let username = gista#api#get_current_username()
-        Assert Equals(username, '')
-
-        " Mimic login
-        let client = gista#api#get_current_client()
-        let client._authorized_username = 'lambdalisue'
-        let username = gista#api#get_current_username()
-        Assert Equals(username, 'lambdalisue')
-      End
-    End
-    
-    Context #switch_client({apiname}[, {options}])
-      It returns a client of {apiname}
-        let client = gista#api#switch_client('B')
-        Assert Equals(client.apiname, 'B')
-      End
-      It call s:login() internally when {options}.username is specified
-        let client = gista#api#get_current_client()
-        function! client.login(...) abort
-          let self._login_args = a:000
-        endfunction
-
-        let client = gista#api#switch_client(client.apiname, {'username': 'lambdalisue'})
-        Assert Equals(client._login_args, ['lambdalisue', { 'verbose': 1 }])
-      End
-      It call s:logout() internally when {options}.username is specified but empty
-        let client = gista#api#get_current_client()
-        function! client.logout(...) abort
-          let self._logout_args = a:000
-        endfunction
-
-        let client = gista#api#switch_client(client.apiname, {'username': ''})
-        Assert Equals(client._logout_args, [{ 'verbose': 1, 'permanent': 0 }])
-
-        let client = gista#api#switch_client(client.apiname, {'username': '', 'permanent': 1})
-        Assert Equals(client._logout_args, [{ 'verbose': 1, 'permanent': 1 }])
-      End
-      It switch a current client
-        let client = gista#api#switch_client('B')
-        let current_client = gista#api#get_current_client()
-        Assert Same(client, current_client)
-      End
-    End
-    Context #session({options})
-      It returns a session instance
-        let session = gista#api#session({ 'apiname': 'A' })
-        Assert KeyExists(session, 'enter')
-        Assert KeyExists(session, 'exit')
-      End
-
-      Context A session instance
-        It enter/exit a session with .enter()/.exit()
-          let session = gista#api#session({ 'apiname': 'B' })
-          Assert Equals(gista#api#get_current_apiname(), 'A')
-          call session.enter()
-          Assert Equals(gista#api#get_current_apiname(), 'B')
-          call session.exit()
-          Assert Equals(gista#api#get_current_apiname(), 'A')
-        End
-        It throws an exception when .exit() called without .enter()
-          let session = gista#api#session({ 'apiname': 'A' })
-          Throw /session\.enter() has not been called yet/
-                \ session.exit()
-        End
-        It throws an exception when .enter() called twice or more
-          let session = gista#api#session({ 'apiname': 'A' })
-          call session.enter()
-          Throw /session\.exit() has not been called yet/
-                \ session.enter()
-        End
-      End
-    End
-
-    Context #throw_api_exception({response})
-      It throws an API exception of {response}
-        let response = {
-              \ 'status': 403,
-              \ 'statusText': 'Forbidden',
-              \ 'header': [],
-              \}
-        Throw /403: Forbidden/
-              \ gista#api#throw_api_exception(response)
-      End
+  Context #throw_api_exception({response})
+    It throws an API exception of {response}
+      let response = {
+            \ 'status': 403,
+            \ 'statusText': 'Forbidden',
+            \ 'header': [],
+            \}
+      Throw /403: Forbidden/
+            \ gista#api#throw_api_exception(response)
     End
   End
 End
