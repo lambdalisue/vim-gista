@@ -4,7 +4,7 @@ set cpo&vim
 let s:V = gista#vital()
 let s:J = s:V.import('Web.JSON')
 
-function! gista#api#fork#post(gistid, ...) abort " {{{
+function! gista#api#fork#post(gistid, ...) abort
   let options = extend({
         \ 'verbose': 1,
         \}, get(a:000, 0, {})
@@ -42,12 +42,12 @@ function! gista#api#fork#post(gistid, ...) abort " {{{
     return gist
   endif
   call gista#api#throw_api_exception(res)
-endfunction " }}}
-function! gista#api#fork#list(gistid, ...) abort " {{{
+endfunction
+function! gista#api#fork#list(gistid, ...) abort
   call gista#util#prompt#throw(
         \ 'Not implemented yet'
         \)
-endfunction " }}}
+endfunction
 
 " Configure variables
 call gista#define_variables('api#fork', {})

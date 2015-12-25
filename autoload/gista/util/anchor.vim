@@ -1,7 +1,7 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! gista#util#anchor#is_suitable(winnum) abort " {{{
+function! gista#util#anchor#is_suitable(winnum) abort
   let bufnum  = winbufnr(a:winnum)
   let bufname = bufname(bufnum)
   let buflisted = buflisted(bufnum)
@@ -14,8 +14,8 @@ function! gista#util#anchor#is_suitable(winnum) abort " {{{
     return 0
   endif
   return 1
-endfunction " }}}
-function! gista#util#anchor#find_suitable(winnum) abort " {{{
+endfunction
+function! gista#util#anchor#find_suitable(winnum) abort
   if winnr('$') == 1
     return 0
   endif
@@ -33,8 +33,8 @@ function! gista#util#anchor#find_suitable(winnum) abort " {{{
   endfor
   " no suitable window is found.
   return 0
-endfunction " }}}
-function! gista#util#anchor#focus() abort " {{{
+endfunction
+function! gista#util#anchor#focus() abort
   " find suitable window from the previous window
   let previous_winnum = winnr('#')
   let suitable_winnum = gista#util#anchor#find_suitable(previous_winnum)
@@ -42,7 +42,7 @@ function! gista#util#anchor#focus() abort " {{{
         \ ? previous_winnum
         \ : suitable_winnum
   silent execute printf('keepjumps %dwincmd w', suitable_winnum)
-endfunction " }}}
+endfunction
 
 " Configure variables
 call gista#define_variables('util#anchor', {

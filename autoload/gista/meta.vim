@@ -5,7 +5,7 @@ set cpo&vim
 " https://developer.github.com/v3/gists/#truncation
 let s:CONTENT_SIZE_LIMIT = 10 * 1024 * 1024
 
-function! gista#meta#validate_gistid(gistid) abort " {{{
+function! gista#meta#validate_gistid(gistid) abort
   call gista#util#validate#not_empty(
         \ a:gistid,
         \ 'A gist ID cannot be empty',
@@ -14,14 +14,14 @@ function! gista#meta#validate_gistid(gistid) abort " {{{
         \ a:gistid, '^\w\{,20}\%(/\w\+\)\?$',
         \ 'A gist ID "%value" requires to follow "%pattern"'
         \)
-endfunction " }}}
-function! gista#meta#validate_filename(filename) abort " {{{
+endfunction
+function! gista#meta#validate_filename(filename) abort
   call gista#util#validate#not_empty(
         \ a:filename,
         \ 'A filename cannot be empty',
         \)
-endfunction " }}}
-function! gista#meta#validate_lookup(lookup) abort " {{{
+endfunction
+function! gista#meta#validate_lookup(lookup) abort
   let client = gista#api#get_current_client()
   let username = client.get_authorized_username()
   if !empty(username)
@@ -32,9 +32,9 @@ function! gista#meta#validate_lookup(lookup) abort " {{{
         \ a:lookup, '^\w*$',
         \ 'A lookup "%value" requires to follow "%pattern"'
         \)
-endfunction " }}}
+endfunction
 
-function! gista#meta#get_valid_gistid(gistid) abort " {{{
+function! gista#meta#get_valid_gistid(gistid) abort
   if empty(a:gistid)
     redraw
     let gistid = gista#util#prompt#ask(
@@ -49,8 +49,8 @@ function! gista#meta#get_valid_gistid(gistid) abort " {{{
   endif
   call gista#meta#validate_gistid(gistid)
   return gistid
-endfunction " }}}
-function! gista#meta#get_valid_filename(gist_or_gistid, filename) abort " {{{
+endfunction
+function! gista#meta#get_valid_filename(gist_or_gistid, filename) abort
   if empty(a:filename)
     let client = gista#api#get_current_client()
     if type(a:gist_or_gistid) == type('')
@@ -87,8 +87,8 @@ function! gista#meta#get_valid_filename(gist_or_gistid, filename) abort " {{{
   endif
   call gista#meta#validate_filename(filename)
   return filename
-endfunction " }}}
-function! gista#meta#get_valid_lookup(lookup) abort " {{{
+endfunction
+function! gista#meta#get_valid_lookup(lookup) abort
   let client = gista#api#get_current_client()
   let username = client.get_authorized_username()
   let lookup = empty(a:lookup)
@@ -103,28 +103,28 @@ function! gista#meta#get_valid_lookup(lookup) abort " {{{
         \ : lookup
   call gista#meta#validate_lookup(lookup)
   return lookup
-endfunction " }}}
+endfunction
 
-function! gista#meta#get_available_gistids() abort " {{{
+function! gista#meta#get_available_gistids() abort
   let client = gista#api#get_current_client()
   let lookup = client.get_authorized_username()
   let lookup = empty(lookup) ? 'public' : lookup
-  let entries = client.entry_cache.get(lookup, [])
-  return map(copy(entries), 'v:val.id')
-endfunction " }}}
-function! gista#meta#get_available_filenames(gist) abort " {{{
+  let content = client.entry_cache.get(lookup, [])
+  return map(copy(content.entries), 'v:val.id')
+endfunction
+function! gista#meta#get_available_filenames(gist) abort
   " Remove files more thant 10 MiB which cannot download with HTTP protocol
   return filter(
         \ keys(get(a:gist, 'files', {})),
         \ 'a:gist.files[v:val].size < s:CONTENT_SIZE_LIMIT'
         \)
-endfunction " }}}
+endfunction
 
-function! gista#meta#complete_apiname(arglead, cmdline, cursorpos, ...) abort " {{{
+function! gista#meta#complete_apiname(arglead, cmdline, cursorpos, ...) abort
   let apinames = gista#api#_get_available_apiname()
   return filter(apinames, 'v:val =~# "^" . a:arglead')
-endfunction " }}}
-function! gista#meta#complete_username(arglead, cmdline, cursorpos, ...) abort " {{{
+endfunction
+function! gista#meta#complete_username(arglead, cmdline, cursorpos, ...) abort
   let options = extend({
         \ 'apiname': '',
         \}, get(a:000, 0, {}),
@@ -138,14 +138,14 @@ function! gista#meta#complete_username(arglead, cmdline, cursorpos, ...) abort "
   catch /^vim-gista: ValidationError:/
     return []
   endtry
-endfunction " }}}
-function! gista#meta#complete_gistid(arglead, cmdline, cursorpos, ...) abort " {{{
+endfunction
+function! gista#meta#complete_gistid(arglead, cmdline, cursorpos, ...) abort
   return filter(
         \ gista#meta#get_available_gistids(),
         \ 'v:val =~# "^" . a:arglead',
         \)
-endfunction " }}}
-function! gista#meta#complete_filename(arglead, cmdline, cursorpos, ...) abort " {{{
+endfunction
+function! gista#meta#complete_filename(arglead, cmdline, cursorpos, ...) abort
   let options = extend({
         \ 'gistid': '',
         \}, get(a:000, 0, {}),
@@ -154,13 +154,16 @@ function! gista#meta#complete_filename(arglead, cmdline, cursorpos, ...) abort "
     call gista#meta#validate_gistid(options.gistid)
     let clinet = gista#api#get_current_client()
     let gist = gista#api#gists#cache#get(options.gistid)
+    if gist._gista_fetched == 0
+      let gist = gista#api#gists#cache#retrieve_entry(options.gistid)
+    endif
     let filenames = gista#meta#get_available_filenames(gist)
     return filter(filenames, 'v:val =~# "^" . a:arglead')
   catch /^vim-gista: ValidationError:/
     return []
   endtry
-endfunction " }}}
-function! gista#meta#complete_lookup(arglead, cmdline, cursorpos, ...) abort " {{{
+endfunction
+function! gista#meta#complete_lookup(arglead, cmdline, cursorpos, ...) abort
   try
     let clinet = gista#api#get_current_client()
     let lookups = extend([
@@ -174,7 +177,7 @@ function! gista#meta#complete_lookup(arglead, cmdline, cursorpos, ...) abort " {
   catch /^vim-gista: ValidationError:/
     return []
   endtry
-endfunction " }}}
+endfunction
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo

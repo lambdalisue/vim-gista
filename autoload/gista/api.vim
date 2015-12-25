@@ -12,13 +12,13 @@ let s:registry = {}
 let s:current_client = {}
 
 " Private functions
-function! s:get_client_cache() abort " {{{
+function! s:get_client_cache() abort
   if !exists('s:client_cache')
     let s:client_cache = s:C.new('memory')
   endif
   return s:client_cache
-endfunction " }}} 
-function! s:get_token_cache(apiname) abort " {{{
+endfunction 
+function! s:get_token_cache(apiname) abort
   if !exists('s:token_cache')
     let s:token_cache = s:C.new('memory')
   endif
@@ -32,8 +32,8 @@ function! s:get_token_cache(apiname) abort " {{{
         \})
   call s:token_cache.set(a:apiname, token_cache)
   return token_cache
-endfunction " }}} 
-function! s:get_entry_cache(apiname) abort " {{{
+endfunction 
+function! s:get_entry_cache(apiname) abort
   if !exists('s:entry_cache')
     let s:entry_cache = s:C.new('memory')
   endif
@@ -46,8 +46,8 @@ function! s:get_entry_cache(apiname) abort " {{{
         \})
   call s:entry_cache.set(a:apiname, entry_cache)
   return entry_cache
-endfunction " }}}
-function! s:get_content_cache(apiname) abort " {{{
+endfunction
+function! s:get_content_cache(apiname) abort
   if !exists('s:content_cache')
     let s:content_cache = s:C.new('memory')
   endif
@@ -60,9 +60,9 @@ function! s:get_content_cache(apiname) abort " {{{
         \})
   call s:content_cache.set(a:apiname, content_cache)
   return content_cache
-endfunction " }}}
+endfunction
 
-function! s:validate_apiname(apiname) abort " {{{
+function! s:validate_apiname(apiname) abort
   call gista#util#validate#not_empty(
         \ a:apiname,
         \ 'An API name cannot be empty',
@@ -71,14 +71,14 @@ function! s:validate_apiname(apiname) abort " {{{
         \ a:apiname, keys(s:registry),
         \ 'An API name "%value" has not been registered yet',
         \)
-endfunction " }}}
-function! s:validate_username(username) abort " {{{
+endfunction
+function! s:validate_username(username) abort
   call gista#util#validate#pattern(
         \ a:username, '^[a-zA-Z0-9_\-]\+$',
         \ 'An API username "%value" requires to follow "%pattern"'
         \)
-endfunction " }}}
-function! s:get_default_apiname() abort " {{{
+endfunction
+function! s:get_default_apiname() abort
   let apiname = g:gista#api#default_apiname
   try
     call s:validate_apiname(apiname)
@@ -90,8 +90,8 @@ function! s:get_default_apiname() abort " {{{
           \)
     return 'GitHub'
   endtry
-endfunction " }}}
-function! s:get_default_username(apiname) abort " {{{
+endfunction
+function! s:get_default_username(apiname) abort
   if type(g:gista#api#default_username) == type('')
     let username = g:gista#api#default_username
   else
@@ -106,9 +106,9 @@ function! s:get_default_username(apiname) abort " {{{
     call gista#util#prompt#warn('An anonymous user is used instead')
     return ''
   endtry
-endfunction " }}}
+endfunction
 
-function! s:login(client, username, options) abort " {{{
+function! s:login(client, username, options) abort
   let options = extend({
         \ 'verbose': 1,
         \}, a:options,
@@ -121,8 +121,8 @@ function! s:login(client, username, options) abort " {{{
   catch /^vital: Web.API.GitHub:/
     throw substitute(v:exception, '^vital: Web.API.GitHub:', 'vim-gista:', '')
   endtry
-endfunction " }}}
-function! s:logout(client, options) abort " {{{
+endfunction
+function! s:logout(client, options) abort
   let options = extend({
         \ 'verbose': 1,
         \ 'permanent': 0,
@@ -136,8 +136,8 @@ function! s:logout(client, options) abort " {{{
   catch /^vital: Web.API.GitHub:/
     throw substitute(v:exception, '^vital: Web.API.GitHub:', 'vim-gista:', '')
   endtry
-endfunction " }}}
-function! s:new_client(apiname) abort " {{{
+endfunction
+function! s:new_client(apiname) abort
   let client = s:G.new({
         \ 'baseurl': s:registry[a:apiname],
         \ 'token_cache': s:get_token_cache(a:apiname),
@@ -152,8 +152,8 @@ function! s:new_client(apiname) abort " {{{
     call s:login(client, default_username, { 'verbose': 1 })
   endif
   return client
-endfunction " }}}
-function! s:get_client(apiname) abort " {{{
+endfunction
+function! s:get_client(apiname) abort
   let client_cache = s:get_client_cache()
   if client_cache.has(a:apiname)
     return client_cache.get(a:apiname)
@@ -161,20 +161,20 @@ function! s:get_client(apiname) abort " {{{
   let client = s:new_client(a:apiname)
   call client_cache.set(a:apiname, client)
   return client
-endfunction " }}}
+endfunction
 
 " Protected function
-function! gista#api#_get_available_apinames() abort " {{{
+function! gista#api#_get_available_apinames() abort
   return keys(s:registry)
-endfunction " }}}
-function! gista#api#_get_available_usernames(apiname) abort " {{{
+endfunction
+function! gista#api#_get_available_usernames(apiname) abort
   call s:validate_apiname(a:apiname)
   let client = s:get_client(a:apiname)
   return client.token_cache.keys()
-endfunction " }}}
+endfunction
 
 " Public function
-function! gista#api#register(apiname, baseurl) abort " {{{
+function! gista#api#register(apiname, baseurl) abort
   try
     call gista#util#validate#not_empty(a:apiname,
           \ 'An API name cannot be empty',
@@ -199,8 +199,8 @@ function! gista#api#register(apiname, baseurl) abort " {{{
   catch /^vim-gista: ValidationError/
     call gista#util#prompt#error(v:exception)
   endtry
-endfunction " }}}
-function! gista#api#unregister(apiname) abort " {{{
+endfunction
+function! gista#api#unregister(apiname) abort
   try
     call gista#util#validate#key_exists(
           \ a:apiname, s:registry,
@@ -210,23 +210,23 @@ function! gista#api#unregister(apiname) abort " {{{
   catch /^vim-gista: ValidationError/
     call gista#util#prompt#error(v:exception)
   endtry
-endfunction " }}}
+endfunction
 
-function! gista#api#get_current_client() abort " {{{
+function! gista#api#get_current_client() abort
   if empty(s:current_client)
     let default_apiname  = s:get_default_apiname()
     let s:current_client = s:get_client(default_apiname)
   endif
   return s:current_client
-endfunction " }}}
-function! gista#api#get_current_apiname() abort " {{{
+endfunction
+function! gista#api#get_current_apiname() abort
   return gista#api#get_current_client().apiname
-endfunction " }}}
-function! gista#api#get_current_username() abort " {{{
+endfunction
+function! gista#api#get_current_username() abort
   return gista#api#get_current_client().get_authorized_username()
-endfunction " }}}
+endfunction
 
-function! gista#api#switch_client(apiname, ...) abort " {{{
+function! gista#api#switch_client(apiname, ...) abort
   let options = extend({
         \ 'verbose': 1,
         \ 'username': 0,
@@ -244,10 +244,10 @@ function! gista#api#switch_client(apiname, ...) abort " {{{
   endif
   let s:current_client = client
   return client
-endfunction " }}}
+endfunction
 
 let s:session = {}
-function! s:session.enter() abort " {{{
+function! s:session.enter() abort
   if has_key(self, '_previous_client')
     call gista#util#prompt#throw(
           \ 'SessionError: session.exit() has not been called yet',
@@ -260,8 +260,8 @@ function! s:session.enter() abort " {{{
         \ 'username': self.username,
         \ 'permanent': 0,
         \})
-endfunction " }}}
-function! s:session.exit() abort " {{{
+endfunction
+function! s:session.exit() abort
   if !has_key(self, '_previous_client')
     call gista#util#prompt#throw(
           \ 'SessionError: session.enter() has not been called yet',
@@ -270,8 +270,8 @@ function! s:session.exit() abort " {{{
   endif
   let s:current_client = self._previous_client
   unlet self._previous_client
-endfunction " }}}
-function! gista#api#session(...) abort " {{{
+endfunction
+function! gista#api#session(...) abort
   let options = extend({
         \ 'verbose': 1,
         \ 'apiname': '',
@@ -287,11 +287,11 @@ function! gista#api#session(...) abort " {{{
         \ 'username': options.username,
         \})
   return session
-endfunction " }}}
+endfunction
 
-function! gista#api#throw_api_exception(response) abort " {{{
+function! gista#api#throw_api_exception(response) abort
   call gista#util#prompt#throw(s:G.build_exception_message(a:response))
-endfunction " }}}
+endfunction
 
 " Register APIs
 call gista#api#register('GitHub', 'https://api.github.com')

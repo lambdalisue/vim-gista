@@ -1,13 +1,13 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! gista#vital() abort " {{{
+function! gista#vital() abort
   if !exists('s:V')
     let s:V = vital#of('vim_gista')
   endif
   return s:V
-endfunction " }}}
-function! gista#define_variables(prefix, defaults) abort " {{{
+endfunction
+function! gista#define_variables(prefix, defaults) abort
   " Note:
   "   Funcref is not supported while the variable must start with a capital
   let prefix = empty(a:prefix)
@@ -20,7 +20,7 @@ function! gista#define_variables(prefix, defaults) abort " {{{
     endif
     unlet value
   endfor
-endfunction " }}}
+endfunction
 
 call gista#define_variables('', {
       \ 'debug': 0,

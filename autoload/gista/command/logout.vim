@@ -4,7 +4,7 @@ set cpo&vim
 let s:V = gista#vital()
 let s:A = s:V.import('ArgumentParser')
 
-function! s:handle_exception(exception) abort " {{{
+function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
         \ '^vim-gista: Login canceled',
@@ -17,8 +17,8 @@ function! s:handle_exception(exception) abort " {{{
   endfor
   " else
   call gista#util#prompt#error(a:exception)
-endfunction " }}}
-function! gista#command#logout#call(...) abort " {{{
+endfunction
+function! gista#command#logout#call(...) abort
   let options = extend({
         \ 'verbose': 1,
         \ 'apiname': '',
@@ -37,9 +37,9 @@ function! gista#command#logout#call(...) abort " {{{
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
   endtry
-endfunction " }}}
+endfunction
 
-function! s:get_parser() abort " {{{
+function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
           \ 'name': 'Gista logout',
@@ -53,8 +53,8 @@ function! s:get_parser() abort " {{{
           \})
   endif
   return s:parser
-endfunction " }}}
-function! gista#command#logout#command(...) abort " {{{
+endfunction
+function! gista#command#logout#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
@@ -66,11 +66,11 @@ function! gista#command#logout#command(...) abort " {{{
         \ options,
         \)
   call gista#command#logout#call(options)
-endfunction " }}}
-function! gista#command#logout#complete(...) abort " {{{
+endfunction
+function! gista#command#logout#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
-endfunction " }}}
+endfunction
 
 call gista#define_variables('command#logout', {
       \ 'default_options': {},

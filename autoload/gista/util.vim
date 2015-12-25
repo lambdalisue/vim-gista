@@ -1,12 +1,20 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! gista#util#clip(content) abort " {{{
+let s:V = gista#vital()
+let s:C = s:V.import('Vim.Compat')
+
+function! gista#util#clip(content) abort
   let @" = a:content
   if has('clipboard')
     call setreg(v:register, a:content)
   endif
-endfunction " }}}
+endfunction
+
+function! gista#util#doautocmd(name) abort
+  let expr = printf('User Gista%s', a:name)
+  call s:C.doautocmd(expr, 1)
+endfunction
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo

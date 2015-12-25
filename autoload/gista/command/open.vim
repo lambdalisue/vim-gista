@@ -4,7 +4,7 @@ set cpo&vim
 let s:V = gista#vital()
 let s:A = s:V.import('ArgumentParser')
 
-function! s:handle_exception(exception) abort " {{{
+function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
         \ '^vim-gista: Login canceled',
@@ -18,9 +18,9 @@ function! s:handle_exception(exception) abort " {{{
   endfor
   " else
   call gista#util#prompt#error(a:exception)
-endfunction " }}}
+endfunction
 
-function! gista#command#open#read(...) abort " {{{
+function! gista#command#open#read(...) abort
   let options = extend({
         \ 'gistid': '',
         \ 'gist': {},
@@ -37,6 +37,8 @@ function! gista#command#open#read(...) abort " {{{
     endif
     let gist    = gista#api#gists#get(gistid, options)
     let content = gista#api#gists#content(gist, filename, options)
+    redraw
+    call gista#util#doautocmd('post_update')
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
   endtry
@@ -44,8 +46,9 @@ function! gista#command#open#read(...) abort " {{{
         \ content.content,
         \ printf('%s.%s', tempname(), fnamemodify(content.filename, ':e')),
         \)
-endfunction " }}}
-function! gista#command#open#edit(...) abort " {{{
+endfunction
+function! gista#command#open#edit(...) abort
+  silent doautocmd BufReadPre
   let options = extend({
         \ 'gistid': '',
         \ 'gist': {},
@@ -94,9 +97,10 @@ function! gista#command#open#edit(...) abort " {{{
         \ gist.id,
         \ content.filename,
         \)
-  filetype detect
-endfunction " }}}
-function! gista#command#open#open(...) abort " {{{
+  silent doautocmd BufReadPost
+  call gista#util#doautocmd('CacheUpdatePost')
+endfunction
+function! gista#command#open#open(...) abort
   let options = extend({
         \ 'gistid': '',
         \ 'gist': {},
@@ -129,9 +133,9 @@ function! gista#command#open#open(...) abort " {{{
         \ 'opener': opener . (options.cache ? '' : '!'),
         \})
   " BufReadCmd will execute gista#command#open#edit()
-endfunction " }}}
+endfunction
 
-function! s:get_parser() abort " {{{
+function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
           \ 'name': 'Gista open',
@@ -162,8 +166,8 @@ function! s:get_parser() abort " {{{
           \})
   endif
   return s:parser
-endfunction " }}}
-function! gista#command#open#command(...) abort " {{{
+endfunction
+function! gista#command#open#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
@@ -175,15 +179,15 @@ function! gista#command#open#command(...) abort " {{{
         \ options,
         \)
   call gista#command#open#open(options)
-endfunction " }}}
-function! gista#command#open#complete(...) abort " {{{
+endfunction
+function! gista#command#open#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
-endfunction " }}}
+endfunction
 
-function! gista#command#open#parse_afile(afile) abort " {{{
+function! gista#command#open#parse_afile(afile) abort
 
-endfunction " }}}
+endfunction
 
 call gista#define_variables('command#open', {
       \ 'default_options': {},

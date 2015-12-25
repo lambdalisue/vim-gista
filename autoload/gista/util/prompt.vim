@@ -3,12 +3,12 @@ set cpo&vim
 
 let s:disable_interactive = 0
 
-function! s:ensure_string(x) abort " {{{
+function! s:ensure_string(x) abort
   return type(a:x) == type('')
         \ ? a:x
         \ : string(a:x)
-endfunction " }}}
-function! s:echo(hl, msg) abort " {{{
+endfunction
+function! s:echo(hl, msg) abort
   execute 'echohl' a:hl
   try
     for m in split(a:msg, '\v\r?\n')
@@ -17,8 +17,8 @@ function! s:echo(hl, msg) abort " {{{
   finally
     echohl None
   endtry
-endfunction " }}}
-function! s:echomsg(hl, msg) abort " {{{
+endfunction
+function! s:echomsg(hl, msg) abort
   execute 'echohl' a:hl
   try
     for m in split(a:msg, '\v\r?\n')
@@ -27,8 +27,8 @@ function! s:echomsg(hl, msg) abort " {{{
   finally
     echohl None
   endtry
-endfunction " }}}
-function! s:input(hl, msg, ...) abort " {{{
+endfunction
+function! s:input(hl, msg, ...) abort
   if s:disable_interactive
     return ''
   endif
@@ -42,8 +42,8 @@ function! s:input(hl, msg, ...) abort " {{{
   finally
     echohl None
   endtry
-endfunction " }}}
-function! s:inputlist(hl, msg, candidates, ...) abort " {{{
+endfunction
+function! s:inputlist(hl, msg, candidates, ...) abort
   if s:disable_interactive
     return 0
   endif
@@ -57,66 +57,66 @@ function! s:inputlist(hl, msg, candidates, ...) abort " {{{
   finally
     echohl None
   endtry
-endfunction " }}}
-function! s:throw(msg) abort " {{{
+endfunction
+function! s:throw(msg) abort
   let msg = type(a:msg) == type([]) ? join(a:msg, "\n") : a:msg
   throw printf('vim-gista: %s', msg)
-endfunction " }}}
+endfunction
 
 
-function! gista#util#prompt#echo(...) abort " {{{
+function! gista#util#prompt#echo(...) abort
   let args = map(deepcopy(a:000), 's:ensure_string(v:val)')
   call s:echo('None', join(args))
-endfunction " }}}
-function! gista#util#prompt#debug(...) abort " {{{
+endfunction
+function! gista#util#prompt#debug(...) abort
   if !g:gista#debug
     return
   endif
   let args = map(deepcopy(a:000), 's:ensure_string(v:val)')
   call s:echo('Comment', 'DEBUG: vim-gista: ' . join(args))
-endfunction " }}}
-function! gista#util#prompt#info(...) abort " {{{
+endfunction
+function! gista#util#prompt#info(...) abort
   let args = map(deepcopy(a:000), 's:ensure_string(v:val)')
   call s:echo('Title', join(args))
-endfunction " }}}
-function! gista#util#prompt#warn(...) abort " {{{
+endfunction
+function! gista#util#prompt#warn(...) abort
   let args = map(deepcopy(a:000), 's:ensure_string(v:val)')
   call s:echo('WarningMsg', join(args))
-endfunction " }}}
-function! gista#util#prompt#error(...) abort " {{{
+endfunction
+function! gista#util#prompt#error(...) abort
   let args = map(deepcopy(a:000), 's:ensure_string(v:val)')
   call s:echo('Error', join(args))
-endfunction " }}}
-function! gista#util#prompt#throw(...) abort " {{{
+endfunction
+function! gista#util#prompt#throw(...) abort
   let args = map(deepcopy(a:000), 's:ensure_string(v:val)')
   call s:throw(args)
-endfunction " }}}
+endfunction
 
-function! gista#util#prompt#echomsg(...) abort " {{{
+function! gista#util#prompt#echomsg(...) abort
   let args = map(deepcopy(a:000), 's:ensure_string(v:val)')
   call s:echomsg('None', join(args))
-endfunction " }}}
-function! gista#util#prompt#debugmsg(...) abort " {{{
+endfunction
+function! gista#util#prompt#debugmsg(...) abort
   if !g:gista#debug
     return
   endif
   let args = map(deepcopy(a:000), 's:ensure_string(v:val)')
   call s:echomsg('Comment', 'DEBUG: vim-gista: ' . join(args))
-endfunction " }}}
-function! gista#util#prompt#infomsg(...) abort " {{{
+endfunction
+function! gista#util#prompt#infomsg(...) abort
   let args = map(deepcopy(a:000), 's:ensure_string(v:val)')
   call s:echomsg('Title', join(args))
-endfunction " }}}
-function! gista#util#prompt#warnmsg(...) abort " {{{
+endfunction
+function! gista#util#prompt#warnmsg(...) abort
   let args = map(deepcopy(a:000), 's:ensure_string(v:val)')
   call s:echomsg('WarningMsg', join(args))
-endfunction " }}}
-function! gista#util#prompt#errormsg(...) abort " {{{
+endfunction
+function! gista#util#prompt#errormsg(...) abort
   let args = map(deepcopy(a:000), 's:ensure_string(v:val)')
   call s:echomsg('Error', join(args))
-endfunction " }}}
+endfunction
 
-function! gista#util#prompt#input(msg, ...) abort " {{{
+function! gista#util#prompt#input(msg, ...) abort
   let result = s:input(
         \ 'None', a:msg,
         \ get(a:000, 0, ''),
@@ -124,13 +124,13 @@ function! gista#util#prompt#input(msg, ...) abort " {{{
         \)
   redraw
   return result
-endfunction " }}}
-function! gista#util#prompt#inputlist(msg, candidates) abort " {{{
+endfunction
+function! gista#util#prompt#inputlist(msg, candidates) abort
   let result = s:inputlist('Question', a:msg, a:candidates)
   redraw
   return result
-endfunction " }}}
-function! gista#util#prompt#ask(msg, ...) abort " {{{
+endfunction
+function! gista#util#prompt#ask(msg, ...) abort
   let result = s:input(
         \ 'Question', a:msg,
         \ get(a:000, 0, ''),
@@ -138,8 +138,8 @@ function! gista#util#prompt#ask(msg, ...) abort " {{{
         \)
   redraw
   return result
-endfunction " }}}
-function! gista#util#prompt#asktf(msg, ...) abort " {{{
+endfunction
+function! gista#util#prompt#asktf(msg, ...) abort
   let result = gista#util#prompt#ask(
         \ printf('%s (y[es]/n[o]): ', a:msg),
         \ get(a:000, 0, ''),
@@ -160,17 +160,17 @@ function! gista#util#prompt#asktf(msg, ...) abort " {{{
   endwhile
   redraw
   return result =~? 'y\%[es]'
-endfunction " }}}
-function! gista#util#prompt#_asktf_complete_yes_or_no(arglead, cmdline, cursorpos) abort " {{{
+endfunction
+function! gista#util#prompt#_asktf_complete_yes_or_no(arglead, cmdline, cursorpos) abort
   return filter(['yes', 'no'], 'v:val =~# "^" . a:arglead')
-endfunction " }}}
+endfunction
 
-function! gista#util#prompt#enable_interactive() abort " {{{
+function! gista#util#prompt#enable_interactive() abort
   let s:disable_interactive = 0
-endfunction " }}}
-function! gista#util#prompt#disable_interactive() abort " {{{
+endfunction
+function! gista#util#prompt#disable_interactive() abort
   let s:disable_interactive = 1
-endfunction " }}}
+endfunction
 
 
 let &cpo = s:save_cpo

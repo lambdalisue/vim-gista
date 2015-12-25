@@ -7,10 +7,10 @@ let s:A = s:V.import('ArgumentParser')
 
 let s:registry = {}
 
-function! gista#command#is_registered(name) abort " {{{
+function! gista#command#is_registered(name) abort
   return index(keys(s:registry), a:name) != -1
-endfunction " }}}
-function! gista#command#register(name, command, complete, ...) abort " {{{
+endfunction
+function! gista#command#register(name, command, complete, ...) abort
   try
     call gista#util#validate#key_not_exists(
           \ a:name, s:registry,
@@ -27,8 +27,8 @@ function! gista#command#register(name, command, complete, ...) abort " {{{
   catch /^vim-gista: ValidationError/
     call gista#util#prompt#error(v:exception)
   endtry
-endfunction " }}}
-function! gista#command#unregister(name) abort " {{{
+endfunction
+function! gista#command#unregister(name) abort
   try
     call gista#util#validate#key_exists(
           \ a:name, s:registry,
@@ -38,9 +38,9 @@ function! gista#command#unregister(name) abort " {{{
   catch /^vim-gista: ValidationError/
     call gista#util#prompt#error(v:exception)
   endtry
-endfunction " }}}
+endfunction
 
-function! s:get_parser() abort " {{{
+function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
           \ 'name': 'Gista',
@@ -87,12 +87,12 @@ function! s:get_parser() abort " {{{
     call s:parser.hooks.validate()
   endif
   return s:parser
-endfunction " }}}
-function! s:complete_action(arglead, cmdline, cursorpos, ...) abort " {{{
+endfunction
+function! s:complete_action(arglead, cmdline, cursorpos, ...) abort
   let available_commands = ['login', 'logout'] + keys(s:registry)
   return filter(available_commands, 'v:val =~# "^" . a:arglead')
-endfunction " }}}
-function! gista#command#command(...) abort " {{{
+endfunction
+function! gista#command#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if !empty(options)
@@ -123,8 +123,8 @@ function! gista#command#command(...) abort " {{{
       echo parser.help()
     endif
   endif
-endfunction " }}}
-function! gista#command#complete(arglead, cmdline, cursorpos, ...) abort " {{{
+endfunction
+function! gista#command#complete(arglead, cmdline, cursorpos, ...) abort
   let bang    = a:cmdline =~# '\v^Gista!'
   let cmdline = substitute(a:cmdline, '\C^Gista!\?\s', '', '')
   let cmdline = substitute(cmdline, '[^ ]\+$', '', '')
@@ -154,7 +154,7 @@ function! gista#command#complete(arglead, cmdline, cursorpos, ...) abort " {{{
     endif
   endif
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
-endfunction " }}}
+endfunction
 
 " Register commands
 call gista#command#register('open',

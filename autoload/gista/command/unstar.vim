@@ -4,7 +4,7 @@ set cpo&vim
 let s:V = gista#vital()
 let s:A = s:V.import('ArgumentParser')
 
-function! s:handle_exception(exception) abort " {{{
+function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
         \ '^vim-gista: Login canceled',
@@ -17,8 +17,8 @@ function! s:handle_exception(exception) abort " {{{
     endif
   endfor
   call gista#util#prompt#error(a:exception)
-endfunction " }}}
-function! gista#command#unstar#call(...) abort " {{{
+endfunction
+function! gista#command#unstar#call(...) abort
   let options = extend({
         \ 'gistid': '',
         \}, get(a:000, 0, {}),
@@ -29,9 +29,9 @@ function! gista#command#unstar#call(...) abort " {{{
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
   endtry
-endfunction " }}}
+endfunction
 
-function! s:get_parser() abort " {{{
+function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
           \ 'name': 'Gista unstar',
@@ -44,8 +44,8 @@ function! s:get_parser() abort " {{{
           \})
   endif
   return s:parser
-endfunction " }}}
-function! gista#command#unstar#command(...) abort " {{{
+endfunction
+function! gista#command#unstar#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
@@ -57,11 +57,11 @@ function! gista#command#unstar#command(...) abort " {{{
         \ options,
         \)
   call gista#command#unstar#call(options)
-endfunction " }}}
-function! gista#command#unstar#complete(...) abort " {{{
+endfunction
+function! gista#command#unstar#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
-endfunction " }}}
+endfunction
 
 call gista#define_variables('command#unstar', {
       \ 'default_options': {},

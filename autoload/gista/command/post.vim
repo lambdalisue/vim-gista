@@ -4,7 +4,7 @@ set cpo&vim
 let s:V = gista#vital()
 let s:A = s:V.import('ArgumentParser')
 
-function! s:handle_exception(exception) abort " {{{
+function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
         \ '^vim-gista: Login canceled',
@@ -18,8 +18,8 @@ function! s:handle_exception(exception) abort " {{{
   endfor
   " else
   call gista#util#prompt#error(a:exception)
-endfunction " }}}
-function! gista#command#post#call(...) abort " {{{
+endfunction
+function! gista#command#post#call(...) abort
   let options = extend({
         \ 'filenames': [],
         \ 'contents': [],
@@ -46,9 +46,9 @@ function! gista#command#post#call(...) abort " {{{
     call s:handle_exception(v:exception)
     return ''
   endtry
-endfunction " }}}
+endfunction
 
-function! s:get_parser() abort " {{{
+function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
           \ 'name': 'Gista post',
@@ -77,8 +77,8 @@ function! s:get_parser() abort " {{{
     endfunction
   endif
   return s:parser
-endfunction " }}}
-function! gista#command#post#command(...) abort " {{{
+endfunction
+function! gista#command#post#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
@@ -108,11 +108,11 @@ function! gista#command#post#command(...) abort " {{{
   let options.filenames = map(filenames, 'fnamemodify(v:val, ":t")')
   let options.contents = contents
   call gista#command#post#call(options)
-endfunction " }}}
-function! gista#command#post#complete(...) abort " {{{
+endfunction
+function! gista#command#post#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
-endfunction " }}}
+endfunction
 
 call gista#define_variables('command#post', {
       \ 'default_options': {},

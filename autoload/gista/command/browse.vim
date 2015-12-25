@@ -5,14 +5,14 @@ let s:V = gista#vital()
 let s:F = s:V.import('System.File')
 let s:A = s:V.import('ArgumentParser')
 
-function! s:get_absolute_url(gistid, filename) abort " {{{
+function! s:get_absolute_url(gistid, filename) abort
     let gistid = gista#meta#get_valid_gistid(a:gistid)
     let gist   = gista#api#gists#get(gistid)
     let filename = tolower(substitute(a:filename, '\.', '-', 'g'))
     return gist.html_url . (empty(filename) ? '' : '#file-' . filename)
-endfunction " }}}
+endfunction
 
-function! s:handle_exception(exception) abort " {{{
+function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
         \ '^vim-gista: Login canceled',
@@ -26,8 +26,8 @@ function! s:handle_exception(exception) abort " {{{
   endfor
   " else
   call gista#util#prompt#error(a:exception)
-endfunction " }}}
-function! gista#command#browse#open(...) abort " {{{
+endfunction
+function! gista#command#browse#open(...) abort
   let options = extend({
         \ 'gistid': '',
         \ 'filename': '',
@@ -39,8 +39,8 @@ function! gista#command#browse#open(...) abort " {{{
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
   endtry
-endfunction " }}}
-function! gista#command#browse#yank(...) abort " {{{
+endfunction
+function! gista#command#browse#yank(...) abort
   let options = extend({
         \ 'gistid': '',
         \ 'filename': '',
@@ -52,8 +52,8 @@ function! gista#command#browse#yank(...) abort " {{{
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
   endtry
-endfunction " }}}
-function! gista#command#browse#echo(...) abort " {{{
+endfunction
+function! gista#command#browse#echo(...) abort
   let options = extend({
         \ 'gistid': '',
         \ 'filename': '',
@@ -65,9 +65,9 @@ function! gista#command#browse#echo(...) abort " {{{
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
   endtry
-endfunction " }}}
+endfunction
 
-function! s:get_parser() abort " {{{
+function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
           \ 'name': 'Gista browse',
@@ -91,8 +91,8 @@ function! s:get_parser() abort " {{{
           \})
   endif
   return s:parser
-endfunction " }}}
-function! gista#command#browse#command(...) abort " {{{
+endfunction
+function! gista#command#browse#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
@@ -110,11 +110,11 @@ function! gista#command#browse#command(...) abort " {{{
   elseif options.action ==# 'echo'
     call gista#command#browse#echo(options)
   endif
-endfunction " }}}
-function! gista#command#browse#complete(...) abort " {{{
+endfunction
+function! gista#command#browse#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
-endfunction " }}}
+endfunction
 
 call gista#define_variables('command#browse', {
       \ 'default_options': {},

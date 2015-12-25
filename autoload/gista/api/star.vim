@@ -4,7 +4,7 @@ set cpo&vim
 let s:V = gista#vital()
 let s:L = s:V.import('Data.List')
 
-function! gista#api#star#get(gistid, ...) abort " {{{
+function! gista#api#star#get(gistid, ...) abort
   let options = extend({
         \ 'verbose': 1,
         \}, get(a:000, 0, {})
@@ -35,8 +35,8 @@ function! gista#api#star#get(gistid, ...) abort " {{{
     return 0
   endif
   call gista#api#throw_api_exception(res)
-endfunction " }}}
-function! gista#api#star#put(gistid, ...) abort " {{{
+endfunction
+function! gista#api#star#put(gistid, ...) abort
   let options = extend({
         \ 'verbose': 1,
         \}, get(a:000, 0, {})
@@ -67,8 +67,8 @@ function! gista#api#star#put(gistid, ...) abort " {{{
   else
     call gista#api#throw_api_exception(res)
   endif
-endfunction " }}}
-function! gista#api#star#delete(gistid, ...) abort " {{{
+endfunction
+function! gista#api#star#delete(gistid, ...) abort
   let options = extend({
         \ 'verbose': 1,
         \}, get(a:000, 0, {})
@@ -97,7 +97,7 @@ function! gista#api#star#delete(gistid, ...) abort " {{{
     return
   endif
   call gista#api#throw_api_exception(res)
-endfunction " }}}
+endfunction
 
 " Configure variables
 call gista#define_variables('api#star', {})

@@ -6,7 +6,7 @@ let s:D  = s:V.import('Data.Dict')
 let s:B  = s:V.import('Vim.Buffer')
 let s:BM = s:V.import('Vim.BufferManager')
 
-function! gista#util#buffer#open(name, ...) abort " {{{
+function! gista#util#buffer#open(name, ...) abort
   let config = get(a:000, 0, {})
   let group  = get(config, 'group', '')
   if empty(group)
@@ -30,8 +30,8 @@ function! gista#util#buffer#open(name, ...) abort " {{{
           \ 'bufnum': ret.bufnr,
           \}
   endif
-endfunction " }}}
-function! gista#util#buffer#read_content(content, ...) abort " {{{
+endfunction
+function! gista#util#buffer#read_content(content, ...) abort
   " Save the content into a tempfile and read the tempfile to achieve Vim's
   " encoding detection
   let tempfile = get(a:000, 0, tempname())
@@ -45,8 +45,8 @@ function! gista#util#buffer#read_content(content, ...) abort " {{{
   finally
     call delete(tempfile)
   endtry
-endfunction " }}}
-function! gista#util#buffer#edit_content(content, ...) abort " {{{
+endfunction
+function! gista#util#buffer#edit_content(content, ...) abort
   let saved_cursor = getpos('.')
   let saved_modifiable = &l:modifiable
   let saved_undolevels = &l:undolevels
@@ -61,7 +61,7 @@ function! gista#util#buffer#edit_content(content, ...) abort " {{{
   let &l:modifiable = saved_modifiable
   let &l:undolevels = saved_undolevels
   setlocal nomodified
-endfunction " }}}
+endfunction
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo

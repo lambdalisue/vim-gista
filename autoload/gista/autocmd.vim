@@ -1,7 +1,7 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! s:on_SourceCmd(gista) abort " {{{
+function! s:on_SourceCmd(gista) abort
   " TODO
   " Check if the file is Vim script or not
   let content = getbufline(expand('<amatch>'), 1, '$')
@@ -14,8 +14,8 @@ function! s:on_SourceCmd(gista) abort " {{{
       call delete(tempfile)
     endif
   endtry
-endfunction " }}}
-function! s:on_BufReadCmd(gista) abort " {{{
+endfunction
+function! s:on_BufReadCmd(gista) abort
   let content_type = get(a:gista, 'content_type', '')
   if content_type ==# 'raw'
     call gista#command#open#edit({
@@ -26,6 +26,12 @@ function! s:on_BufReadCmd(gista) abort " {{{
   elseif content_type ==# 'json'
     call gista#command#json#edit({
           \ 'gistid': a:gista.gistid,
+          \ 'cache': !v:cmdbang,
+          \})
+  elseif content_type ==# 'json_entry'
+    call gista#command#json#edit({
+          \ 'gistid': a:gista.gistid,
+          \ 'entry': 1,
           \ 'cache': !v:cmdbang,
           \})
   elseif content_type ==# 'list'
@@ -39,8 +45,8 @@ function! s:on_BufReadCmd(gista) abort " {{{
           \ content_type,
           \))
   endif
-endfunction " }}}
-function! s:on_FileReadCmd(gista) abort " {{{
+endfunction
+function! s:on_FileReadCmd(gista) abort
   let content_type = get(a:gista, 'content_type', '')
   if content_type ==# 'raw'
     call gista#command#open#read({
@@ -51,6 +57,12 @@ function! s:on_FileReadCmd(gista) abort " {{{
   elseif content_type ==# 'json'
     call gista#command#json#read({
           \ 'gistid': a:gista.gistid,
+          \ 'cache': !v:cmdbang,
+          \})
+  elseif content_type ==# 'json_entry'
+    call gista#command#json#read({
+          \ 'gistid': a:gista.gistid,
+          \ 'entry': 1,
           \ 'cache': !v:cmdbang,
           \})
   elseif content_type ==# 'list'
@@ -64,18 +76,18 @@ function! s:on_FileReadCmd(gista) abort " {{{
           \ content_type,
           \))
   endif
-endfunction " }}}
+endfunction
 
-function! s:on_BufWriteCmd(gista) abort " {{{
+function! s:on_BufWriteCmd(gista) abort
   let content = getbufline(expand('<amatch>'), 1, '$')
   echo content
-endfunction " }}}
-function! s:on_FileWriteCmd(gista) abort " {{{
+endfunction
+function! s:on_FileWriteCmd(gista) abort
   let content = getbufline(expand('<amatch>'), line("'["), line("']"))
   echo content
-endfunction " }}}
+endfunction
 
-function! gista#autocmd#call(name) abort " {{{
+function! gista#autocmd#call(name) abort
   let fname = 's:on_' . a:name
   if !exists('*' . fname)
     call gista#util#prompt#throw(printf(
@@ -83,7 +95,6 @@ function! gista#autocmd#call(name) abort " {{{
           \))
   endif
   let filename = expand('<afile>')
-  echomsg bufnr('<afile>')
   let gista = gista#util#compat#getbufvar('<afile>', 'gista', {})
   let gista = empty(gista)
         \ ? s:parse_filename(filename)
@@ -98,7 +109,7 @@ function! gista#autocmd#call(name) abort " {{{
   finally
     call session.exit()
   endtry
-endfunction " }}}
+endfunction
 
 let s:schemes = [
       \ ['^gista:\(.*\):\(.*\):\(.*\)$', {
@@ -106,6 +117,11 @@ let s:schemes = [
       \   'gistid': 2,
       \   'filename': 3,
       \   'content_type': 'raw',
+      \ }],
+      \ ['^gista:\(.*\):\(.*\)\.entry\.json$', {
+      \   'apiname': 1,
+      \   'gistid': 2,
+      \   'content_type': 'json_entry',
       \ }],
       \ ['^gista:\(.*\):\(.*\)\.json$', {
       \   'apiname': 1,
@@ -118,7 +134,7 @@ let s:schemes = [
       \   'content_type': 'list',
       \ }],
       \]
-function! s:parse_filename(filename) abort " {{{
+function! s:parse_filename(filename) abort
   for scheme in s:schemes
     if a:filename !~# scheme[0]
       continue
@@ -136,7 +152,7 @@ function! s:parse_filename(filename) abort " {{{
     return o
   endfor
   return {}
-endfunction " }}}
+endfunction
 
 " Configure variables
 call gista#define_variables('autocmd', {})

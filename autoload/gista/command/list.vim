@@ -2,6 +2,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 let s:V = gista#vital()
+let s:C = s:V.import('Vim.Compat')
 let s:S = s:V.import('Data.String')
 let s:A = s:V.import('ArgumentParser')
 
@@ -11,11 +12,11 @@ let s:LABEL_MODES = [
       \ 'updated_at',
       \]
 
-function! s:truncate(str, width) abort " {{{
+function! s:truncate(str, width) abort
   let suffix = strdisplaywidth(a:str) > a:width ? '...' : '   '
   return s:S.truncate(a:str, a:width - 4) . suffix
-endfunction " }}}
-function! s:format_entry(entry) abort " {{{
+endfunction
+function! s:format_entry(entry) abort
   let gistid = a:entry.public
         \ ? 'gistid:' . a:entry.id
         \ : 'gistid:' . s:PRIVATE_GISTID
@@ -32,24 +33,13 @@ function! s:format_entry(entry) abort " {{{
   let description = printf('[%d] %s', len(a:entry.files), description)
   let description = s:truncate(description, width)
   return prefix . description . suffix
-endfunction " }}}
-function! s:get_entry(index, ...) abort " {{{
+endfunction
+function! s:get_entry(index, ...) abort
   let offset = get(a:000, 0, 0)
   return get(b:gista.content.entries, a:index + offset, {})
-endfunction " }}}
-function! s:update_if_necessary() abort " {{{
-  let saved_winnum = winnr()
-  for winnum in range(1, winnr('$'))
-    if gista#util#compat#getbufvar(winbufnr(winnum), '&filetype') ==# 'gista-list'
-      silent execute printf('keepjumps %dwincmd w', winnum)
-      call s:action_update()
-      silent execute printf('keepjumps %dwincmd w', saved_winnum)
-      return
-    endif
-  endfor
-endfunction " }}}
+endfunction
 
-function! s:get_current_label_index() abort " {{{
+function! s:get_current_label_index() abort
   if !exists('s:current_label_index')
     let index = index(s:LABEL_MODES, g:gista#command#list#default_label)
     if index == -1
@@ -61,11 +51,11 @@ function! s:get_current_label_index() abort " {{{
     let s:current_label_index = index
   endif
   return s:current_label_index
-endfunction " }}}
-function! s:set_current_label_index(index) abort " {{{
+endfunction
+function! s:set_current_label_index(index) abort
   let s:current_label_index = a:index
-endfunction " }}}
-function! s:get_current_label(entry) abort " {{{
+endfunction
+function! s:get_current_label(entry) abort
   let lmode = s:LABEL_MODES[s:get_current_label_index()]
   if lmode ==# 'created_at' || lmode ==# 'updated_at'
     let datetime = a:entry[lmode]
@@ -77,9 +67,9 @@ function! s:get_current_label(entry) abort " {{{
           \)
     return label
   endif
-endfunction " }}}
+endfunction
 
-function! s:define_plugin_mappings() abort " {{{
+function! s:define_plugin_mappings() abort
   noremap <buffer><silent> <Plug>(gista-quit)
         \ :<C-u>q<CR>
   noremap <buffer><silent> <Plug>(gista-update)
@@ -132,8 +122,8 @@ function! s:define_plugin_mappings() abort " {{{
         \ :call <SID>action('star')<CR>
   noremap <buffer><silent> <Plug>(gista-unstar)
         \ :call <SID>action('unstar')<CR>
-endfunction " }}}
-function! s:define_default_mappings() abort " {{{
+endfunction
+function! s:define_default_mappings() abort
   map <buffer> q <Plug>(gista-quit)
   map <buffer> <C-n> <Plug>(gista-next-label)
   map <buffer> <C-p> <Plug>(gista-prev-label)
@@ -154,9 +144,9 @@ function! s:define_default_mappings() abort " {{{
   map <buffer> DD <Plug>(gista-DELETE)
   map <buffer> ++ <Plug>(gista-star)
   map <buffer> -- <Plug>(gista-unstar)
-endfunction " }}}
+endfunction
 
-function! s:handle_exception(exception) abort " {{{
+function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
         \ '^vim-gista: Login canceled',
@@ -170,8 +160,8 @@ function! s:handle_exception(exception) abort " {{{
   endfor
   " else
   call gista#util#prompt#error(a:exception)
-endfunction " }}}
-function! gista#command#list#call(...) abort " {{{
+endfunction
+function! gista#command#list#call(...) abort
   let options = extend({
         \ 'lookup': '',
         \}, get(a:000, 0, {}),
@@ -184,8 +174,8 @@ function! gista#command#list#call(...) abort " {{{
     call s:handle_exception(v:exception)
     return []
   endtry
-endfunction " }}}
-function! gista#command#list#edit(...) abort " {{{
+endfunction
+function! gista#command#list#edit(...) abort
   let options = extend({
         \ 'lookup': '',
         \}, get(a:000, 0, {}),
@@ -231,8 +221,8 @@ function! gista#command#list#edit(...) abort " {{{
         \ lookup,
         \)
   setlocal filetype=gista-list
-endfunction " }}}
-function! gista#command#list#open(...) abort " {{{
+endfunction
+function! gista#command#list#open(...) abort
   let options = extend({
         \ 'lookup': '',
         \ 'opener': '',
@@ -258,22 +248,25 @@ function! gista#command#list#open(...) abort " {{{
         \ 'group': 'manipulation_panel',
         \})
   " BufReadCmd will execute gista#command#open#edit()
-endfunction " }}}
+endfunction
+function! gista#command#list#update() abort
+  execute 'noautocmd windo if &filetype ==# "gista-list" | call s:action_update() | endif'
+endfunction
 
-function! s:on_VimResized() abort " {{{
+function! s:on_VimResized() abort
   call gista#util#buffer#edit_content(
         \ map(copy(b:gista.content.entries), 's:format_entry(v:val)')
         \)
-endfunction " }}}
-function! s:on_WinEnter() abort " {{{
+endfunction
+function! s:on_WinEnter() abort
   if b:gista.winwidth != winwidth(0)
     call gista#util#buffer#edit_content(
           \ map(copy(b:gista.content.entries), 's:format_entry(v:val)')
           \)
   endif
-endfunction " }}}
+endfunction
 
-function! s:action(name, ...) range abort " {{{
+function! s:action(name, ...) range abort
   let fname = printf('s:action_%s', a:name)
   if !exists('*' . fname)
     throw printf('vim-gista: Unknown action name "%s" is called.', a:name)
@@ -283,8 +276,8 @@ function! s:action(name, ...) range abort " {{{
         \ '%d,%dcall call("%s", a:000)',
         \ a:firstline, a:lastline, fname
         \)
-endfunction " }}}
-function! s:action_edit(...) range abort " {{{
+endfunction
+function! s:action_edit(...) range abort
   let opener = get(a:000, 0, '')
   let opener = empty(opener)
         \ ? g:gista#command#list#default_entry_opener
@@ -315,8 +308,8 @@ function! s:action_edit(...) range abort " {{{
   finally
     call session.exit()
   endtry
-endfunction " }}}
-function! s:action_json(...) range abort " {{{
+endfunction
+function! s:action_json(...) range abort
   let opener = get(a:000, 0, '')
   let opener = empty(opener)
         \ ? g:gista#command#list#default_entry_opener
@@ -347,8 +340,8 @@ function! s:action_json(...) range abort " {{{
   finally
     call session.exit()
   endtry
-endfunction " }}}
-function! s:action_browse(...) range abort " {{{
+endfunction
+function! s:action_browse(...) range abort
   let action = get(a:000, 0, 'open')
   let session = gista#api#session({
         \ 'apiname': b:gista.apiname,
@@ -368,8 +361,8 @@ function! s:action_browse(...) range abort " {{{
   finally
     call session.exit()
   endtry
-endfunction " }}}
-function! s:action_delete(...) range abort " {{{
+endfunction
+function! s:action_delete(...) range abort
   " TODO
   " Show a prompt to ask
   let cache = get(a:000, 0, 1)
@@ -392,8 +385,8 @@ function! s:action_delete(...) range abort " {{{
   finally
     call session.exit()
   endtry
-endfunction " }}}
-function! s:action_star(...) range abort " {{{
+endfunction
+function! s:action_star(...) range abort
   let session = gista#api#session({
         \ 'apiname': b:gista.apiname,
         \ 'username': b:gista.username,
@@ -412,8 +405,8 @@ function! s:action_star(...) range abort " {{{
   finally
     call session.exit()
   endtry
-endfunction " }}}
-function! s:action_unstar(...) range abort " {{{
+endfunction
+function! s:action_unstar(...) range abort
   let session = gista#api#session({
         \ 'apiname': b:gista.apiname,
         \ 'username': b:gista.username,
@@ -432,8 +425,8 @@ function! s:action_unstar(...) range abort " {{{
   finally
     call session.exit()
   endtry
-endfunction " }}}
-function! s:action_update(...) range abort " {{{
+endfunction
+function! s:action_update(...) range abort
   let cache = get(a:000, 0, 1)
   let options = {
         \ 'verbose': 1,
@@ -443,21 +436,21 @@ function! s:action_update(...) range abort " {{{
         \ 'cache': cache,
         \}
   call gista#command#list#edit(options)
-endfunction " }}}
-function! s:action_next_label(...) range abort " {{{
+endfunction
+function! s:action_next_label(...) range abort
   let index = s:get_current_label_index() + 1
   let index = index >= len(s:LABEL_MODES) ? 0 : index
   call s:set_current_label_index(index)
   call s:action_update()
-endfunction " }}}
-function! s:action_prev_label(...) range abort " {{{
+endfunction
+function! s:action_prev_label(...) range abort
   let index = s:get_current_label_index() - 1
   let index = index < 0 ? len(s:LABEL_MODES) - 1 : index
   call s:set_current_label_index(index)
   call s:action_update()
-endfunction " }}}
+endfunction
 
-function! s:get_parser() abort " {{{
+function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
           \ 'name': 'Gista[!] list',
@@ -496,8 +489,8 @@ function! s:get_parser() abort " {{{
     endif
   endif
   return s:parser
-endfunction " }}}
-function! gista#command#list#command(...) abort " {{{
+endfunction
+function! gista#command#list#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
@@ -513,13 +506,13 @@ function! gista#command#list#command(...) abort " {{{
     let options.since = ''
   endif
   call gista#command#list#open(options)
-endfunction " }}}
-function! gista#command#list#complete(...) abort " {{{
+endfunction
+function! gista#command#list#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
-endfunction " }}}
+endfunction
 
-function! gista#command#list#define_highlights() abort " {{{
+function! gista#command#list#define_highlights() abort
   " TODO: Add 'default' keyword when development has reached stable phase
   " e.g. highlight default link GistaPartialMarker    Constant
   highlight link GistaPartialMarker    Comment
@@ -528,8 +521,8 @@ function! gista#command#list#define_highlights() abort " {{{
   highlight link GistaLastModified     Comment
   highlight link GistaGistIDPublic     Tag
   highlight link GistaGistIDPrivate    Constant
-endfunction " }}}
-function! gista#command#list#define_syntax() abort " {{{
+endfunction
+function! gista#command#list#define_syntax() abort
   syntax match GistaLine /^[=\-].*gistid:.\{,20}\%(\/[a-zA-Z0-9]\+\)\?$/
   syntax match GistaGistIDPublic /gistid:[a-zA-Z0-9_\-]\{,20}\%(\/[a-zA-Z0-9]\+\)\?$/
         \ display contained containedin=GistaLine
@@ -545,9 +538,9 @@ function! gista#command#list#define_syntax() abort " {{{
         \ display contained containedin=GistaMeta
   syntax match GistaModifiedMarker /[ \*]/
         \ display contained containedin=GistaMeta
-endfunction " }}}
+endfunction
 
-function! gista#command#list#get_status_string(...) abort " {{{
+function! gista#command#list#get_status_string(...) abort
   let lookup = get(a:000, 0, '')
   if empty(lookup)
     return printf('Gist entries of %s in %s (Mode: %s)',
@@ -556,11 +549,11 @@ function! gista#command#list#get_status_string(...) abort " {{{
           \ s:LABEL_MODES[s:get_current_label_index()]
           \)
   endif
-endfunction " }}}
+endfunction
 
-augroup vim_gista_list_update
+augroup vim_gista_update_list
   autocmd!
-  autocmd User vim_gista_update call s:update_if_necessary()
+  autocmd User GistaCacheUpdatePost call gista#command#list#update()
 augroup END
 
 call gista#define_variables('command#list', {
