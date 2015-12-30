@@ -70,6 +70,19 @@ function! s:get_parser() abort
           \   'default': 0,
           \   'deniable': 1,
           \})
+    function! s:parser.hooks.pre_validate(options) abort
+      let gista = get(b:, 'gista', {})
+      if !has_key(a:options, 'gistid')
+        let a:options.gistid = get(gista, 'gistid', '')
+      endif
+    endfunction
+    function! s:parser.hooks.pre_complete(options) abort
+      let gista = get(b:, 'gista', {})
+      if !has_key(a:options, 'gistid')
+        let a:options.gistid = get(gista, 'gistid', '')
+      endif
+    endfunction
+    call s:parser.hooks.validate()
   endif
   return s:parser
 endfunction

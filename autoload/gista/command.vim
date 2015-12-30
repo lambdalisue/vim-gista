@@ -78,6 +78,16 @@ function! s:get_parser() abort
           \ ], {
           \   'conflicts': ['username'],
           \})
+    function! s:parser.hooks.pre_validate(options) abort
+      if !has_key(a:options, 'apiname')
+        let a:options.apiname = gista#meta#get_apiname()
+      endif
+    endfunction
+    function! s:parser.hooks.pre_complete(options) abort
+      if !has_key(a:options, 'apiname')
+        let a:options.apiname = gista#meta#get_apiname()
+      endif
+    endfunction
     function! s:parser.hooks.post_validate(options) abort
       if get(a:options, 'anonymous')
         let a:options.username = ''

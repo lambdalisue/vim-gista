@@ -1,6 +1,9 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+let s:V = gista#vital()
+let s:C = s:V.import('Vim.Compat')
+
 " A content size limit for downloading via HTTP
 " https://developer.github.com/v3/gists/#truncation
 let s:CONTENT_SIZE_LIMIT = 10 * 1024 * 1024
@@ -36,17 +39,13 @@ endfunction
 
 function! gista#meta#get_valid_gistid(gistid) abort
   if empty(a:gistid)
-    if has_key(b:, 'gista') && has_key(b:gista, 'gistid')
-      let gistid = b:gista.gistid
-    else
-      redraw
-      let gistid = gista#util#prompt#ask(
-            \ 'Please input a gist id: ', '',
-            \ 'customlist,gista#meta#complete_gistid',
-            \)
-      if empty(gistid)
-        call gista#util#prompt#throw('Cancel')
-      endif
+    redraw
+    let gistid = gista#util#prompt#ask(
+          \ 'Please input a gist id: ', '',
+          \ 'customlist,gista#meta#complete_gistid',
+          \)
+    if empty(gistid)
+      call gista#util#prompt#throw('Cancel')
     endif
   else
     let gistid = a:gistid
@@ -62,10 +61,6 @@ function! gista#meta#get_valid_filename(gist_or_gistid, filename) abort
       let gist   = client.gist_cache.get(gistid, {})
     else
       let gist = a:gist_or_gistid
-    endif
-    let b_gista = get(b:, 'gista', {})
-    if gist.id ==# get(b_gista, 'id', '') && !empty(get(b_gista, 'filename', ''))
-      return b_gista.filename
     endif
     let filenames = gista#meta#get_available_filenames(gist)
     if len(filenames) == 1
@@ -185,6 +180,40 @@ function! gista#meta#complete_lookup(arglead, cmdline, cursorpos, ...) abort
   catch /^vim-gista: ValidationError:/
     return []
   endtry
+endfunction
+
+function! gista#meta#get_apiname(expr) abort
+  let gista = s:C.getbufvar(a:expr, 'gista', {})
+  let filename = expand(a:expr)
+  if has_key(gista, 'apiname')
+    return gista.apiname
+  elseif filename =~# '^gista:.*:.*.:.*$'
+    return matchstr(filename, '^gista:\zs.*\ze:.*:.*$')
+  else
+    return ''
+  endif
+endfunction
+function! gista#meta#get_gistid(expr) abort
+  let gista = s:C.getbufvar(a:expr, 'gista', {})
+  let filename = expand(a:expr)
+  if has_key(gista, 'gistid')
+    return gista.apiname
+  elseif filename =~# '^gista:.*:.*.:.*$'
+    return matchstr(filename, '^gista:.*:\zs.*\ze:.*$')
+  else
+    return ''
+  endif
+endfunction
+function! gista#meta#get_filename(expr) abort
+  let gista = s:C.getbufvar(a:expr, 'gista', {})
+  let filename = expand(a:expr)
+  if has_key(gista, 'filename')
+    return gista.apiname
+  elseif filename =~# '^gista:.*:.*.:.*$'
+    return matchstr(filename, '^gista:.*:.*:\zs.*\ze$')
+  else
+    return ''
+  endif
 endfunction
 
 let &cpo = s:save_cpo

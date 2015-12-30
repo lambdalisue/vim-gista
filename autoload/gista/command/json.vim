@@ -146,6 +146,17 @@ function! s:get_parser() abort
           \ '--entry',
           \ 'Use an entry cache instead of content cache',
           \)
+    function! s:parser.hooks.pre_validate(options) abort
+      if !has_key(a:options, 'gistid')
+        let a:options.gistid = gista#meta#get_gistid()
+      endif
+    endfunction
+    function! s:parser.hooks.pre_complete(options) abort
+      if !has_key(a:options, 'gistid')
+        let a:options.gistid = gista#meta#get_gistid()
+      endif
+    endfunction
+    call s:parser.hooks.validate()
   endif
   return s:parser
 endfunction

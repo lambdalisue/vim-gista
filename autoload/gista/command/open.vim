@@ -164,6 +164,23 @@ function! s:get_parser() abort
           \   'default': 1,
           \   'deniable': 1,
           \})
+    function! s:parser.hooks.pre_validate(options) abort
+      if !has_key(a:options, 'gistid')
+        let a:options.gistid = gista#meta#get_gistid()
+      endif
+      if !has_key(a:options, 'filename')
+        let a:options.gistid = gista#meta#get_filename()
+      endif
+    endfunction
+    function! s:parser.hooks.pre_complete(options) abort
+      if !has_key(a:options, 'gistid')
+        let a:options.gistid = gista#meta#get_gistid()
+      endif
+      if !has_key(a:options, 'filename')
+        let a:options.gistid = gista#meta#get_filename()
+      endif
+    endfunction
+    call s:parser.hooks.validate()
   endif
   return s:parser
 endfunction

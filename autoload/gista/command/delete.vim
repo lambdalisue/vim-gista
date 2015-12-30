@@ -44,6 +44,12 @@ function! s:get_parser() abort
           \ 'description': 'Delete a gist',
           \})
     call s:parser.add_argument(
+          \ 'gistid',
+          \ 'A gist ID', {
+          \   'complete': function('g:gista#meta#complete_gistid'),
+          \   'type': s:A.types.value,
+          \})
+    call s:parser.add_argument(
           \ '--remote', '-r',
           \ 'Delete a gist from remote as well', {
           \   'type': s:A.types.value,
@@ -54,6 +60,17 @@ function! s:get_parser() abort
           \   'default': 0,
           \   'deniable': 1,
           \})
+    function! s:parser.hooks.pre_validate(options) abort
+      if !has_key(a:options, 'gistid')
+        let a:options.gistid = gista#meta#get_gistid()
+      endif
+    endfunction
+    function! s:parser.hooks.pre_complete(options) abort
+      if !has_key(a:options, 'gistid')
+        let a:options.gistid = gista#meta#get_gistid()
+      endif
+    endfunction
+    call s:parser.hooks.validate()
   endif
   return s:parser
 endfunction
