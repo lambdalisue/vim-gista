@@ -98,9 +98,10 @@ function! gista#autocmd#call(name) abort
           \))
   endif
   let filename = expand('<afile>')
-  let gista = s:C.getbufvar('<afile>', 'gista', {})
+  echomsg filename
+  let gista = s:parse_filename(filename)
   let gista = empty(gista)
-        \ ? s:parse_filename(filename)
+        \ ? s:C.getbufvar('<afile>', 'gista', {})
         \ : gista
   let session = gista#api#session({
         \ 'apiname':  get(gista, 'apiname', ''),

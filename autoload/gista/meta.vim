@@ -56,38 +56,38 @@ function! gista#meta#get_valid_gistid(gistid) abort
 endfunction
 function! gista#meta#get_valid_filename(gist_or_gistid, filename) abort
   if empty(a:filename)
-    if has_key(b:, 'gista') && has_key(b:gista, 'filename')
-      let filename = b:gista.filename
-    else
+    if type(a:gist_or_gistid) == type('')
       let client = gista#api#get_current_client()
-      if type(a:gist_or_gistid) == type('')
-        let gistid = gista#meta#get_valid_gistid(a:gist_or_gistid)
-        let gist   = client.gist_cache.get(gistid, {})
-      else
-        let gist = a:gist_or_gistid
+      let gistid = gista#meta#get_valid_gistid(a:gist_or_gistid)
+      let gist   = client.gist_cache.get(gistid, {})
+    else
+      let gist = a:gist_or_gistid
+    endif
+    let b_gista = get(b:, 'gista', {})
+    if gist.id ==# get(b_gista, 'id', '') && !empty(get(b_gista, 'filename', ''))
+      return b_gista.filename
+    endif
+    let filenames = gista#meta#get_available_filenames(gist)
+    if len(filenames) == 1
+      let filename = filenames[0]
+    elseif len(filenames) > 0
+      redraw
+      let ret = gista#util#prompt#inputlist(
+            \ 'Please select a filename: ',
+            \ filenames,
+            \)
+      if ret == 0
+        call gista#util#prompt#throw('Cancel')
       endif
-      let filenames = gista#meta#get_available_filenames(gist)
-      if len(filenames) == 1
-        let filename = filenames[0]
-      elseif len(filenames) > 0
-        redraw
-        let ret = gista#util#prompt#inputlist(
-              \ 'Please select a filename: ',
-              \ filenames,
-              \)
-        if ret == 0
-          call gista#util#prompt#throw('Cancel')
-        endif
-        let filename = filenames[ret - 1]
-      else
-        redraw
-        let filename = gista#util#prompt#ask(
-              \ 'Please input a filename: ', '',
-              \ 'customlist,gista#meta#complete_filename',
-              \)
-        if empty(filename)
-          call gista#util#prompt#throw('Cancel')
-        endif
+      let filename = filenames[ret - 1]
+    else
+      redraw
+      let filename = gista#util#prompt#ask(
+            \ 'Please input a filename: ', '',
+            \ 'customlist,gista#meta#complete_filename',
+            \)
+      if empty(filename)
+        call gista#util#prompt#throw('Cancel')
       endif
     endif
   else
