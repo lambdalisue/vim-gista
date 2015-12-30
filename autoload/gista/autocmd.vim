@@ -1,6 +1,9 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+let s:V = gista#vital()
+let s:C = s:V.import('Vim.Compat')
+
 function! s:on_SourceCmd(gista) abort
   " TODO
   " Check if the file is Vim script or not
@@ -95,7 +98,7 @@ function! gista#autocmd#call(name) abort
           \))
   endif
   let filename = expand('<afile>')
-  let gista = gista#util#compat#getbufvar('<afile>', 'gista', {})
+  let gista = s:C.getbufvar('<afile>', 'gista', {})
   let gista = empty(gista)
         \ ? s:parse_filename(filename)
         \ : gista

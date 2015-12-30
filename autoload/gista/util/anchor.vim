@@ -1,12 +1,15 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+let s:V = gista#vital()
+let s:C = s:V.import('Vim.Compat')
+
 function! gista#util#anchor#is_suitable(winnum) abort
   let bufnum  = winbufnr(a:winnum)
   let bufname = bufname(bufnum)
   let buflisted = buflisted(bufnum)
-  let buftype = gista#util#compat#getbufvar(bufnum, '&buftype')
-  let filetype = gista#util#compat#getbufvar(bufnum, '&filetype')
+  let buftype  = s.C.getbufvar(bufnum, '&buftype')
+  let filetype = s:C.getbufvar(bufnum, '&filetype')
   if !buflisted
         \ || bufname =~# g:gista#util#anchor#unsuitable_bufname_pattern
         \ || buftype =~# g:gista#util#anchor#unsuitable_buftype_pattern
