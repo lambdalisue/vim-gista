@@ -6,7 +6,7 @@ function! Capture(command) abort " {{{
 endfunction" }}}
 
 Describe gista#util#prompt
-  Context #echo({msg}[, ...])
+  Describe #echo({msg}[, ...])
     It should echo a {msg}
       let ret = Capture('call gista#util#prompt#echo("foo")')
       Assert Equals(ret, ['foo'])
@@ -23,7 +23,7 @@ Describe gista#util#prompt
     End
   End
 
-  Context #debug({msg}[, ...])
+  Describe #debug({msg}[, ...])
     Before
       let stored_gita_debug = g:gista#debug
     End
@@ -64,7 +64,7 @@ Describe gista#util#prompt
     End
   End
 
-  Context #info({msg}[, ...])
+  Describe #info({msg}[, ...])
     It should echo a {msg}
       let ret = Capture('call gista#util#prompt#info("foo")')
       Assert Equals(ret, ['foo'])
@@ -81,7 +81,7 @@ Describe gista#util#prompt
     End
   End
 
-  Context #warn({msg}[, ...])
+  Describe #warn({msg}[, ...])
     It should echo a {msg}
       let ret = Capture('call gista#util#prompt#warn("foo")')
       Assert Equals(ret, ['foo'])
@@ -98,7 +98,7 @@ Describe gista#util#prompt
     End
   End
 
-  Context #error({msg}[, ...])
+  Describe #error({msg}[, ...])
     It should echo a {msg}
       let ret = Capture('call gista#util#prompt#error("foo")')
       Assert Equals(ret, ['foo'])
@@ -115,7 +115,7 @@ Describe gista#util#prompt
     End
   End
 
-  Context #echomsg({msg}[, ...])
+  Describe #echomsg({msg}[, ...])
     It should echo a {msg}
       let ret = Capture('call gista#util#prompt#echomsg("foo")')
       Assert Equals(ret, ['foo'])
@@ -132,7 +132,7 @@ Describe gista#util#prompt
     End
   End
 
-  Context #debugmsg({msg}[, ...])
+  Describe #debugmsg({msg}[, ...])
     Before
       let stored_gita_debug = g:gista#debug
     End
@@ -173,7 +173,7 @@ Describe gista#util#prompt
     End
   End
 
-  Context #infomsg({msg}[, ...])
+  Describe #infomsg({msg}[, ...])
     It should echo a {msg}
       let ret = Capture('call gista#util#prompt#infomsg("foo")')
       Assert Equals(ret, ['foo'])
@@ -190,7 +190,7 @@ Describe gista#util#prompt
     End
   End
 
-  Context #warnmsg({msg}[, ...])
+  Describe #warnmsg({msg}[, ...])
     It should echo a {msg}
       let ret = Capture('call gista#util#prompt#warnmsg("foo")')
       Assert Equals(ret, ['foo'])
@@ -207,7 +207,7 @@ Describe gista#util#prompt
     End
   End
 
-  Context #errormsg({msg}[, ...])
+  Describe #errormsg({msg}[, ...])
     It should echo a {msg}
       let ret = Capture('call gista#util#prompt#errormsg("foo")')
       Assert Equals(ret, ['foo'])
@@ -224,19 +224,19 @@ Describe gista#util#prompt
     End
   End
 
-  Context #input({msg}[, {default}])
+  Describe #input({msg}[, {default}])
     It should show a prompt to user
       Assert True(exists('*gista#util#prompt#input'))
     End
   End
 
-  Context #ask({msg}[, {default}])
+  Describe #ask({msg}[, {default}])
     It should show a prompt to user
       Assert True(exists('*gista#util#prompt#ask'))
     End
   End
 
-  Context #asktf({msg}[, {default}])
+  Describe #asktf({msg}[, {default}])
     It should show a prompt to user
       Assert True(exists('*gista#util#prompt#asktf'))
     End

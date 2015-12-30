@@ -23,7 +23,7 @@ Describe gista#api#gists#cache
   After
     call guard.restore()
   End
-  Context [PRIVATE] s:pick_necessary_params_of_file({content})
+  Describe s:pick_necessary_params_of_file({content})
     It returns a reduced {content}
       let content = {
             \ 'size': 10,
@@ -39,7 +39,7 @@ Describe gista#api#gists#cache
             \})
     End
   End
-  Context [PRIVATE] s:pick_necessary_params_of_entry({entry})
+  Describe s:pick_necessary_params_of_entry({entry})
     It returns a reduced {entry} with '_gista_XXX'
       let entry = {
             \ 'id': 0,
@@ -136,7 +136,7 @@ Describe gista#api#gists#cache
     End
   End
 
-  Context #get({gistid}[, {options}])
+  Describe #get({gistid}[, {options}])
     Before
       let pseudo_gist = gista#api#gists#get_pseudo_gist('A')
       let pseudo_gist = extend(pseudo_gist, {
@@ -159,7 +159,7 @@ Describe gista#api#gists#cache
       Assert Equals(ret, pseudo_gist)
     End
   End
-  Context #file({gist}, {filename}[, {options}])
+  Describe #file({gist}, {filename}[, {options}])
     It returns a pseudo gist file when {filename} does not exist in {gist}
       let gist = gista#api#gists#get_pseudo_gist('A')
       let ret = gista#api#gists#cache#file(gist, 'foo.txt')
@@ -179,7 +179,7 @@ Describe gista#api#gists#cache
       Assert Equals(ret, file)
     End
   End
-  Context #list({lookup}[, {options}])
+  Describe #list({lookup}[, {options}])
     Before
       let pseudo_index = gista#api#gists#get_pseudo_index()
       let pseudo_index = extend(pseudo_index, {
@@ -201,7 +201,7 @@ Describe gista#api#gists#cache
       Assert Equals(ret, pseudo_index)
     End
   End
-  Context #patch({gistid}[, {options}])
+  Describe #patch({gistid}[, {options}])
     Before
       let pseudo_gist = gista#api#gists#get_pseudo_gist('A')
       let pseudo_gist = extend(pseudo_gist, {
@@ -328,7 +328,7 @@ Describe gista#api#gists#cache
             \})
     End
   End
-  Context #delete({gistid}[, {options}])
+  Describe #delete({gistid}[, {options}])
     Before
       let pseudo_gist = gista#api#gists#get_pseudo_gist('A')
       let pseudo_gist = extend(pseudo_gist, {
@@ -371,7 +371,7 @@ Describe gista#api#gists#cache
     End
   End
 
-  Context #add_gist({gist})
+  Describe #add_gist({gist})
     It add {gist} into a gist_cache of the current client
       let gist = extend(gista#api#gists#get_pseudo_gist('A'), {
             \ '_gista_fetched': 1,
@@ -382,7 +382,7 @@ Describe gista#api#gists#cache
       Assert Equals(client.gist_cache.get('A'), gist)
     End
   End
-  Context #remove_gist({gist})
+  Describe #remove_gist({gist})
     Before
       let gist = extend(gista#api#gists#get_pseudo_gist('A'), {
             \ '_gista_fetched': 1,
@@ -397,7 +397,7 @@ Describe gista#api#gists#cache
     End
   End
 
-  Context #retrieve_index_entry({gistid}[, {options}])
+  Describe #retrieve_index_entry({gistid}[, {options}])
     Before
       let pseudo_entry = extend(gista#api#gists#get_pseudo_entry('B'), {
             \ '_gista_fetched': 1,
@@ -418,7 +418,7 @@ Describe gista#api#gists#cache
     End
   End
 
-  Context #add_index_entry({gist}[, {options}])
+  Describe #add_index_entry({gist}[, {options}])
     Before
       let pseudo_index = extend(gista#api#gists#get_pseudo_index(), {
             \ 'entries': [
@@ -458,7 +458,7 @@ Describe gista#api#gists#cache
       Assert Equals(index.entries[4]._gista_fetched, 0)
     End
   End
-  Context #update_index_entry({gist}[, {options}])
+  Describe #update_index_entry({gist}[, {options}])
     Before
       let pseudo_index = extend(gista#api#gists#get_pseudo_index(), {
             \ 'entries': [
@@ -499,7 +499,7 @@ Describe gista#api#gists#cache
       Assert Equals(index.entries[2]._gista_fetched, 0)
     End
   End
-  Context #replace_index_entry({gist}[, {options}])
+  Describe #replace_index_entry({gist}[, {options}])
     Before
       let pseudo_index = extend(gista#api#gists#get_pseudo_index(), {
             \ 'entries': [
@@ -540,7 +540,7 @@ Describe gista#api#gists#cache
       Assert Equals(index.entries[2]._gista_fetched, 0)
     End
   End
-  Context #remove_index_entry({gist}[, {options}])
+  Describe #remove_index_entry({gist}[, {options}])
     Before
       let pseudo_index = extend(gista#api#gists#get_pseudo_index(), {
             \ 'entries': [
@@ -581,7 +581,7 @@ Describe gista#api#gists#cache
     End
   End
 
-  Context #update_index_entries({gists}, {lookup}[, {options}])
+  Describe #update_index_entries({gists}, {lookup}[, {options}])
     Before
       let pseudo_index = extend(gista#api#gists#get_pseudo_index(), {
             \ 'entries': [
@@ -620,7 +620,7 @@ Describe gista#api#gists#cache
       Assert Equals(index.entries[6]._gista_modified, 0)
     End
   End
-  Context #replace_index_entries({gists}, {lookup}[, {options}])
+  Describe #replace_index_entries({gists}, {lookup}[, {options}])
     Before
       let pseudo_index = extend(gista#api#gists#get_pseudo_index(), {
             \ 'entries': [

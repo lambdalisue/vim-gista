@@ -18,13 +18,13 @@ Describe gista#util#validate
     let s:sv.NAME = saved_NAME
   End
 
-  Context [PRIVATE] s:throw({msg})
+  Describe s:throw({msg})
     It throw unittest: ValidationError: {msg}
       let sf = s:sf
       Throw /^unittest: ValidationError: foo$/ sf.throw('foo')
     End
   End
-  Context [PRIVATE] s:translate({text}, {table})
+  Describe s:translate({text}, {table})
     It substitutes keys of {table} in {text} into string value of {table}
       let text = 'foo %foo bar %bar'
       let table = {
@@ -45,7 +45,7 @@ Describe gista#util#validate
     End
   End
 
-  Context #exists({value}, {list}[, {msg}])
+  Describe #exists({value}, {list}[, {msg}])
     It does nothing if {value} is in {list}
       call gista#util#validate#exists('foo', ['foo', 'bar'])
     End
@@ -61,7 +61,7 @@ Describe gista#util#validate
             \ gista#util#validate#exists(value, list, '%value %list')
     End
   End
-  Context #not_exists({value}, {list}[, {msg}])
+  Describe #not_exists({value}, {list}[, {msg}])
     It does nothing if {value} is NOT in {list}
       call gista#util#validate#not_exists('foo', ['bar'])
     End
@@ -78,7 +78,7 @@ Describe gista#util#validate
     End
   End
 
-  Context #key_exists({value}, {dict}[, {msg}])
+  Describe #key_exists({value}, {dict}[, {msg}])
     It does nothing if {value} is in {dict}
       call gista#util#validate#key_exists('foo', {'foo': 'bar'})
     End
@@ -94,7 +94,7 @@ Describe gista#util#validate
             \ gista#util#validate#key_exists(value, dict, '%value %dict')
     End
   End
-  Context #key_not_exists({value}, {dict}[, {msg}])
+  Describe #key_not_exists({value}, {dict}[, {msg}])
     It does nothing if {value} is NOT in {dict}
       call gista#util#validate#key_not_exists('hoge', {'foo': 'bar'})
     End
@@ -111,7 +111,7 @@ Describe gista#util#validate
     End
   End
 
-  Context #empty({value}[, {msg}])
+  Describe #empty({value}[, {msg}])
     It does nothing if {value} is an empty value
       call gista#util#validate#empty('')
       call gista#util#validate#empty([])
@@ -131,7 +131,7 @@ Describe gista#util#validate
       Throw /ValidationError: 1/ gista#util#validate#empty(1, '%value')
     End
   End
-  Context #not_empty({value}[, {msg}])
+  Describe #not_empty({value}[, {msg}])
     It does nothing if {value} is not an empty value
       call gista#util#validate#not_empty('foo')
       call gista#util#validate#not_empty(['foo'])
@@ -156,7 +156,7 @@ Describe gista#util#validate
     End
   End
 
-  Context #pattern({value}, {pattern}[, {msg}])
+  Describe #pattern({value}, {pattern}[, {msg}])
     It does nothing if {value} follow {pattern}
       call gista#util#validate#pattern('foo', '^foo$')
     End
@@ -168,7 +168,7 @@ Describe gista#util#validate
             \ gista#util#validate#pattern('bar', '^foo$', '%value %pattern')
     End
   End
-  Context #not_pattern({value}, {pattern}[, {msg}])
+  Describe #not_pattern({value}, {pattern}[, {msg}])
     It does nothing if {value} does not follow {pattern}
       call gista#util#validate#not_pattern('bar', '^foo$')
     End
@@ -181,7 +181,7 @@ Describe gista#util#validate
     End
   End
 
-  Context #silently({fn}[, {args}, {default}])
+  Describe #silently({fn}[, {args}, {default}])
     After
       unlet g:ValidateSilentlyTestVariable
       delfunction ValidateSilentlyTestFunction

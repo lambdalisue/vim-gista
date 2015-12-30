@@ -1,5 +1,5 @@
 Describe gista
-  Context #define_variables({prefix}, {defaults})
+  Describe #define_variables({prefix}, {defaults})
     It define 'g:gista#{key}' variables when {prefix} is empty
       let defaults = {
             \ 'foo': 'bar',

@@ -35,7 +35,7 @@ Describe gista#api#gists
     call guard.restore()
   End
 
-  Context gista#api#gists#get_gist_owner({gist})
+  Describe gista#api#gists#get_gist_owner({gist})
     It returns an empty string if {gist} does not have an information about it's owner
       let gist = gista#api#gists#get_pseudo_gist('A')
       let ret = gista#api#gists#get_gist_owner(gist)
@@ -53,7 +53,7 @@ Describe gista#api#gists
     End
   End
 
-  Context gista#api#gists#get_pseudo_entry_file()
+  Describe gista#api#gists#get_pseudo_entry_file()
     It returns a pseudo entry file
       let ret = gista#api#gists#get_pseudo_entry_file()
       Assert Equals(ret, {
@@ -63,7 +63,7 @@ Describe gista#api#gists
             \})
     End
   End
-  Context gista#api#gists#get_pseudo_gist_file()
+  Describe gista#api#gists#get_pseudo_gist_file()
     It returns a pseudo gist file
       let ret = gista#api#gists#get_pseudo_gist_file()
       Assert Equals(ret, {
@@ -76,7 +76,7 @@ Describe gista#api#gists
             \})
     End
   End
-  Context gista#api#gists#get_pseudo_entry({gistid})
+  Describe gista#api#gists#get_pseudo_entry({gistid})
     It returns a pseudo (index) entry
       let ret = gista#api#gists#get_pseudo_entry('100')
       Assert Equals(ret, {
@@ -91,7 +91,7 @@ Describe gista#api#gists
             \})
     End
   End
-  Context gista#api#gists#get_pseudo_gist({gistid})
+  Describe gista#api#gists#get_pseudo_gist({gistid})
     It returns a pseudo gist
       let ret = gista#api#gists#get_pseudo_gist('A')
       Assert Equals(ret, {
@@ -107,7 +107,7 @@ Describe gista#api#gists
             \})
     End
   End
-  Context gista#api#gists#get_pseudo_index({gistid})
+  Describe gista#api#gists#get_pseudo_index({gistid})
     It returns a pseudo index
       let ret = gista#api#gists#get_pseudo_index()
       Assert Equals(ret, {
@@ -118,7 +118,7 @@ Describe gista#api#gists
   End
 
 
-  Context #get({gistid}[, {options})
+  Describe #get({gistid}[, {options})
     Before
       let gist = extend(gista#api#gists#get_pseudo_gist('A'), {
             \ 'description': 'HELLO',
@@ -195,6 +195,6 @@ Describe gista#api#gists
       Assert Equals(entry.description, 'HELLO')
     End
   End
-  Context #file({gist}, {filename}[, {options}])
+  Describe #file({gist}, {filename}[, {options}])
   End
 End
