@@ -7,6 +7,47 @@ let s:D = s:V.import('Data.Dict')
 let s:J = s:V.import('Web.JSON')
 let s:G = s:V.import('Web.API.GitHub')
 
+function! gista#api#gists#get_gist_owner(gist) abort
+  return get(get(a:gist, 'owner', {}), 'login', '')
+endfunction
+function! gista#api#gists#get_pseudo_entry_file() abort
+  return {
+        \ 'size': 0,
+        \ 'type': '',
+        \ 'language': '',
+        \}
+endfunction
+function! gista#api#gists#get_pseudo_gist_file() abort
+  return extend(gista#api#gists#get_pseudo_entry_file(), {
+        \ 'truncated': 1,
+        \ 'content': '',
+        \ 'raw_url': '',
+        \})
+endfunction
+function! gista#api#gists#get_pseudo_entry(gistid) abort
+  return {
+        \ 'id': a:gistid,
+        \ 'description': '',
+        \ 'public': 0,
+        \ 'files': {},
+        \ 'created_at': '',
+        \ 'updated_at': '',
+        \ '_gista_fetched': 0,
+        \ '_gista_modified': 0,
+        \}
+endfunction
+function! gista#api#gists#get_pseudo_gist(gistid) abort
+  return extend(gista#api#gists#get_pseudo_entry(a:gistid), {
+        \ '_gista_last_modified': '',
+        \})
+endfunction
+function! gista#api#gists#get_pseudo_index() abort
+  return {
+        \ 'entries': [],
+        \ '_gista_fetched': 0,
+        \}
+endfunction
+
 " Resource API
 function! gista#api#gists#get(gistid, ...) abort
   let options = extend({
@@ -302,47 +343,6 @@ function! gista#api#gists#delete(gistid, ...) abort
     call gista#api#gists#cache#remove_index_entry(gist)
   endif
   call gista#api#throw_api_exception(res)
-endfunction
-
-function! gista#api#gists#get_gist_owner(gist) abort
-  return get(get(a:gist, 'owner', {}), 'login', '')
-endfunction
-function! gista#api#gists#get_pseudo_entry_file() abort
-  return {
-        \ 'size': 0,
-        \ 'type': '',
-        \ 'language': '',
-        \}
-endfunction
-function! gista#api#gists#get_pseudo_gist_file() abort
-  return extend(gista#api#gists#get_pseudo_entry_file(), {
-        \ 'truncated': 1,
-        \ 'content': '',
-        \ 'raw_url': '',
-        \})
-endfunction
-function! gista#api#gists#get_pseudo_entry(gistid) abort
-  return {
-        \ 'id': a:gistid,
-        \ 'description': '',
-        \ 'public': 0,
-        \ 'files': {},
-        \ 'created_at': '',
-        \ 'updated_at': '',
-        \ '_gista_fetched': 0,
-        \ '_gista_modified': 0,
-        \}
-endfunction
-function! gista#api#gists#get_pseudo_gist(gistid) abort
-  return extend(gista#api#gists#get_pseudo_entry(a:gistid), {
-        \ '_gista_last_modified': '',
-        \})
-endfunction
-function! gista#api#gists#get_pseudo_index() abort
-  return {
-        \ 'entries': [],
-        \ '_gista_fetched': 0,
-        \}
 endfunction
 
 " Configure variables

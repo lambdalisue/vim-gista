@@ -8,7 +8,7 @@ function! gista#util#anchor#is_suitable(winnum) abort
   let bufnum  = winbufnr(a:winnum)
   let bufname = bufname(bufnum)
   let buflisted = buflisted(bufnum)
-  let buftype  = s.C.getbufvar(bufnum, '&buftype')
+  let buftype  = s:C.getbufvar(bufnum, '&buftype')
   let filetype = s:C.getbufvar(bufnum, '&filetype')
   if !buflisted
         \ || bufname =~# g:gista#util#anchor#unsuitable_bufname_pattern
