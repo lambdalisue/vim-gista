@@ -570,8 +570,8 @@ function! gista#command#list#get_status_string(...) abort
   let lookup = get(a:000, 0, '')
   if empty(lookup)
     return printf('gista | %s:%s | Mode: %s',
-          \ b:gista.options.lookup,
           \ b:gista.apiname,
+          \ b:gista.lookup,
           \ s:LABEL_MODES[s:get_current_label_index()]
           \)
   endif
