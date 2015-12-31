@@ -74,11 +74,6 @@ function! s:get_parser() abort
           \ 'description': 'Open a gist with a system browser',
           \})
     call s:parser.add_argument(
-          \ 'gistid',
-          \ 'A gist ID', {
-          \   'complete': function('g:gista#meta#complete_gistid'),
-          \})
-    call s:parser.add_argument(
           \ '--filename',
           \ 'A filename', {
           \   'complete': function('g:gista#meta#complete_filename'),
@@ -88,6 +83,11 @@ function! s:get_parser() abort
           \ 'An action', {
           \   'choices': ['open', 'yank', 'echo'],
           \   'default': 'open',
+          \})
+    call s:parser.add_argument(
+          \ 'gistid',
+          \ 'A gist ID', {
+          \   'complete': function('g:gista#meta#complete_gistid'),
           \})
     call s:parser.hooks.validate()
   endif

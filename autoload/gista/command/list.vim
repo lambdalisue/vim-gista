@@ -164,7 +164,27 @@ function! s:handle_exception(exception) abort
   " else
   call gista#util#prompt#error(a:exception)
 endfunction
+function! gista#command#list#read(...) abort
+  let options = extend({
+        \ 'lookup': '',
+        \}, get(a:000, 0, {}),
+        \)
+  try
+    let lookup = gista#meta#get_valid_lookup(options.lookup)
+    let index  = gista#api#gists#list(lookup, options)
+  catch /^vim-gista:/
+    call s:handle_exception(v:exception)
+    return
+  endtry
+  redraw
+  call gista#util#prompt#echo('Formatting gist entries to display ...')
+  call gista#util#buffer#read_content(
+        \ map(copy(index.entries), 's:format_entry(v:val)')
+        \)
+  redraw
+endfunction
 function! gista#command#list#edit(...) abort
+  silent doautocmd BufReadPre
   let options = extend({
         \ 'lookup': '',
         \}, get(a:000, 0, {}),
@@ -183,6 +203,7 @@ function! gista#command#list#edit(...) abort
         \ 'winwidth': winwidth(0),
         \ 'apiname': apiname,
         \ 'username': username,
+        \ 'lookup': lookup,
         \ 'entries': index.entries,
         \ 'options': options,
         \ 'content_type': 'list',
@@ -207,17 +228,30 @@ function! gista#command#list#edit(...) abort
   setlocal cursorline
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
-  silent execute printf('file gista-list:%s:%s',
-        \ apiname,
-        \ lookup,
-        \)
   setlocal filetype=gista-list
+  silent doautocmd BufReadPost
 endfunction
 function! gista#command#list#open(...) abort
   let options = extend({
-        \ 'lookup': '',
         \ 'opener': '',
         \ 'cache': 1,
+        \}, get(a:000, 0, {})
+        \)
+  let opener = empty(options.opener)
+        \ ? g:gista#command#list#default_opener
+        \ : options.opener
+  let bufname = gista#command#list#bufname(options)
+  if !empty(bufname)
+    call gista#util#buffer#open(bufname, {
+          \ 'opener': opener . (options.cache ? '' : '!'),
+          \ 'group': 'manipulation_panel',
+          \})
+    " BufReadCmd will execute gista#command#list#edit()
+  endif
+endfunction
+function! gista#command#list#bufname(...) abort
+  let options = extend({
+        \ 'lookup': '',
         \}, get(a:000, 0, {})
         \)
   try
@@ -231,14 +265,9 @@ function! gista#command#list#open(...) abort
   let opener = empty(options.opener)
         \ ? g:gista#command#list#default_opener
         \ : options.opener
-  let bufname = printf('gista-list:%s:%s',
+  return printf('gista-list:%s:%s',
         \ client.apiname, lookup,
         \)
-  call gista#util#buffer#open(bufname, {
-        \ 'opener': opener . (options.cache ? '' : '!'),
-        \ 'group': 'manipulation_panel',
-        \})
-  " BufReadCmd will execute gista#command#open#edit()
 endfunction
 function! gista#command#list#update() abort
   execute 'noautocmd windo if &filetype ==# "gista-list" | call s:action_update() | endif'

@@ -21,20 +21,29 @@ function! s:handle_exception(exception) abort
   call gista#util#prompt#error(a:exception)
 endfunction
 function! gista#command#json#read(...) abort
+  silent doautocmd FileReadPre
   let options = extend({
         \ 'gistid': '',
-        \ 'entry': 0,
         \}, get(a:000, 0, {}),
         \)
   try
     let gistid = gista#meta#get_valid_gistid(options.gistid)
-    let gist = options.entry
-          \ ? gista#api#gists#cache#retrieve_index_entry(gistid)
-          \ : gista#api#gists#get(gistid, options)
-    let content = split(
-          \ s:J.encode(gist, { 'indent': 2 }),
-          \ "\r\\?\n"
-          \)
+    let gist = gista#api#gists#get(gistid, options)
+    if g:gista#debug
+      let index_entry = gista#api#gists#cache#retrieve_index_entry(gistid)
+      let content = split(
+            \ s:J.encode(
+            \   { 'gist': gist, 'index_entry': index_entry },
+            \   { 'indent': 2 }
+            \ ),
+            \ "\r\\?\n"
+            \)
+    else
+      let content = split(
+            \ s:J.encode(gist, { 'indent': 2 }),
+            \ "\r\\?\n"
+            \)
+    endif
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
   endtry
@@ -42,23 +51,33 @@ function! gista#command#json#read(...) abort
         \ content,
         \ printf('%s.json', tempname()),
         \)
+  silent doautocmd FileReadPost
+  call gista#util#doautocmd('CacheUpdatePost')
 endfunction
 function! gista#command#json#edit(...) abort
   silent doautocmd BufReadPre
   let options = extend({
         \ 'gistid': '',
-        \ 'entry': 0,
         \}, get(a:000, 0, {})
         \)
   try
     let gistid = gista#meta#get_valid_gistid(options.gistid)
-    let gist = options.entry
-          \ ? gista#api#gists#cache#retrieve_index_entry(gistid)
-          \ : gista#api#gists#get(gistid, options)
-    let content = split(
-          \ s:J.encode(gist, { 'indent': 2 }),
-          \ "\r\\?\n"
-          \)
+    let gist = gista#api#gists#get(gistid, options)
+    if g:gista#debug
+      let index_entry = gista#api#gists#cache#retrieve_index_entry(gistid)
+      let content = split(
+            \ s:J.encode(
+            \   { 'gist': gist, 'index_entry': index_entry },
+            \   { 'indent': 2 }
+            \ ),
+            \ "\r\\?\n"
+            \)
+    else
+      let content = split(
+            \ s:J.encode(gist, { 'indent': 2 }),
+            \ "\r\\?\n"
+            \)
+    endif
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return
@@ -78,18 +97,30 @@ function! gista#command#json#edit(...) abort
         \)
   setlocal buftype=nowrite
   setlocal nomodifiable
-  silent execute printf('file gista:%s:%s%s.json',
-        \ client.apiname, gist.id,
-        \ options.entry ? '.entry' : '',
-        \)
+  setlocal filetype=json
   silent doautocmd BufReadPost
   call gista#util#doautocmd('CacheUpdatePost')
 endfunction
 function! gista#command#json#open(...) abort
   let options = extend({
-        \ 'gistid': '',
-        \ 'entry': 0,
         \ 'opener': '',
+        \ 'cache': 1,
+        \}, get(a:000, 0, {})
+        \)
+  let opener = empty(options.opener)
+        \ ? g:gista#command#json#default_opener
+        \ : options.opener
+  let bufname = gista#command#json#bufname(options)
+  if !empty(bufname)
+    call gista#util#buffer#open(bufname, {
+          \ 'opener': opener . (options.cache ? '' : '!'),
+          \})
+    " BufReadCmd will execute gista#command#json#edit()
+  endif
+endfunction
+function! gista#command#json#bufname(...) abort
+  let options = extend({
+        \ 'gistid': '',
         \ 'cache': 1,
         \}, get(a:000, 0, {})
         \)
@@ -101,22 +132,9 @@ function! gista#command#json#open(...) abort
   endtry
   let client = gista#api#get_current_client()
   let apiname = client.apiname
-  let opener = empty(options.opener)
-        \ ? g:gista#command#json#default_opener
-        \ : options.opener
-  if options.entry
-    let bufname = printf('gista:%s:%s.entry.json',
-          \ client.apiname, gistid,
-          \)
-  else
-    let bufname = printf('gista:%s:%s.json',
-          \ client.apiname, gistid,
-          \)
-  endif
-  call gista#util#buffer#open(bufname, {
-        \ 'opener': opener . (options.cache ? '' : '!'),
-        \})
-  " BufReadCmd will execute gista#command#json#edit()
+  return printf('gista-json:%s:%s',
+        \ client.apiname, gistid,
+        \)
 endfunction
 
 function! s:get_parser() abort
@@ -124,12 +142,6 @@ function! s:get_parser() abort
     let s:parser = s:A.new({
           \ 'name': 'Gista json',
           \ 'description': 'Open a JSON of a particular gist',
-          \})
-    call s:parser.add_argument(
-          \ 'gistid',
-          \ 'A gist ID', {
-          \   'complete': function('g:gista#meta#complete_gistid'),
-          \   'type': s:A.types.value,
           \})
     call s:parser.add_argument(
           \ '--opener', '-o',
@@ -146,6 +158,12 @@ function! s:get_parser() abort
           \ '--entry',
           \ 'Use an entry cache instead of content cache',
           \)
+    call s:parser.add_argument(
+          \ 'gistid',
+          \ 'A gist ID', {
+          \   'complete': function('g:gista#meta#complete_gistid'),
+          \   'type': s:A.types.value,
+          \})
   endif
   return s:parser
 endfunction

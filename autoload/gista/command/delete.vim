@@ -44,21 +44,16 @@ function! s:get_parser() abort
           \ 'description': 'Delete a gist',
           \})
     call s:parser.add_argument(
-          \ 'gistid',
-          \ 'A gist ID', {
-          \   'complete': function('g:gista#meta#complete_gistid'),
-          \   'type': s:A.types.value,
-          \})
-    call s:parser.add_argument(
-          \ '--remote', '-r',
-          \ 'Delete a gist from remote as well', {
-          \   'type': s:A.types.value,
-          \})
-    call s:parser.add_argument(
           \ '--cache',
           \ 'Delete a gist only from the cache', {
           \   'default': 0,
           \   'deniable': 1,
+          \})
+    call s:parser.add_argument(
+          \ 'gistid',
+          \ 'A gist ID', {
+          \   'complete': function('g:gista#meta#complete_gistid'),
+          \   'type': s:A.types.value,
           \})
   endif
   return s:parser

@@ -63,11 +63,6 @@ function! s:get_parser() abort
           \ 'description': 'Patch a current buffer content into an existing gist',
           \})
     call s:parser.add_argument(
-          \ 'gistid',
-          \ 'A gist ID', {
-          \   'complete': function('g:gista#api#gists#complete_gistid'),
-          \})
-    call s:parser.add_argument(
           \ '--description', '-d',
           \ 'A description of a gist', {
           \   'type': s:A.types.value,
@@ -77,6 +72,11 @@ function! s:get_parser() abort
           \ 'Do not PATCH a content and save the content only to the cache', {
           \   'default': 0,
           \   'deniable': 1,
+          \})
+    call s:parser.add_argument(
+          \ 'gistid',
+          \ 'A gist ID', {
+          \   'complete': function('g:gista#api#gists#complete_gistid'),
           \})
   endif
   return s:parser

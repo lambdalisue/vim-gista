@@ -21,6 +21,7 @@ function! s:handle_exception(exception) abort
 endfunction
 
 function! gista#command#open#read(...) abort
+  silent doautocmd FileReadPre
   let options = extend({
         \ 'gistid': '',
         \ 'gist': {},
@@ -45,7 +46,8 @@ function! gista#command#open#read(...) abort
         \ printf('%s.%s', tempname(), fnamemodify(filename, ':e')),
         \)
   redraw
-  call gista#util#doautocmd('post_update')
+  silent doautocmd FileReadPost
+  call gista#util#doautocmd('CacheUpdatePost')
 endfunction
 function! gista#command#open#edit(...) abort
   silent doautocmd BufReadPre
@@ -92,20 +94,31 @@ function! gista#command#open#edit(...) abort
     setlocal buftype=nowrite
     setlocal nomodifiable
   endif
-  silent execute printf('file gista:%s:%s:%s',
-        \ apiname,
-        \ gist.id,
-        \ filename,
-        \)
   silent doautocmd BufReadPost
   call gista#util#doautocmd('CacheUpdatePost')
 endfunction
 function! gista#command#open#open(...) abort
   let options = extend({
+        \ 'opener': '',
+        \ 'cache': 1,
+        \}, get(a:000, 0, {})
+        \)
+  let opener = empty(options.opener)
+        \ ? g:gista#command#open#default_opener
+        \ : options.opener
+  let bufname = gista#command#open#bufname(options)
+  if !empty(bufname)
+    call gista#util#buffer#open(bufname, {
+          \ 'opener': opener . (options.cache ? '' : '!'),
+          \})
+    " BufReadCmd will execute gista#command#open#edit()
+  endif
+endfunction
+function! gista#command#open#bufname(...) abort
+  let options = extend({
         \ 'gistid': '',
         \ 'gist': {},
         \ 'filename': '',
-        \ 'opener': '',
         \ 'cache': 1,
         \}, get(a:000, 0, {})
         \)
@@ -123,16 +136,9 @@ function! gista#command#open#open(...) abort
   endtry
   let client = gista#api#get_current_client()
   let apiname = client.apiname
-  let opener = empty(options.opener)
-        \ ? g:gista#command#open#default_opener
-        \ : options.opener
-  let bufname = printf('gista:%s:%s:%s',
+  return printf('gista-file:%s:%s:%s',
         \ client.apiname, gistid, filename,
         \)
-  call gista#util#buffer#open(bufname, {
-        \ 'opener': opener . (options.cache ? '' : '!'),
-        \})
-  " BufReadCmd will execute gista#command#open#edit()
 endfunction
 
 function! s:get_parser() abort
@@ -140,6 +146,17 @@ function! s:get_parser() abort
     let s:parser = s:A.new({
           \ 'name': 'Gista open',
           \ 'description': 'Open a content of a particular gist',
+          \})
+    call s:parser.add_argument(
+          \ '--opener', '-o',
+          \ 'A way to open a new buffer such as "edit", "split", etc.', {
+          \   'type': s:A.types.value,
+          \})
+    call s:parser.add_argument(
+          \ '--cache',
+          \ 'Use cached content whenever possible', {
+          \   'default': 1,
+          \   'deniable': 1,
           \})
     call s:parser.add_argument(
           \ 'gistid',
@@ -152,17 +169,6 @@ function! s:get_parser() abort
           \ 'A filename', {
           \   'complete': function('g:gista#meta#complete_filename'),
           \   'type': s:A.types.value,
-          \})
-    call s:parser.add_argument(
-          \ '--opener', '-o',
-          \ 'A way to open a new buffer such as "edit", "split", etc.', {
-          \   'type': s:A.types.value,
-          \})
-    call s:parser.add_argument(
-          \ '--cache',
-          \ 'Use cached content whenever possible', {
-          \   'default': 1,
-          \   'deniable': 1,
           \})
   endif
   return s:parser
