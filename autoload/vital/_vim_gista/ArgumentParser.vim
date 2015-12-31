@@ -771,16 +771,16 @@ endfunction " }}}
 function! s:parser.help() abort " {{{
   let definitions  = { 'positional': [], 'optional': [] }
   let descriptions = { 'positional': [], 'optional': [] }
-  let commandlines = { 'positional': [], 'optional': [] }
+  let commandlines = []
   for argument in self._arguments
     if argument.positional
       let [definition, description] = self._help_positional_argument(argument)
       call add(definitions.positional, definition)
       call add(descriptions.positional, description)
       if argument.required
-        call add(commandlines.positional, definition)
+        call add(commandlines, definition)
       else
-        call add(commandlines.positional, printf('[%s]', definition))
+        call add(commandlines, printf('[%s]', definition))
       endif
     else
       let [definition, description] = self._help_optional_argument(argument)
@@ -788,9 +788,9 @@ function! s:parser.help() abort " {{{
       call add(definitions.optional, definition)
       call add(descriptions.optional, description)
       if argument.required
-        call add(commandlines.optional, printf('%s', partial_definition))
+        call add(commandlines, printf('%s', partial_definition))
       else
-        call add(commandlines.optional, printf('[%s]', partial_definition))
+        call add(commandlines, printf('[%s]', partial_definition))
       endif
     endif
   endfor
@@ -800,8 +800,7 @@ function! s:parser.help() abort " {{{
   call add(buflines, printf(
         \ ':%s', join(filter([
         \ self.name,
-        \ join(commandlines.positional),
-        \ join(commandlines.optional),
+        \ join(commandlines),
         \ empty(self.unknown_description)
         \   ? ''
         \   : printf('-- %s', self.unknown_description),

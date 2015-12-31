@@ -182,9 +182,10 @@ function! gista#meta#complete_lookup(arglead, cmdline, cursorpos, ...) abort
   endtry
 endfunction
 
-function! gista#meta#get_apiname(expr) abort
-  let gista = s:C.getbufvar(a:expr, 'gista', {})
-  let filename = expand(a:expr)
+function! gista#meta#get_apiname(...) abort
+  let expr = get(a:000, 0, '%')
+  let gista = s:C.getbufvar(expr, 'gista', {})
+  let filename = expand(expr)
   if has_key(gista, 'apiname')
     return gista.apiname
   elseif filename =~# '^gista:.*:.*.:.*$'
@@ -193,9 +194,10 @@ function! gista#meta#get_apiname(expr) abort
     return ''
   endif
 endfunction
-function! gista#meta#get_gistid(expr) abort
-  let gista = s:C.getbufvar(a:expr, 'gista', {})
-  let filename = expand(a:expr)
+function! gista#meta#get_gistid(...) abort
+  let expr = get(a:000, 0, '%')
+  let gista = s:C.getbufvar(expr, 'gista', {})
+  let filename = expand(expr)
   if has_key(gista, 'gistid')
     return gista.apiname
   elseif filename =~# '^gista:.*:.*.:.*$'
@@ -204,9 +206,10 @@ function! gista#meta#get_gistid(expr) abort
     return ''
   endif
 endfunction
-function! gista#meta#get_filename(expr) abort
-  let gista = s:C.getbufvar(a:expr, 'gista', {})
-  let filename = expand(a:expr)
+function! gista#meta#get_filename(...) abort
+  let expr = get(a:000, 0, '%')
+  let gista = s:C.getbufvar(expr, 'gista', {})
+  let filename = expand(expr)
   if has_key(gista, 'filename')
     return gista.apiname
   elseif filename =~# '^gista:.*:.*.:.*$'

@@ -49,17 +49,6 @@ function! s:get_parser() abort
           \ ],
           \})
     call s:parser.add_argument(
-          \ 'action', [
-          \   'An action name of vim-gista. The following actions are available:',
-          \   '- login  : Login to a specified username of a specified API',
-          \   '- logout : Logout from a specified API',
-          \   '- get    : Get and open a gist',
-          \   '- list   : Fetch and display a list of gist entries',
-          \ ], {
-          \   'terminal': 1,
-          \   'complete': function('s:complete_action'),
-          \})
-    call s:parser.add_argument(
           \ '--apiname', [
           \   'A temporary API name used only in this command execution',
           \ ], {
@@ -77,6 +66,27 @@ function! s:get_parser() abort
           \   'Temporary logout only in this command execution',
           \ ], {
           \   'conflicts': ['username'],
+          \})
+    call s:parser.add_argument(
+          \ 'action', [
+          \   'An action name of vim-gista. The following actions are available:',
+          \   '- login  : Login to a specified username of a specified API',
+          \   '- logout : Logout from a specified API',
+          \   '- open   : Get and open a file of a gist',
+          \   '- json   : Get and open a gist as a json file',
+          \   '- list   : List gist entries of a lookup',
+          \   '- post   : Post content(s) to a gist',
+          \   '- patch  : Post content to an existing gist',
+          \   '- delete : Delete an existing gist',
+          \   '- browse : Browse an existing gist in a system browser',
+          \   '- fork   : Fork an existing gist',
+          \   '- star   : Star an existing gist',
+          \   '- unstar : Unstar an existing gist',
+          \   'This argument is required',
+          \ ], {
+          \   'required': 1,
+          \   'terminal': 1,
+          \   'complete': function('s:complete_action'),
           \})
     function! s:parser.hooks.pre_validate(options) abort
       if !has_key(a:options, 'apiname')

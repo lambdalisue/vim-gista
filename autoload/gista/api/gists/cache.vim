@@ -27,113 +27,6 @@ function! s:pick_necessary_params_of_entry(gist) abort
         \}
 endfunction
 
-function! gista#api#gists#cache#get(gistid, ...) abort
-  let options = extend({
-        \ 'verbose': 1,
-        \}, get(a:000, 0, {})
-        \)
-  let client = gista#api#get_current_client()
-  if options.verbose
-    redraw
-    call gista#util#prompt#echo(printf(
-          \ 'Loading a gist %s in %s from the local cache ...',
-          \ a:gistid, client.apiname,
-          \))
-  endif
-  let gist = extend(
-        \ gista#api#gists#get_pseudo_gist(a:gistid),
-        \ client.gist_cache.get(a:gistid, {})
-        \)
-  redraw
-  return gist
-endfunction
-function! gista#api#gists#cache#file(gist, filename) abort
-  return extend(
-        \ gista#api#gists#get_pseudo_gist_file(),
-        \ get(a:gist.files, a:filename, {})
-        \)
-endfunction
-function! gista#api#gists#cache#list(lookup, ...) abort
-  let options = extend({
-        \ 'verbose': 1,
-        \}, get(a:000, 0, {})
-        \)
-  let client = gista#api#get_current_client()
-  if options.verbose
-    redraw
-    call gista#util#prompt#echo(printf(
-          \ 'Loading gists of %s in %s from the local cache ...',
-          \ a:lookup, client.apiname,
-          \))
-  endif
-  let index = extend(
-        \ gista#api#gists#get_pseudo_index(),
-        \ client.index_cache.get(a:lookup, {})
-        \)
-  redraw
-  return index
-endfunction
-function! gista#api#gists#cache#patch(gistid, ...) abort
-  let options = extend({
-        \ 'verbose': 1,
-        \ 'description': 0,
-        \ 'filenames': [],
-        \ 'contents': [],
-        \ 'cache': 0,
-        \}, get(a:000, 0, {})
-        \)
-  let gist = gista#api#gists#cache#get(a:gistid, options)
-  let gist._gista_modified = 1
-  let gist.description = type(options.description) == type(0)
-        \ ? gist.description
-        \ : options.description
-  for [filename, content] in s:L.zip(options.filenames, options.contents)
-    let gist.files[filename] = extend(
-          \ get(gist.files, filename, {}),
-          \ content
-          \)
-  endfor
-  if options.cache
-    " NOTE:
-    " If options.cache is 0, the followings will be performed on
-    " gista#api#gists#patch() function later
-    if options.verbose
-      let client = gista#api#get_current_client()
-      redraw
-      call gista#util#prompt#echo(printf(
-            \ 'Updating a cache of a gist %s in %s ...',
-            \ gist.id, client.apiname,
-            \))
-    endif
-    call gista#api#gists#cache#add_gist(gist)
-    call gista#api#gists#cache#update_index_entry(gist)
-    redraw
-  endif
-  return gist
-endfunction
-function! gista#api#gists#cache#delete(gistid, ...) abort
-  let options = extend({
-        \ 'verbose': 1,
-        \ 'cache': 0,
-        \}, get(a:000, 0, {})
-        \)
-  let gist = gista#api#gists#cache#get(a:gistid, options)
-  if options.cache
-    if options.verbose
-      let client = gista#api#get_current_client()
-      redraw
-      call gista#util#prompt#echo(printf(
-            \ 'Deleting a cache of a gist %s in %s ...',
-            \ gist.id, client.apiname,
-            \))
-    endif
-    call gista#api#gists#cache#remove_gist(gist)
-    call gista#api#gists#cache#remove_index_entry(gist)
-    redraw
-  endif
-  return gist
-endfunction
-
 function! gista#api#gists#cache#add_gist(gist) abort
   let client = gista#api#get_current_client()
   call client.gist_cache.set(a:gist.id, a:gist)
@@ -354,6 +247,114 @@ function! gista#api#gists#cache#replace_index_entries(gists, lookup, ...) abort
   let index._gista_fetched = options.fetched
   let index._gista_modified = options.modified
   call client.index_cache.set(a:lookup, index)
+endfunction
+
+" Resource API
+function! gista#api#gists#cache#get(gistid, ...) abort
+  let options = extend({
+        \ 'verbose': 1,
+        \}, get(a:000, 0, {})
+        \)
+  let client = gista#api#get_current_client()
+  if options.verbose
+    redraw
+    call gista#util#prompt#echo(printf(
+          \ 'Loading a gist %s in %s from the local cache ...',
+          \ a:gistid, client.apiname,
+          \))
+  endif
+  let gist = extend(
+        \ gista#api#gists#get_pseudo_gist(a:gistid),
+        \ client.gist_cache.get(a:gistid, {})
+        \)
+  redraw
+  return gist
+endfunction
+function! gista#api#gists#cache#file(gist, filename) abort
+  return extend(
+        \ gista#api#gists#get_pseudo_gist_file(),
+        \ get(a:gist.files, a:filename, {})
+        \)
+endfunction
+function! gista#api#gists#cache#list(lookup, ...) abort
+  let options = extend({
+        \ 'verbose': 1,
+        \}, get(a:000, 0, {})
+        \)
+  let client = gista#api#get_current_client()
+  if options.verbose
+    redraw
+    call gista#util#prompt#echo(printf(
+          \ 'Loading gists of %s in %s from the local cache ...',
+          \ a:lookup, client.apiname,
+          \))
+  endif
+  let index = extend(
+        \ gista#api#gists#get_pseudo_index(),
+        \ client.index_cache.get(a:lookup, {})
+        \)
+  redraw
+  return index
+endfunction
+function! gista#api#gists#cache#patch(gistid, ...) abort
+  let options = extend({
+        \ 'verbose': 1,
+        \ 'description': 0,
+        \ 'filenames': [],
+        \ 'contents': [],
+        \ 'cache': 0,
+        \}, get(a:000, 0, {})
+        \)
+  let gist = gista#api#gists#cache#get(a:gistid, options)
+  let gist._gista_modified = 1
+  let gist.description = type(options.description) == type(0)
+        \ ? gist.description
+        \ : options.description
+  for [filename, content] in s:L.zip(options.filenames, options.contents)
+    let gist.files[filename] = extend(
+          \ get(gist.files, filename, {}),
+          \ content
+          \)
+  endfor
+  if options.cache
+    " NOTE:
+    " If options.cache is 0, the followings will be performed on
+    " gista#api#gists#patch() function later
+    if options.verbose
+      let client = gista#api#get_current_client()
+      redraw
+      call gista#util#prompt#echo(printf(
+            \ 'Updating a cache of a gist %s in %s ...',
+            \ gist.id, client.apiname,
+            \))
+    endif
+    call gista#api#gists#cache#add_gist(gist)
+    call gista#api#gists#cache#update_index_entry(gist)
+    redraw
+  endif
+  return gist
+endfunction
+function! gista#api#gists#cache#delete(gistid, ...) abort
+  let options = extend({
+        \ 'verbose': 1,
+        \ 'cache': 0,
+        \}, get(a:000, 0, {})
+        \)
+  let gist = gista#api#gists#cache#get(a:gistid, options)
+  if options.cache
+    if options.verbose
+      let client = gista#api#get_current_client()
+      redraw
+      call gista#util#prompt#echo(printf(
+            \ 'Deleting a cache of a gist %s in %s ...',
+            \ gist.id, client.apiname,
+            \))
+    endif
+    call gista#api#gists#cache#remove_gist(gist)
+    call gista#api#gists#cache#remove_index_entry(gist)
+    redraw
+  endif
+  return gist
 endfunction
 
 let &cpo = s:save_cpo

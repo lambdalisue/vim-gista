@@ -98,7 +98,6 @@ function! gista#autocmd#call(name) abort
           \))
   endif
   let filename = expand('<afile>')
-  echomsg filename
   let gista = s:parse_filename(filename)
   let gista = empty(gista)
         \ ? s:C.getbufvar('<afile>', 'gista', {})
