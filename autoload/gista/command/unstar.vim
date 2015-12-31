@@ -27,6 +27,7 @@ function! gista#command#unstar#call(...) abort
     let gistid = gista#meta#get_valid_gistid(options.gistid)
     let client = gista#api#get_current_client()
     call gista#api#star#delete(gistid, options)
+    call gista#util#doautocmd('CacheUpdatePost')
     call gista#util#prompt#echo(printf(
           \ 'A gist %s in %s is unstarred',
           \ gistid, client.apiname,

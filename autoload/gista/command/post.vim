@@ -65,6 +65,7 @@ function! gista#command#post#call(...) abort
               \})
       endif
     endfor
+    call gista#util#doautocmd('CacheUpdatePost')
     redraw
     call gista#util#prompt#echo(printf(
           \ 'A gist %s is posted to %s',

@@ -254,7 +254,7 @@ function! gista#api#gists#patch(gistid, ...) abort
   let options = extend({
         \ 'verbose': 1,
         \ 'cache': 0,
-        \ 'description': '',
+        \ 'description': 0,
         \ 'filenames': [],
         \ 'contents': [],
         \}, get(a:000, 0, {})
@@ -341,6 +341,7 @@ function! gista#api#gists#delete(gistid, ...) abort
   if res.status == 204
     call gista#api#gists#cache#remove_gist(gist)
     call gista#api#gists#cache#remove_index_entry(gist)
+    return
   endif
   call gista#api#throw_api_exception(res)
 endfunction

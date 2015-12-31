@@ -22,14 +22,26 @@ endfunction
 function! gista#command#delete#call(...) abort
   let options = extend({
         \ 'gistid': '',
+        \ 'cache': 0,
         \}, get(a:000, 0, {}),
         \)
   try
     let gistid = gista#meta#get_valid_gistid(options.gistid)
     let gist   = gista#api#gists#delete(gistid, options)
     let client = gista#api#get_current_client()
-    " TODO
-    " Handle existing buffer which open a file content of the deleted gist
+    call gista#util#doautocmd('CacheUpdatePost')
+    redraw
+    if options.cache
+      call gista#util#prompt#echo(printf(
+            \ 'A gist %s is removed from a local cache',
+            \ gist.id,
+            \))
+    else
+      call gista#util#prompt#echo(printf(
+            \ 'A gist %s is removed from %s',
+            \ gist.id, client.apiname,
+            \))
+    endif
     return gist
   catch /^vim-gista:/
     call s:handle_exception(v:exception)

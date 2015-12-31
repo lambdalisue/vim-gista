@@ -32,7 +32,6 @@ function! gista#command#patch#call(...) abort
         \ 'content': options.content,
         \}]
   try
-
     let gistid = gista#meta#get_valid_gistid(options.gistid)
     let gist   = gista#api#gists#patch(gistid, options)
     let client = gista#api#get_current_client()
@@ -43,6 +42,7 @@ function! gista#command#patch#call(...) abort
           \ 'filename': options.filename,
           \ 'content_type': 'raw',
           \}
+    call gista#util#doautocmd('CacheUpdatePost')
     redraw
     if options.cache
       call gista#util#prompt#echo(printf(

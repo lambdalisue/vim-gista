@@ -31,11 +31,6 @@ function! s:on_BufReadCmd(gista) abort
           \ 'gistid': a:gista.gistid,
           \ 'cache': !v:cmdbang,
           \})
-  elseif content_type ==# 'list'
-    call gista#command#list#edit({
-          \ 'lookup': a:gista.lookup,
-          \ 'cache': !v:cmdbang,
-          \})
   else
     call gista#util#prompt#throw(printf(
           \ 'Unknown content_type "%s" is specified',
@@ -56,11 +51,6 @@ function! s:on_FileReadCmd(gista) abort
           \ 'gistid': a:gista.gistid,
           \ 'cache': !v:cmdbang,
           \})
-  elseif content_type ==# 'list'
-    call gista#command#list#read({
-          \ 'lookup': a:gista.lookup,
-          \ 'cache': !v:cmdbang,
-          \})
   else
     call gista#util#prompt#throw(printf(
           \ 'Unknown content_type "%s" is specified',
@@ -76,15 +66,18 @@ function! s:on_BufWriteCmd(gista) abort
     call gista#command#patch#call({
           \ 'gistid': a:gista.gistid,
           \ 'filename': a:gista.filename,
-          \ 'content': content,
+          \ 'content': join(content, "\n"),
           \ 'cache': !v:cmdbang,
           \})
     if !v:cmdbang
-      call gista#util#prompt#warn(printf(
-            \ 'Use ":w!" to post changes to %s',
+      call gista#util#prompt#warn(printf(join([
+            \   'Note that the content is saved only to a local cache.',
+            \   'Use ":w!" to post changes to %s',
+            \ ]),
             \ a:gista.apiname,
             \))
     endif
+    set nomodified
   else
     call gista#util#prompt#throw(printf(
           \ 'Unknown content_type "%s" is specified',
@@ -99,12 +92,14 @@ function! s:on_FileWriteCmd(gista) abort
     call gista#command#patch#call({
           \ 'gistid': a:gista.gistid,
           \ 'filename': a:gista.filename,
-          \ 'content': content,
+          \ 'content': join(content, "\n"),
           \ 'cache': !v:cmdbang,
           \})
     if !v:cmdbang
-      call gista#util#prompt#warn(printf(
-            \ 'Use ":w!" to post changes to %s',
+      call gista#util#prompt#warn(printf(join([
+            \   'Note that the content is saved only to a local cache.',
+            \   'Use ":w!" to post changes to %s',
+            \ ]),
             \ a:gista.apiname,
             \))
     endif
@@ -151,11 +146,6 @@ let s:schemes = [
       \   'apiname': 1,
       \   'gistid': 2,
       \   'content_type': 'json',
-      \ }],
-      \ ['^gista-list:\(.*\):\(.*\)$', {
-      \   'apiname': 1,
-      \   'lookup': 2,
-      \   'content_type': 'list',
       \ }],
       \]
 function! s:parse_filename(filename) abort

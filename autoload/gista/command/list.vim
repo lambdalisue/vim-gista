@@ -4,6 +4,7 @@ set cpo&vim
 let s:V = gista#vital()
 let s:C = s:V.import('Vim.Compat')
 let s:S = s:V.import('Data.String')
+let s:D = s:V.import('Data.Dict')
 let s:A = s:V.import('ArgumentParser')
 
 let s:PRIVATE_GISTID = repeat('*', 20)
@@ -72,6 +73,8 @@ endfunction
 function! s:define_plugin_mappings() abort
   noremap <buffer><silent> <Plug>(gista-quit)
         \ :<C-u>q<CR>
+  noremap <buffer><silent> <Plug>(gista-redraw)
+        \ :call <SID>action('redraw')<CR>
   noremap <buffer><silent> <Plug>(gista-update)
         \ :call <SID>action('update', 1)<CR>
   noremap <buffer><silent> <Plug>(gista-UPDATE)
@@ -129,15 +132,16 @@ function! s:define_default_mappings() abort
   map <buffer> q <Plug>(gista-quit)
   map <buffer> <C-n> <Plug>(gista-next-label)
   map <buffer> <C-p> <Plug>(gista-prev-label)
-  map <buffer> <C-l> <Plug>(gista-update)
-  map <buffer> <S-l> <Plug>(gista-UPDATE)
+  map <buffer> <C-l> <Plug>(gista-redraw)
+  map <buffer> <F5>   <Plug>(gista-update)
+  map <buffer> <S-F5> <Plug>(gista-UPDATE)
   map <buffer> <Return> <Plug>(gista-edit)
   map <buffer> ee <Plug>(gista-edit)
   map <buffer> EE <Plug>(gista-edit-right)
   map <buffer> tt <Plug>(gista-edit-tab)
   map <buffer> pp <Plug>(gista-edit-preview)
   map <buffer> ej <Plug>(gista-json)
-  map <buffer> Ej <Plug>(gista-json-right)
+  map <buffer> EJ <Plug>(gista-json-right)
   map <buffer> tj <Plug>(gista-json-tab)
   map <buffer> pj <Plug>(gista-json-preview)
   map <buffer> bb <Plug>(gista-browse-open)
@@ -164,10 +168,12 @@ function! s:handle_exception(exception) abort
   " else
   call gista#util#prompt#error(a:exception)
 endfunction
-function! gista#command#list#read(...) abort
+function! gista#command#list#open(...) abort
   let options = extend({
         \ 'lookup': '',
-        \}, get(a:000, 0, {}),
+        \ 'opener': '',
+        \ 'cache': 1,
+        \}, get(a:000, 0, {})
         \)
   try
     let lookup = gista#meta#get_valid_lookup(options.lookup)
@@ -176,44 +182,28 @@ function! gista#command#list#read(...) abort
     call s:handle_exception(v:exception)
     return
   endtry
-  redraw
-  call gista#util#prompt#echo('Formatting gist entries to display ...')
-  call gista#util#buffer#read_content(
-        \ map(copy(index.entries), 's:format_entry(v:val)')
-        \)
-  redraw
-endfunction
-function! gista#command#list#edit(...) abort
-  silent doautocmd BufReadPre
-  let options = extend({
-        \ 'lookup': '',
-        \}, get(a:000, 0, {}),
-        \)
-  try
-    let lookup = gista#meta#get_valid_lookup(options.lookup)
-    let index  = gista#api#gists#list(lookup, options)
-  catch /^vim-gista:/
-    call s:handle_exception(v:exception)
-    return {}
-  endtry
   let client = gista#api#get_current_client()
   let apiname = client.apiname
   let username = client.get_authorized_username()
+  let opener = empty(options.opener)
+        \ ? g:gista#command#list#default_opener
+        \ : options.opener
+  let bufname = printf('gista-list:%s:%s',
+        \ client.apiname, lookup,
+        \)
+  call gista#util#buffer#open(bufname, {
+        \ 'opener': opener . (options.cache ? '' : '!'),
+        \ 'group': 'manipulation_panel',
+        \})
   let b:gista = {
         \ 'winwidth': winwidth(0),
         \ 'apiname': apiname,
         \ 'username': username,
         \ 'lookup': lookup,
         \ 'entries': index.entries,
-        \ 'options': options,
+        \ 'options': s:D.omit(options, ['cache']),
         \ 'content_type': 'list',
         \}
-  redraw
-  call gista#util#prompt#echo('Formatting gist entries to display ...')
-  call gista#util#buffer#edit_content(
-        \ map(copy(index.entries), 's:format_entry(v:val)')
-        \)
-  redraw
   call s:define_plugin_mappings()
   if g:gista#command#list#enable_default_mappings
     call s:define_default_mappings()
@@ -229,48 +219,48 @@ function! gista#command#list#edit(...) abort
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
   setlocal filetype=gista-list
-  silent doautocmd BufReadPost
+  call gista#command#list#redraw()
 endfunction
-function! gista#command#list#open(...) abort
-  let options = extend({
-        \ 'opener': '',
-        \ 'cache': 1,
-        \}, get(a:000, 0, {})
-        \)
-  let opener = empty(options.opener)
-        \ ? g:gista#command#list#default_opener
-        \ : options.opener
-  let bufname = gista#command#list#bufname(options)
-  if !empty(bufname)
-    call gista#util#buffer#open(bufname, {
-          \ 'opener': opener . (options.cache ? '' : '!'),
-          \ 'group': 'manipulation_panel',
-          \})
-    " BufReadCmd will execute gista#command#list#edit()
+function! gista#command#list#redraw() abort
+  if &filetype !=# 'gista-list'
+    call gista#util#prompt#throw(
+          \ 'redraw() requires to be called in a gista-list buffer'
+          \)
   endif
-endfunction
-function! gista#command#list#bufname(...) abort
-  let options = extend({
-        \ 'lookup': '',
-        \}, get(a:000, 0, {})
+  redraw
+  call gista#util#prompt#echo('Formatting gist entries to display ...')
+  call gista#util#buffer#edit_content(
+        \ map(copy(b:gista.entries), 's:format_entry(v:val)')
         \)
+  redraw
+endfunction
+function! gista#command#list#update(...) abort
+  if &filetype !=# 'gista-list'
+    call gista#util#prompt#throw(
+          \ 'update() requires to be called in a gista-list buffer'
+          \)
+  endif
+  let options = extend(b:gista.options, get(a:000, 0, {}))
   try
     let lookup = gista#meta#get_valid_lookup(options.lookup)
+    let index  = gista#api#gists#list(lookup, options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return
   endtry
   let client = gista#api#get_current_client()
   let apiname = client.apiname
-  let opener = empty(options.opener)
-        \ ? g:gista#command#list#default_opener
-        \ : options.opener
-  return printf('gista-list:%s:%s',
-        \ client.apiname, lookup,
-        \)
-endfunction
-function! gista#command#list#update() abort
-  execute 'noautocmd windo if &filetype ==# "gista-list" | call s:action_update() | endif'
+  let username = client.get_authorized_username()
+  let b:gista = {
+        \ 'winwidth': winwidth(0),
+        \ 'apiname': apiname,
+        \ 'username': username,
+        \ 'lookup': lookup,
+        \ 'entries': index.entries,
+        \ 'options': options,
+        \ 'content_type': 'list',
+        \}
+  call gista#command#list#redraw()
 endfunction
 
 function! s:on_VimResized() abort
@@ -466,19 +456,12 @@ function! s:action_unstar(...) range abort
     call session.exit()
   endtry
 endfunction
+function! s:action_redraw(...) range abort
+  call gista#command#list#redraw()
+endfunction
 function! s:action_update(...) range abort
   let cache = get(a:000, 0, 1)
-  let options = {
-        \ 'verbose': 1,
-        \ 'apiname': b:gista.apiname,
-        \ 'username': b:gista.username,
-        \ 'lookup': b:gista.options.lookup,
-        \ 'cache': cache,
-        \}
-  if has_key(b:gista.options, 'since')
-    let options.since = b:gista.options.since
-  endif
-  call gista#command#list#edit(options)
+  call gista#command#list#update({ 'cache': cache })
 endfunction
 function! s:action_next_label(...) range abort
   let index = s:get_current_label_index() + 1
@@ -596,7 +579,10 @@ endfunction
 
 augroup vim_gista_update_list
   autocmd!
-  autocmd User GistaCacheUpdatePost call gista#command#list#update()
+  autocmd User GistaCacheUpdatePost windo
+        \ if &filetype ==# 'gista-list' |
+        \   call s:action_update(1) |
+        \ endif
 augroup END
 
 call gista#define_variables('command#list', {

@@ -123,7 +123,7 @@ function! gista#api#gists#cache#update_index_entry(gist, ...) abort
       let previous_count = len(index.entries)
       let index.entries = filter(
             \ index.entries,
-            \ 'v:val.id != entry.id'
+            \ 'v:val.id !=# entry.id'
             \)
       if len(index.entries) == previous_count
         " no entry of {gist} found, skip
@@ -165,7 +165,7 @@ function! gista#api#gists#cache#replace_index_entry(gist, ...) abort
             \)
       let index.entries = map(
             \ index.entries,
-            \ 'v:val.id != entry.id ? v:val : entry'
+            \ 'v:val.id !=# entry.id ? v:val : entry'
             \)
       let index._gista_modified = options.modified
       call client.index_cache.set(lookup, index)
@@ -199,9 +199,9 @@ function! gista#api#gists#cache#remove_index_entry(gist, ...) abort
             \ gista#api#gists#get_pseudo_index(),
             \ client.index_cache.get(lookup, {})
             \)
-      call filter(
+      let index.entries = filter(
             \ index.entries,
-            \ 'v:val.id != a:gist.id'
+            \ 'v:val.id !=# a:gist.id'
             \)
       let index._gista_modified = options.modified
       call client.index_cache.set(lookup, index)
@@ -329,7 +329,7 @@ function! gista#api#gists#cache#patch(gistid, ...) abort
             \))
     endif
     call gista#api#gists#cache#add_gist(gist)
-    call gista#api#gists#cache#update_index_entry(gist)
+    call gista#api#gists#cache#replace_index_entry(gist)
     redraw
   endif
   return gist
