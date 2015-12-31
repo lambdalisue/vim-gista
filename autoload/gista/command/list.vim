@@ -5,13 +5,46 @@ let s:V = gista#vital()
 let s:C = s:V.import('Vim.Compat')
 let s:S = s:V.import('Data.String')
 let s:D = s:V.import('Data.Dict')
+let s:L = s:V.import('Data.List')
 let s:A = s:V.import('ArgumentParser')
 
 let s:PRIVATE_GISTID = repeat('*', 20)
-let s:LABEL_MODES = [
+let s:MODES = [
       \ 'created_at',
       \ 'updated_at',
       \]
+let s:MAPPING_TABLE = {
+      \ '<Plug>(gista-quit)': 'Close the buffer',
+      \ '<Plug>(gista-redraw)': 'Redraw the buffer',
+      \ '<Plug>(gista-update)': 'Update the buffer content',
+      \ '<Plug>(gista-UPDATE)': 'Update the buffer content without cache',
+      \ '<Plug>(gista-next-mode)': 'Select next mode',
+      \ '<Plug>(gista-prev-mode)': 'Select previous mode',
+      \ '<Plug>(gista-toggle-mapping-visibility)': 'Toggle mapping visibility',
+      \ '<Plug>(gista-edit)': 'Open a selected gist',
+      \ '<Plug>(gista-edit-above)': 'Open a selected gist in an above window',
+      \ '<Plug>(gista-edit-below)': 'Open a selected gist in a below window',
+      \ '<Plug>(gista-edit-left)': 'Open a selected gist in a left window',
+      \ '<Plug>(gista-edit-right)': 'Open a selected gist in a right window',
+      \ '<Plug>(gista-edit-tab)': 'Open a selected gist in a next tab',
+      \ '<Plug>(gista-edit-preview)': 'Open a selected gist in a preview window',
+      \ '<Plug>(gista-json)': 'Open a selected gist as a json file',
+      \ '<Plug>(gista-json-above)': 'Open a selected gist as a json file in an above window',
+      \ '<Plug>(gista-json-below)': 'Open a selected gist as a json file in a below window',
+      \ '<Plug>(gista-json-left)': 'Open a selected gist as a json file in a left window',
+      \ '<Plug>(gista-json-right)': 'Open a selected gist as a json file in a right window',
+      \ '<Plug>(gista-json-tab)': 'Open a selected gist as a json file in a next tab',
+      \ '<Plug>(gista-json-preview)': 'Open a selected gist as a json file in a preview window',
+      \ '<Plug>(gista-browse-open)': 'Browse a URL of a selected gist in a system browser',
+      \ '<Plug>(gista-browse-yank)': 'Yank a URL of a selected gist',
+      \ '<Plug>(gista-browse-echo)': 'Echo a URL of a selected gist',
+      \ '<Plug>(gista-delete)': 'Delete a selected gist from a local cache',
+      \ '<Plug>(gista-DELETE)': 'Delete a selected gist from the remote',
+      \ '<Plug>(gista-fork)': 'Fork a selected gist',
+      \ '<Plug>(gista-star)': 'Star a selected gist',
+      \ '<Plug>(gista-unstar)': 'Unstar a selected gist',
+      \}
+let s:entry_offset = 0
 
 function! s:truncate(str, width) abort
   let suffix = strdisplaywidth(a:str) > a:width ? '...' : '   '
@@ -23,8 +56,8 @@ function! s:format_entry(entry) abort
         \ : 'gistid:' . s:PRIVATE_GISTID
   let fetched  = a:entry._gista_fetched  ? '=' : '-'
   let modified = a:entry._gista_modified ? '*' : ' '
-  let label    = s:get_current_label(a:entry)
-  let prefix = fetched . ' ' . label . ' ' . modified . ' '
+  let mode    = s:get_current_mode(a:entry)
+  let prefix = fetched . ' ' . mode . ' ' . modified . ' '
   let suffix = ' ' . gistid
   let width = winwidth(0) - strdisplaywidth(prefix . suffix)
   let description = empty(a:entry.description)
@@ -35,39 +68,50 @@ function! s:format_entry(entry) abort
   let description = s:truncate(description, width)
   return prefix . description . suffix
 endfunction
-function! s:get_entry(index, ...) abort
-  let offset = get(a:000, 0, 0)
-  return get(b:gista.entries, a:index + offset, {})
+function! s:get_entry(index) abort
+  let index = a:index - s:entry_offset
+  return index >= 0 ? get(b:gista.entries, index, {}) : {}
 endfunction
 
-function! s:get_current_label_index() abort
-  if !exists('s:current_label_index')
-    let index = index(s:LABEL_MODES, g:gista#command#list#default_label)
+function! s:get_current_mode_index() abort
+  if !exists('s:current_mode_index')
+    let index = index(s:MODES, g:gista#command#list#default_mode)
     if index == -1
       call gista#util#prompt#throw(printf(
-            \ 'An invalid label "%s" is specified to g:gista#command#list#default_label',
-            \ g:gista#command#list#default_label,
+            \ 'An invalid mode "%s" is specified to g:gista#command#list#default_mode',
+            \ g:gista#command#list#default_mode,
             \))
     endif
-    let s:current_label_index = index
+    let s:current_mode_index = index
   endif
-  return s:current_label_index
+  return s:current_mode_index
 endfunction
-function! s:set_current_label_index(index) abort
-  let s:current_label_index = a:index
+function! s:set_current_mode_index(index) abort
+  let s:current_mode_index = a:index
 endfunction
-function! s:get_current_label(entry) abort
-  let lmode = s:LABEL_MODES[s:get_current_label_index()]
+function! s:get_current_mode(entry) abort
+  let lmode = s:MODES[s:get_current_mode_index()]
   if lmode ==# 'created_at' || lmode ==# 'updated_at'
     let datetime = a:entry[lmode]
-    let label = substitute(
+    let mode = substitute(
           \ datetime,
           \ '\v\d{2}(\d{2})-(\d{2})-(\d{2})T(\d{2}:\d{2}:\d{2})Z',
           \ '\1/\2/\3(\4)',
           \ ''
           \)
-    return label
+    return mode
   endif
+endfunction
+function! s:get_current_mapping_visibility() abort
+  if exists('s:current_mapping_visibility')
+    return s:current_mapping_visibility
+  endif
+  let s:current_mapping_visibility =
+        \ g:gista#command#list#default_mapping_visibility
+  return s:current_mapping_visibility
+endfunction
+function! s:set_current_mapping_visibility(value) abort
+  let s:current_mapping_visibility = a:value
 endfunction
 
 function! s:define_plugin_mappings() abort
@@ -79,10 +123,12 @@ function! s:define_plugin_mappings() abort
         \ :call <SID>action('update', 1)<CR>
   noremap <buffer><silent> <Plug>(gista-UPDATE)
         \ :call <SID>action('update', 0)<CR>
-  noremap <buffer><silent> <Plug>(gista-next-label)
-        \ :call <SID>action('next_label')<CR>
-  noremap <buffer><silent> <Plug>(gista-prev-label)
-        \ :call <SID>action('prev_label')<CR>
+  noremap <buffer><silent> <Plug>(gista-next-mode)
+        \ :call <SID>action('next_mode')<CR>
+  noremap <buffer><silent> <Plug>(gista-prev-mode)
+        \ :call <SID>action('prev_mode')<CR>
+  noremap <buffer><silent> <Plug>(gista-toggle-mapping-visibility)
+        \ :call <SID>action('toggle_mapping_visibility')<CR>
   noremap <buffer><silent> <Plug>(gista-edit)
         \ :call <SID>action('edit')<CR>
   noremap <buffer><silent> <Plug>(gista-edit-above)
@@ -130,8 +176,9 @@ function! s:define_plugin_mappings() abort
 endfunction
 function! s:define_default_mappings() abort
   map <buffer> q <Plug>(gista-quit)
-  map <buffer> <C-n> <Plug>(gista-next-label)
-  map <buffer> <C-p> <Plug>(gista-prev-label)
+  map <buffer> <C-n> <Plug>(gista-next-mode)
+  map <buffer> <C-p> <Plug>(gista-prev-mode)
+  map <buffer> ? <Plug>(gista-toggle-mapping-visibility)
   map <buffer> <C-l> <Plug>(gista-redraw)
   map <buffer> <F5>   <Plug>(gista-update)
   map <buffer> <S-F5> <Plug>(gista-UPDATE)
@@ -229,9 +276,17 @@ function! gista#command#list#redraw() abort
   endif
   redraw
   call gista#util#prompt#echo('Formatting gist entries to display ...')
-  call gista#util#buffer#edit_content(
-        \ map(copy(b:gista.entries), 's:format_entry(v:val)')
-        \)
+  let prologue = s:L.flatten([
+        \ g:gista#command#list#show_status_string_in_prologue
+        \   ? [gista#command#list#get_status_string() . ' | Press ? to toggle a mapping help']
+        \   : [],
+        \ s:get_current_mapping_visibility()
+        \   ? map(gista#util#mapping#help(s:MAPPING_TABLE), '"| " . v:val')
+        \   : []
+        \])
+  let contents = map(copy(b:gista.entries), 's:format_entry(v:val)')
+  let s:entry_offset = len(prologue)
+  call gista#util#buffer#edit_content(extend(prologue, contents))
   redraw
 endfunction
 function! gista#command#list#update(...) abort
@@ -463,16 +518,20 @@ function! s:action_update(...) range abort
   let cache = get(a:000, 0, 1)
   call gista#command#list#update({ 'cache': cache })
 endfunction
-function! s:action_next_label(...) range abort
-  let index = s:get_current_label_index() + 1
-  let index = index >= len(s:LABEL_MODES) ? 0 : index
-  call s:set_current_label_index(index)
+function! s:action_next_mode(...) range abort
+  let index = s:get_current_mode_index() + 1
+  let index = index >= len(s:MODES) ? 0 : index
+  call s:set_current_mode_index(index)
   call s:action_update()
 endfunction
-function! s:action_prev_label(...) range abort
-  let index = s:get_current_label_index() - 1
-  let index = index < 0 ? len(s:LABEL_MODES) - 1 : index
-  call s:set_current_label_index(index)
+function! s:action_prev_mode(...) range abort
+  let index = s:get_current_mode_index() - 1
+  let index = index < 0 ? len(s:MODES) - 1 : index
+  call s:set_current_mode_index(index)
+  call s:action_update()
+endfunction
+function! s:action_toggle_mapping_visibility(...) range abort
+  call s:set_current_mapping_visibility(!s:get_current_mapping_visibility())
   call s:action_update()
 endfunction
 
@@ -547,8 +606,10 @@ function! gista#command#list#define_highlights() abort
   highlight link GistaLastModified     Comment
   highlight link GistaGistIDPublic     Tag
   highlight link GistaGistIDPrivate    Constant
+  highlight link GistaMapping          Comment
 endfunction
 function! gista#command#list#define_syntax() abort
+  syntax match GistaMapping /^|.*$/
   syntax match GistaLine /^[=\-].*gistid:.\{,20}\%(\/[a-zA-Z0-9]\+\)\?$/
   syntax match GistaGistIDPublic /gistid:[a-zA-Z0-9_\-]\{,20}\%(\/[a-zA-Z0-9]\+\)\?$/
         \ display contained containedin=GistaLine
@@ -566,15 +627,12 @@ function! gista#command#list#define_syntax() abort
         \ display contained containedin=GistaMeta
 endfunction
 
-function! gista#command#list#get_status_string(...) abort
-  let lookup = get(a:000, 0, '')
-  if empty(lookup)
-    return printf('gista | %s:%s | Mode: %s',
-          \ b:gista.apiname,
-          \ b:gista.lookup,
-          \ s:LABEL_MODES[s:get_current_label_index()]
-          \)
-  endif
+function! gista#command#list#get_status_string() abort
+  return printf('%s:%s | Mode: %s',
+        \ b:gista.apiname,
+        \ b:gista.lookup,
+        \ s:MODES[s:get_current_mode_index()]
+        \)
 endfunction
 
 augroup vim_gista_update_list
@@ -588,8 +646,8 @@ augroup END
 call gista#define_variables('command#list', {
       \ 'default_options': {},
       \ 'default_lookup': '',
-      \ 'default_label': 'updated_at',
-      \ 'default_datetime': 'updated_at',
+      \ 'default_mode': 'updated_at',
+      \ 'default_mapping_visibility': 0,
       \ 'default_opener': 'topleft 15 split',
       \ 'default_entry_opener': 'edit',
       \ 'entry_openers': {
@@ -602,6 +660,7 @@ call gista#define_variables('command#list', {
       \   'preview': ['pedit', 0],
       \ },
       \ 'enable_default_mappings': 1,
+      \ 'show_status_string_in_prologue': 1,
       \})
 
 let &cpo = s:save_cpo
