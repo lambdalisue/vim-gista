@@ -71,11 +71,49 @@ endfunction
 
 function! s:on_BufWriteCmd(gista) abort
   let content = getbufline(expand('<amatch>'), 1, '$')
-  echo content
+  let content_type = get(a:gista, 'content_type', '')
+  if content_type ==# 'raw'
+    call gista#command#patch#call({
+          \ 'gistid': a:gista.gistid,
+          \ 'filename': a:gista.filename,
+          \ 'content': content,
+          \ 'cache': !v:cmdbang,
+          \})
+    if !v:cmdbang
+      call gista#util#prompt#warn(printf(
+            \ 'Use ":w!" to post changes to %s',
+            \ a:gista.apiname,
+            \))
+    endif
+  else
+    call gista#util#prompt#throw(printf(
+          \ 'Unknown content_type "%s" is specified',
+          \ content_type,
+          \))
+  endif
 endfunction
 function! s:on_FileWriteCmd(gista) abort
   let content = getbufline(expand('<amatch>'), line("'["), line("']"))
-  echo content
+  let content_type = get(a:gista, 'content_type', '')
+  if content_type ==# 'raw'
+    call gista#command#patch#call({
+          \ 'gistid': a:gista.gistid,
+          \ 'filename': a:gista.filename,
+          \ 'content': content,
+          \ 'cache': !v:cmdbang,
+          \})
+    if !v:cmdbang
+      call gista#util#prompt#warn(printf(
+            \ 'Use ":w!" to post changes to %s',
+            \ a:gista.apiname,
+            \))
+    endif
+  else
+    call gista#util#prompt#throw(printf(
+          \ 'Unknown content_type "%s" is specified',
+          \ content_type,
+          \))
+  endif
 endfunction
 
 function! gista#autocmd#call(name) abort

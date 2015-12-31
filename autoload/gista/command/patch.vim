@@ -24,14 +24,13 @@ function! gista#command#patch#call(...) abort
         \ 'gistid': '',
         \ 'filename': '',
         \ 'content': '',
+        \ 'cache': 0,
         \}, get(a:000, 0, {}),
         \)
   let options.filenames = [options.filename]
   let options.contents = [{
         \ 'content': options.content,
         \}]
-  unlet options.filename
-  unlet options.content
   try
 
     let gistid = gista#meta#get_valid_gistid(options.gistid)
@@ -41,14 +40,21 @@ function! gista#command#patch#call(...) abort
           \ 'apiname': client.apiname,
           \ 'username': client.get_authorized_username(),
           \ 'gistid': gist.id,
-          \ 'filename': expand('%:t'),
+          \ 'filename': options.filename,
           \ 'content_type': 'raw',
           \}
     redraw
-    call gista#util#prompt#echo(printf(
-          \ 'A gist %s is posted to %s',
-          \ gist.id, client.apiname,
-          \))
+    if options.cache
+      call gista#util#prompt#echo(printf(
+            \ 'Changes of %s in gist %s is saved to a local cache',
+            \ options.filename, gist.id,
+            \))
+    else
+      call gista#util#prompt#echo(printf(
+            \ 'Changes of %s in gist %s is posted to %s',
+            \ options.filename, gist.id, client.apiname,
+            \))
+    endif
     return gist
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
