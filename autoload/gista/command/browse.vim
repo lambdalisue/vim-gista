@@ -89,16 +89,6 @@ function! s:get_parser() abort
           \   'choices': ['open', 'yank', 'echo'],
           \   'default': 'open',
           \})
-    function! s:parser.hooks.pre_validate(options) abort
-      if !has_key(a:options, 'gistid')
-        let a:options.gistid = gista#meta#get_gistid()
-      endif
-    endfunction
-    function! s:parser.hooks.pre_complete(options) abort
-      if !has_key(a:options, 'gistid')
-        let a:options.gistid = gista#meta#get_gistid()
-      endif
-    endfunction
     call s:parser.hooks.validate()
   endif
   return s:parser
@@ -109,6 +99,8 @@ function! gista#command#browse#command(...) abort
   if empty(options)
     return
   endif
+  call gista#meta#assign_gistid(options, '%')
+  call gista#meta#assign_filename(options, '%')
   " extend default options
   let options = extend(
         \ deepcopy(g:gista#command#browse#default_options),

@@ -164,23 +164,6 @@ function! s:get_parser() abort
           \   'default': 1,
           \   'deniable': 1,
           \})
-    function! s:parser.hooks.pre_validate(options) abort
-      if !has_key(a:options, 'gistid')
-        let a:options.gistid = gista#meta#get_gistid()
-      endif
-      if !has_key(a:options, 'filename')
-        let a:options.gistid = gista#meta#get_filename()
-      endif
-    endfunction
-    function! s:parser.hooks.pre_complete(options) abort
-      if !has_key(a:options, 'gistid')
-        let a:options.gistid = gista#meta#get_gistid()
-      endif
-      if !has_key(a:options, 'filename')
-        let a:options.gistid = gista#meta#get_filename()
-      endif
-    endfunction
-    call s:parser.hooks.validate()
   endif
   return s:parser
 endfunction
@@ -190,6 +173,8 @@ function! gista#command#open#command(...) abort
   if empty(options)
     return
   endif
+  call gista#meta#assign_gistid(options, '%')
+  call gista#meta#assign_filename(options, '%')
   " extend default options
   let options = extend(
         \ deepcopy(g:gista#command#open#default_options),

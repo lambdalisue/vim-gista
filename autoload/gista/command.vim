@@ -88,16 +88,6 @@ function! s:get_parser() abort
           \   'terminal': 1,
           \   'complete': function('s:complete_action'),
           \})
-    function! s:parser.hooks.pre_validate(options) abort
-      if !has_key(a:options, 'apiname')
-        let a:options.apiname = gista#meta#get_apiname()
-      endif
-    endfunction
-    function! s:parser.hooks.pre_complete(options) abort
-      if !has_key(a:options, 'apiname')
-        let a:options.apiname = gista#meta#get_apiname()
-      endif
-    endfunction
     function! s:parser.hooks.post_validate(options) abort
       if get(a:options, 'anonymous')
         let a:options.username = ''
@@ -176,7 +166,7 @@ function! gista#command#complete(arglead, cmdline, cursorpos, ...) abort
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
 
-" Register commands
+" Register sub commands
 call gista#command#register('open',
       \ 'gista#command#open#command',
       \ 'gista#command#open#complete',
@@ -184,10 +174,6 @@ call gista#command#register('open',
 call gista#command#register('json',
       \ 'gista#command#json#command',
       \ 'gista#command#json#complete',
-      \)
-call gista#command#register('browse',
-      \ 'gista#command#browse#command',
-      \ 'gista#command#browse#complete',
       \)
 call gista#command#register('list',
       \ 'gista#command#list#command',
@@ -201,6 +187,18 @@ call gista#command#register('patch',
       \ 'gista#command#patch#command',
       \ 'gista#command#patch#complete',
       \)
+call gista#command#register('delete',
+      \ 'gista#command#delete#command',
+      \ 'gista#command#delete#complete',
+      \)
+call gista#command#register('browse',
+      \ 'gista#command#browse#command',
+      \ 'gista#command#browse#complete',
+      \)
+call gista#command#register('fork',
+      \ 'gista#command#fork#command',
+      \ 'gista#command#fork#complete',
+      \)
 call gista#command#register('star',
       \ 'gista#command#star#command',
       \ 'gista#command#star#complete',
@@ -208,10 +206,6 @@ call gista#command#register('star',
 call gista#command#register('unstar',
       \ 'gista#command#unstar#command',
       \ 'gista#command#unstar#complete',
-      \)
-call gista#command#register('fork',
-      \ 'gista#command#fork#command',
-      \ 'gista#command#fork#complete',
       \)
 
 let &cpo = s:save_cpo

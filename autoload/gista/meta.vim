@@ -182,40 +182,51 @@ function! gista#meta#complete_lookup(arglead, cmdline, cursorpos, ...) abort
   endtry
 endfunction
 
-function! gista#meta#get_apiname(...) abort
-  let expr = get(a:000, 0, '%')
-  let gista = s:C.getbufvar(expr, 'gista', {})
-  let filename = expand(expr)
-  if has_key(gista, 'apiname')
-    return gista.apiname
-  elseif filename =~# '^gista:.*:.*.:.*$'
-    return matchstr(filename, '^gista:\zs.*\ze:.*:.*$')
-  else
-    return ''
-  endif
-endfunction
-function! gista#meta#get_gistid(...) abort
-  let expr = get(a:000, 0, '%')
-  let gista = s:C.getbufvar(expr, 'gista', {})
-  let filename = expand(expr)
-  if has_key(gista, 'gistid')
-    return gista.apiname
-  elseif filename =~# '^gista:.*:.*.:.*$'
-    return matchstr(filename, '^gista:.*:\zs.*\ze:.*$')
-  else
-    return ''
-  endif
-endfunction
-function! gista#meta#get_filename(...) abort
-  let expr = get(a:000, 0, '%')
-  let gista = s:C.getbufvar(expr, 'gista', {})
-  let filename = expand(expr)
+function! gista#meta#guess_filename(expr) abort
+  let gista = s:C.getbufvar(a:expr, 'gista', {})
+  let filename = expand(a:expr)
   if has_key(gista, 'filename')
-    return gista.apiname
-  elseif filename =~# '^gista:.*:.*.:.*$'
+    return gista.filename
+  elseif filename =~# '^gista:.*:.*:.*$'
     return matchstr(filename, '^gista:.*:.*:\zs.*\ze$')
   else
-    return ''
+    return filename
+  endif
+endfunction
+function! gista#meta#assign_apiname(options, expr) abort
+  if has_key(a:options, 'apiname')
+    return
+  endif
+  let gista    = s:C.getbufvar(a:expr, 'gista', {})
+  let filename = expand(a:expr)
+  if has_key(gista, 'apiname')
+    let a:options.apiname = gista.apiname
+  elseif filename =~# '^gista:.*:.*:.*$'
+    let a:options.apiname = matchstr(filename, '^gista:\zs.*\ze:.*:.*$')
+  endif
+endfunction
+function! gista#meta#assign_gistid(options, expr) abort
+  if has_key(a:options, 'gistid')
+    return
+  endif
+  let gista    = s:C.getbufvar(a:expr, 'gista', {})
+  let filename = expand(a:expr)
+  if has_key(gista, 'gistid')
+    let a:options.gistid = gista.gistid
+  elseif filename =~# '^gista:.*:.*:.*$'
+    let a:options.gistid = matchstr(filename, '^gista:.*:\zs.*\ze:.*$')
+  endif
+endfunction
+function! gista#meta#assign_filename(options, expr) abort
+  if has_key(a:options, 'filename')
+    return
+  endif
+  let gista    = s:C.getbufvar(a:expr, 'gista', {})
+  let filename = expand(a:expr)
+  if has_key(gista, 'filename')
+    let a:options.filename = gista.filename
+  elseif filename =~# '^gista:.*:.*:.*$'
+    let a:options.filename = matchstr(filename, '^gista:.*:.*:\zs.*\ze$')
   endif
 endfunction
 

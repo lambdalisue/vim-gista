@@ -120,8 +120,8 @@ function! gista#command#post#command(...) abort
         \)
   if empty(options.__unknown__)
     " Get content from the current buffer
-    let filenames = [expand('%')]
-    let contents = [
+    let filenames = [ gista#meta#guess_filename('%') ]
+    let contents  = [
           \ call('getline', options.__range__)
           \]
   else
@@ -135,7 +135,7 @@ function! gista#command#post#command(...) abort
           \)
   endif
   let options.filenames = map(filenames, 'fnamemodify(v:val, ":t")')
-  let options.contents = map(contents, '{ "content": join(v:val, "\n") }')
+  let options.contents  = map(contents, '{ "content": join(v:val, "\n") }')
   call gista#command#post#call(options)
 endfunction
 function! gista#command#post#complete(...) abort

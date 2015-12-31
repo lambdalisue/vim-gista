@@ -146,17 +146,6 @@ function! s:get_parser() abort
           \ '--entry',
           \ 'Use an entry cache instead of content cache',
           \)
-    function! s:parser.hooks.pre_validate(options) abort
-      if !has_key(a:options, 'gistid')
-        let a:options.gistid = gista#meta#get_gistid()
-      endif
-    endfunction
-    function! s:parser.hooks.pre_complete(options) abort
-      if !has_key(a:options, 'gistid')
-        let a:options.gistid = gista#meta#get_gistid()
-      endif
-    endfunction
-    call s:parser.hooks.validate()
   endif
   return s:parser
 endfunction
@@ -166,6 +155,7 @@ function! gista#command#json#command(...) abort
   if empty(options)
     return
   endif
+  call gista#meta#assign_gistid(options, '%')
   " extend default options
   let options = extend(
         \ deepcopy(g:gista#command#json#default_options),

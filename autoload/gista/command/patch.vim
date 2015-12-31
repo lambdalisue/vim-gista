@@ -22,8 +22,16 @@ endfunction
 function! gista#command#patch#call(...) abort
   let options = extend({
         \ 'gistid': '',
+        \ 'filename': '',
+        \ 'content': '',
         \}, get(a:000, 0, {}),
         \)
+  let options.filenames = [options.filename]
+  let options.contents = [{
+        \ 'content': options.content,
+        \}]
+  unlet options.filename
+  unlet options.content
   try
 
     let gistid = gista#meta#get_valid_gistid(options.gistid)
@@ -70,19 +78,6 @@ function! s:get_parser() abort
           \   'default': 0,
           \   'deniable': 1,
           \})
-    function! s:parser.hooks.pre_validate(options) abort
-      let gista = get(b:, 'gista', {})
-      if !has_key(a:options, 'gistid')
-        let a:options.gistid = get(gista, 'gistid', '')
-      endif
-    endfunction
-    function! s:parser.hooks.pre_complete(options) abort
-      let gista = get(b:, 'gista', {})
-      if !has_key(a:options, 'gistid')
-        let a:options.gistid = get(gista, 'gistid', '')
-      endif
-    endfunction
-    call s:parser.hooks.validate()
   endif
   return s:parser
 endfunction
@@ -92,17 +87,14 @@ function! gista#command#patch#command(...) abort
   if empty(options)
     return
   endif
+  call gista#meta#assign_gistid(options, '%')
+  let options.filename = fnamemodify(gista#meta#guess_filename('%'), ':t')
+  let options.content  = join(call('getline', options.__range__), "\n")
   " extend default options
   let options = extend(
         \ deepcopy(g:gista#command#patch#default_options),
         \ options,
         \)
-  " get filenames
-  " not like post, patch only support a current buffer
-  let options.filenames = [expand('%:t')]
-  let options.contents = [
-        \ { 'content': join(call('getline', options.__range__), "\n") },
-        \]
   call gista#command#patch#call(options)
 endfunction
 function! gista#command#patch#complete(...) abort

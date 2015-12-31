@@ -52,17 +52,6 @@ function! s:get_parser() abort
           \ 'A gist ID', {
           \   'complete': function('g:gista#meta#complete_gistid'),
           \})
-    function! s:parser.hooks.pre_validate(options) abort
-      if !has_key(a:options, 'gistid')
-        let a:options.gistid = gista#meta#get_gistid()
-      endif
-    endfunction
-    function! s:parser.hooks.pre_complete(options) abort
-      if !has_key(a:options, 'gistid')
-        let a:options.gistid = gista#meta#get_gistid()
-      endif
-    endfunction
-    call s:parser.hooks.validate()
   endif
   return s:parser
 endfunction
@@ -72,6 +61,7 @@ function! gista#command#fork#command(...) abort
   if empty(options)
     return
   endif
+  call gista#meta#assign_gistid(options, '%')
   " extend default options
   let options = extend(
         \ deepcopy(g:gista#command#fork#default_options),
