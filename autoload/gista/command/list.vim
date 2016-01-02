@@ -50,12 +50,13 @@ function! s:truncate(str, width) abort
   let suffix = strdisplaywidth(a:str) > a:width ? '...' : '   '
   return s:S.truncate(a:str, a:width - 4) . suffix
 endfunction
-function! s:format_entry(entry) abort
+function! s:format_entry(entry, starred_cache) abort
   let gistid = a:entry.public
         \ ? 'gistid:' . a:entry.id
         \ : 'gistid:' . s:PRIVATE_GISTID
   let fetched  = a:entry._gista_fetched  ? '=' : '-'
-  let modified = a:entry._gista_modified ? '*' : ' '
+  "let modified = a:entry._gista_modified ? '*' : ' '
+  let modified = get(a:starred_cache, a:entry.id) ? '*' : ' '
   let mode    = s:get_current_mode(a:entry)
   let prefix = fetched . ' ' . mode . ' ' . modified . ' '
   let suffix = ' ' . gistid
@@ -284,7 +285,14 @@ function! gista#command#list#redraw() abort
         \   ? map(gista#util#mapping#help(s:MAPPING_TABLE), '"| " . v:val')
         \   : []
         \])
-  let contents = map(copy(b:gista.entries), 's:format_entry(v:val)')
+  let client = gista#api#get_current_client()
+  let starred_cache = client.starred_cache.get(
+        \ client.get_authorized_username(), {}
+        \)
+  let contents = map(
+        \ copy(b:gista.entries),
+        \ 's:format_entry(v:val, starred_cache)'
+        \)
   let s:entry_offset = len(prologue)
   call gista#util#buffer#edit_content(extend(prologue, contents))
   redraw
@@ -319,15 +327,11 @@ function! gista#command#list#update(...) abort
 endfunction
 
 function! s:on_VimResized() abort
-  call gista#util#buffer#edit_content(
-        \ map(copy(b:gista.entries), 's:format_entry(v:val)')
-        \)
+  call gista#command#list#redraw()
 endfunction
 function! s:on_WinEnter() abort
   if b:gista.winwidth != winwidth(0)
-    call gista#util#buffer#edit_content(
-          \ map(copy(b:gista.entries), 's:format_entry(v:val)')
-          \)
+    call gista#command#list#redraw()
   endif
 endfunction
 

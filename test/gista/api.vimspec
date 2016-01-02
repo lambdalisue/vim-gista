@@ -83,6 +83,20 @@ Describe gista#api
       Assert NotSame(ret, ret3)
     End
   End
+  Describe s:get_starred_cache({apiname})
+    It returns a unique cache system of {apiname}
+      let ret = sf.get_starred_cache('A')
+      Assert KeyExists(ret, 'has')
+      Assert KeyExists(ret, 'get')
+      Assert KeyExists(ret, 'set')
+      Assert KeyExists(ret, 'remove')
+      Assert KeyExists(ret, 'clear')
+      let ret2 = sf.get_starred_cache('A')
+      Assert Same(ret, ret2)
+      let ret3 = sf.get_starred_cache('B')
+      Assert NotSame(ret, ret3)
+    End
+  End
 
   Describe s:validate_apiname({apiname})
     It throws an exception when {apiname} is empty

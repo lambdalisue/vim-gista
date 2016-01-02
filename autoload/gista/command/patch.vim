@@ -22,26 +22,23 @@ endfunction
 function! gista#command#patch#call(...) abort
   let options = extend({
         \ 'gistid': '',
-        \ 'filename': '',
-        \ 'content': '',
         \ 'cache': 0,
         \}, get(a:000, 0, {}),
         \)
-  let options.filenames = [options.filename]
-  let options.contents = [{
-        \ 'content': options.content,
-        \}]
+  let filename = fnamemodify(gista#meta#guess_filename('%'), ':t')
+  let content  = join(call('getline', options.__range__), "\n")
+  let options.filenames = [ filename ]
+  let options.contents  = [
+        \ { 'content': content },
+        \]
   try
     let gistid = gista#meta#get_valid_gistid(options.gistid)
     let gist   = gista#api#gists#patch(gistid, options)
-    let client = gista#api#get_current_client()
-    let b:gista = {
-          \ 'apiname': client.apiname,
-          \ 'username': client.get_authorized_username(),
+    let bufname = gista#command#open#bufname({
           \ 'gistid': gist.id,
-          \ 'filename': options.filename,
-          \ 'content_type': 'raw',
-          \}
+          \ 'filename': filename,
+          \})
+    silent execute printf('file %s', bufname)
     call gista#util#doautocmd('CacheUpdatePost')
     redraw
     if options.cache
@@ -50,6 +47,7 @@ function! gista#command#patch#call(...) abort
             \ options.filename, gist.id,
             \))
     else
+      let client = gista#api#get_current_client()
       call gista#util#prompt#echo(printf(
             \ 'Changes of %s in gist %s is posted to %s',
             \ options.filename, gist.id, client.apiname,
@@ -94,8 +92,6 @@ function! gista#command#patch#command(...) abort
     return
   endif
   call gista#meta#assign_gistid(options, '%')
-  let options.filename = fnamemodify(gista#meta#guess_filename('%'), ':t')
-  let options.content  = join(call('getline', options.__range__), "\n")
   " extend default options
   let options = extend(
         \ deepcopy(g:gista#command#patch#default_options),

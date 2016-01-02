@@ -60,13 +60,11 @@ function! s:on_FileReadCmd(gista) abort
 endfunction
 
 function! s:on_BufWriteCmd(gista) abort
-  let content = getbufline(expand('<amatch>'), 1, '$')
   let content_type = get(a:gista, 'content_type', '')
   if content_type ==# 'raw'
     call gista#command#patch#call({
+          \ '__range__': [line('1'), line('$')],
           \ 'gistid': a:gista.gistid,
-          \ 'filename': a:gista.filename,
-          \ 'content': join(content, "\n"),
           \ 'cache': !v:cmdbang,
           \})
     if !v:cmdbang
@@ -86,13 +84,11 @@ function! s:on_BufWriteCmd(gista) abort
   endif
 endfunction
 function! s:on_FileWriteCmd(gista) abort
-  let content = getbufline(expand('<amatch>'), line("'["), line("']"))
   let content_type = get(a:gista, 'content_type', '')
   if content_type ==# 'raw'
     call gista#command#patch#call({
+          \ '__range__': [line("'["), line("']")],
           \ 'gistid': a:gista.gistid,
-          \ 'filename': a:gista.filename,
-          \ 'content': join(content, "\n"),
           \ 'cache': !v:cmdbang,
           \})
     if !v:cmdbang

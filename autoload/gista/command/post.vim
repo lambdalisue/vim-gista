@@ -42,33 +42,33 @@ function! s:handle_exception(exception) abort
 endfunction
 function! gista#command#post#call(...) abort
   let options = extend({
-        \ 'filenames': [],
-        \ 'contents': [],
         \ 'description': g:gista#command#post#interactive_description,
         \ 'public': g:gista#command#post#default_public,
         \}, get(a:000, 0, {}),
         \)
   call s:interactive_description(options)
+  let filename = fnamemodify(gista#meta#guess_filename('%'), ':t')
+  let content  = join(call('getline', options.__range__), "\n")
+  let options.filenames = [ filename ]
+  let options.contents  = [
+        \ { 'content': content },
+        \]
   try
     let gist = gista#api#gists#post(
-          \ options.filenames, options.contents, options,
+          \ options.filenames,
+          \ options.contents,
+          \ options,
           \)
     let client = gista#api#get_current_client()
-    for filename in options.filenames
-      if bufexists(filename)
-        call setbufvar(bufnr(filename), 'gista', {
-              \ 'apiname': client.apiname,
-              \ 'username': client.get_authorized_username(),
-              \ 'gistid': gist.id,
-              \ 'filename': fnamemodify(expand(filename), ':t'),
-              \ 'content_type': 'raw',
-              \})
-      endif
-    endfor
+    let bufname = gista#command#open#bufname({
+          \ 'gistid': gist.id,
+          \ 'filename': filename,
+          \})
+    silent execute printf('file %s', bufname)
     call gista#util#doautocmd('CacheUpdatePost')
     redraw
     call gista#util#prompt#echo(printf(
-          \ 'A gist %s is posted to %s',
+          \ 'A content of the current buffer is posted to a gist %s in %s',
           \ gist.id, client.apiname,
           \))
     return gist
@@ -119,24 +119,6 @@ function! gista#command#post#command(...) abort
         \ deepcopy(g:gista#command#post#default_options),
         \ options,
         \)
-  if empty(options.__unknown__)
-    " Get content from the current buffer
-    let filenames = [ gista#meta#guess_filename('%') ]
-    let contents  = [
-          \ call('getline', options.__range__)
-          \]
-  else
-    let filenames = filter(
-          \ map(options.__unknown__, 'expand(v:val)'),
-          \ 'bufexists(v:val) || filereadable(v:val)',
-          \)
-    let contents = map(
-          \ copy(filenames),
-          \ 'bufexists(v:val) ? getbufline(v:val, 1, "$") : readfile(v:val)',
-          \)
-  endif
-  let options.filenames = map(filenames, 'fnamemodify(v:val, ":t")')
-  let options.contents  = map(contents, '{ "content": join(v:val, "\n") }')
   call gista#command#post#call(options)
 endfunction
 function! gista#command#post#complete(...) abort
@@ -148,7 +130,7 @@ call gista#define_variables('command#post', {
       \ 'default_options': {},
       \ 'default_public': 1,
       \ 'interactive_description': 1,
-      \ 'allow_empty_description': 1,
+      \ 'allow_empty_description': 0,
       \})
 
 let &cpo = s:save_cpo

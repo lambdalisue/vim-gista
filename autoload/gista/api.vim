@@ -61,6 +61,20 @@ function! s:get_gist_cache(apiname) abort
   call s:gist_cache.set(a:apiname, gist_cache)
   return gist_cache
 endfunction
+function! s:get_starred_cache(apiname) abort
+  if !exists('s:starred_cache')
+    let s:starred_cache = s:C.new('memory')
+  endif
+  if s:starred_cache.has(a:apiname)
+    return s:starred_cache.get(a:apiname)
+  endif
+  let cache_dir = expand(s:P.join(g:gista#api#cache_dir, 'starred', a:apiname))
+  let starred_cache = s:C.new('file', {
+        \ 'cache_dir': cache_dir,
+        \})
+  call s:starred_cache.set(a:apiname, starred_cache)
+  return starred_cache
+endfunction
 
 function! s:validate_apiname(apiname) abort
   call gista#util#validate#not_empty(
@@ -146,6 +160,7 @@ function! s:new_client(apiname) abort
   let client.apiname = a:apiname
   let client.index_cache = s:get_index_cache(a:apiname)
   let client.gist_cache = s:get_gist_cache(a:apiname)
+  let client.starred_cache = s:get_starred_cache(a:apiname)
   " login if default_username of apiname exists
   let default_username = s:get_default_username(a:apiname)
   if !empty(default_username)

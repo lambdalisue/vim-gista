@@ -199,10 +199,19 @@ function! gista#api#gists#list(lookup, ...) abort
           \})
   endif
   call gista#api#gists#cache#remove_gists(fetched_entries)
+
+  let index = client.index_cache.get(a:lookup)
+  if a:lookup ==# username . '/starred'
+    let starred_cache = {}
+    for entry in index.entries
+      let starred_cache[entry.id] = 1
+    endfor
+    call client.starred_cache.set(username, starred_cache)
+  endif
   " TODO
   " Assign 'Last-Modified' correctly to handle 304 Not Modified
   redraw
-  return client.index_cache.get(a:lookup)
+  return index
 endfunction
 function! gista#api#gists#post(filenames, contents, ...) abort
   let options = extend({

@@ -16,8 +16,6 @@ It provide the following features:
 - [x] Delete a gist
 - [x] Star/Unstar a gist
 - [x] Folk a gist
-- [ ] List folks of a gist
-- [ ] List commits of a gist
 
 Requirements
 -------------------------------------------------------------------------------
