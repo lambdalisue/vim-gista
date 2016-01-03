@@ -25,8 +25,8 @@ function! gista#command#star#call(...) abort
         \)
   try
     let gistid = gista#meta#get_valid_gistid(options.gistid)
-    let client = gista#api#get_current_client()
-    call gista#api#star#put(gistid, options)
+    let client = gista#client#get()
+    call gista#resource#star#put(gistid, options)
     call gista#util#doautocmd('CacheUpdatePost')
     call gista#util#prompt#echo(printf(
           \ 'A gist %s in %s is starred',

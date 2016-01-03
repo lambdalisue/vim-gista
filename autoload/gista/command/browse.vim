@@ -7,7 +7,7 @@ let s:A = s:V.import('ArgumentParser')
 
 function! s:get_absolute_url(gistid, filename) abort
     let gistid = gista#meta#get_valid_gistid(a:gistid)
-    let gist   = gista#api#gists#get(gistid)
+    let gist   = gista#resource#gists#get(gistid)
     let filename = tolower(substitute(a:filename, '\.', '-', 'g'))
     return gist.html_url . (empty(filename) ? '' : '#file-' . filename)
 endfunction
@@ -27,51 +27,59 @@ function! s:handle_exception(exception) abort
   " else
   call gista#util#prompt#error(a:exception)
 endfunction
-function! gista#command#browse#open(...) abort
+function! gista#command#browse#call(...) abort
   let options = extend({
         \ 'gistid': '',
         \ 'filename': '',
         \}, get(a:000, 0, {}),
         \)
   try
-    let url = s:get_absolute_url(options.gistid, options.filename)
-    call s:F.open(url)
+    let gistid = gista#meta#get_valid_gistid(options.gistid)
+    let filename = empty(options.filename)
+          \ ? ''
+          \ : gista#meta#get_valid_filename(gistid, options.filename)
+    let gist = gista#resource#gists#get(gistid)
+    if has_key(gist, 'html_url')
+      return gist.html_url . (
+            \ empty(filename)
+            \   ? ''
+            \   : '#file-' . tolower(substitute(filename, '\.', '-', 'g'))
+            \)
+    else
+      return ''
+    endif
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
+    return ''
   endtry
+endfunction
+function! gista#command#browse#open(...) abort
+  let options = get(a:000, 0, {})
+  let url = gista#command#browse#call(options)
+  if !empty(url)
+    call s:F.open(url)
+  endif
 endfunction
 function! gista#command#browse#yank(...) abort
-  let options = extend({
-        \ 'gistid': '',
-        \ 'filename': '',
-        \}, get(a:000, 0, {}),
-        \)
-  try
-    let url = s:get_absolute_url(options.gistid, options.filename)
+  let options = get(a:000, 0, {})
+  let url = gista#command#browse#call(options)
+  if !empty(url)
     call gista#util#clip(url)
-  catch /^vim-gista:/
-    call s:handle_exception(v:exception)
-  endtry
+  endif
 endfunction
 function! gista#command#browse#echo(...) abort
-  let options = extend({
-        \ 'gistid': '',
-        \ 'filename': '',
-        \}, get(a:000, 0, {}),
-        \)
-  try
-    let url = s:get_absolute_url(options.gistid, options.filename)
+  let options = get(a:000, 0, {})
+  let url = gista#command#browse#call(options)
+  if !empty(url)
     echo url
-  catch /^vim-gista:/
-    call s:handle_exception(v:exception)
-  endtry
+  endif
 endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
           \ 'name': 'Gista browse',
-          \ 'description': 'Open a gist with a system browser',
+          \ 'description': 'Open a URL of a gist with a system browser',
           \})
     call s:parser.add_argument(
           \ '--filename',
@@ -79,17 +87,20 @@ function! s:get_parser() abort
           \   'complete': function('g:gista#meta#complete_filename'),
           \})
     call s:parser.add_argument(
-          \ '--action',
-          \ 'An action', {
-          \   'choices': ['open', 'yank', 'echo'],
-          \   'default': 'open',
+          \ '--echo',
+          \ 'Echo a URL instead of open', {
+          \   'conflicts': ['yank'],
+          \})
+    call s:parser.add_argument(
+          \ '--yank',
+          \ 'Yank a URL instead of open', {
+          \   'conflicts': ['echo'],
           \})
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
           \   'complete': function('g:gista#meta#complete_gistid'),
           \})
-    call s:parser.hooks.validate()
   endif
   return s:parser
 endfunction
@@ -106,12 +117,12 @@ function! gista#command#browse#command(...) abort
         \ deepcopy(g:gista#command#browse#default_options),
         \ options,
         \)
-  if options.action ==# 'open'
-    call gista#command#browse#open(options)
-  elseif options.action ==# 'yank'
+  if options.yank
     call gista#command#browse#yank(options)
-  elseif options.action ==# 'echo'
+  elseif options.echo
     call gista#command#browse#echo(options)
+  else
+    call gista#command#browse#open(options)
   endif
 endfunction
 function! gista#command#browse#complete(...) abort

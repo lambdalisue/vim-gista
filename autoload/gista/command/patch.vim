@@ -33,7 +33,7 @@ function! gista#command#patch#call(...) abort
         \]
   try
     let gistid = gista#meta#get_valid_gistid(options.gistid)
-    let gist   = gista#api#gists#patch(gistid, options)
+    let gist   = gista#resource#gists#patch(gistid, options)
     let bufname = gista#command#open#bufname({
           \ 'gistid': gist.id,
           \ 'filename': filename,
@@ -41,22 +41,15 @@ function! gista#command#patch#call(...) abort
     silent execute printf('file %s', bufname)
     call gista#util#doautocmd('CacheUpdatePost')
     redraw
-    if options.cache
-      call gista#util#prompt#echo(printf(
-            \ 'Changes of %s in gist %s is saved to a local cache',
-            \ options.filename, gist.id,
-            \))
-    else
-      let client = gista#api#get_current_client()
-      call gista#util#prompt#echo(printf(
-            \ 'Changes of %s in gist %s is posted to %s',
-            \ options.filename, gist.id, client.apiname,
-            \))
-    endif
+    let client = gista#client#get()
+    call gista#util#prompt#echo(printf(
+          \ 'Changes of %s in gist %s is posted to %s',
+          \ filename, gistid, client.apiname,
+          \))
     return gist
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
-    return ''
+    return {}
   endtry
 endfunction
 
@@ -72,15 +65,15 @@ function! s:get_parser() abort
           \   'type': s:A.types.value,
           \})
     call s:parser.add_argument(
-          \ '--cache',
-          \ 'Do not PATCH a content and save the content only to the cache', {
+          \ '--force',
+          \ 'Patch a gist even a remote content of the gist is modified', {
           \   'default': 0,
           \   'deniable': 1,
           \})
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#api#gists#complete_gistid'),
+          \   'complete': function('g:gista#meta#complete_gistid'),
           \})
   endif
   return s:parser

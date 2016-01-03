@@ -28,22 +28,11 @@ function! gista#command#json#read(...) abort
         \)
   try
     let gistid = gista#meta#get_valid_gistid(options.gistid)
-    let gist = gista#api#gists#get(gistid, options)
-    if g:gista#debug
-      let index_entry = gista#api#gists#cache#retrieve_index_entry(gistid)
-      let content = split(
-            \ s:J.encode(
-            \   { 'gist': gist, 'index_entry': index_entry },
-            \   { 'indent': 2 }
-            \ ),
-            \ "\r\\?\n"
-            \)
-    else
-      let content = split(
-            \ s:J.encode(gist, { 'indent': 2 }),
-            \ "\r\\?\n"
-            \)
-    endif
+    let gist = gista#resource#gists#get(gistid, options)
+    let content = split(
+          \ s:J.encode(gist, { 'indent': 2 }),
+          \ "\r\\?\n"
+          \)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
   endtry
@@ -62,33 +51,22 @@ function! gista#command#json#edit(...) abort
         \)
   try
     let gistid = gista#meta#get_valid_gistid(options.gistid)
-    let gist = gista#api#gists#get(gistid, options)
-    if g:gista#debug
-      let index_entry = gista#api#gists#cache#retrieve_index_entry(gistid)
-      let content = split(
-            \ s:J.encode(
-            \   { 'gist': gist, 'index_entry': index_entry },
-            \   { 'indent': 2 }
-            \ ),
-            \ "\r\\?\n"
-            \)
-    else
-      let content = split(
-            \ s:J.encode(gist, { 'indent': 2 }),
-            \ "\r\\?\n"
-            \)
-    endif
+    let gist = gista#resource#gists#get(gistid, options)
+    let content = split(
+          \ s:J.encode(gist, { 'indent': 2 }),
+          \ "\r\\?\n"
+          \)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return
   endtry
-  let client = gista#api#get_current_client()
+  let client = gista#client#get()
   let apiname = client.apiname
   let username = client.get_authorized_username()
   let b:gista = {
         \ 'apiname': apiname,
         \ 'username': username,
-        \ 'gistid': gist.id,
+        \ 'gistid': gistid,
         \ 'content_type': 'json',
         \}
   call gista#util#buffer#edit_content(
@@ -130,7 +108,7 @@ function! gista#command#json#bufname(...) abort
     call s:handle_exception(v:exception)
     return
   endtry
-  let client = gista#api#get_current_client()
+  let client = gista#client#get()
   let apiname = client.apiname
   return printf('gista-json:%s:%s',
         \ client.apiname, gistid,
@@ -144,7 +122,7 @@ function! s:get_parser() abort
           \ 'description': 'Open a JSON of a particular gist',
           \})
     call s:parser.add_argument(
-          \ '--opener', '-o',
+          \ '--opener',
           \ 'A way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:A.types.value,
           \})
@@ -154,10 +132,6 @@ function! s:get_parser() abort
           \   'default': 1,
           \   'deniable': 1,
           \})
-    call s:parser.add_argument(
-          \ '--entry',
-          \ 'Use an entry cache instead of content cache',
-          \)
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {

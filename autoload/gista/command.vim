@@ -52,13 +52,13 @@ function! s:get_parser() abort
           \ '--apiname', [
           \   'A temporary API name used only in this command execution',
           \ ], {
-          \   'complete': function('gista#api#complete_apiname'),
+          \   'complete': function('gista#meta#complete_apiname'),
           \})
     call s:parser.add_argument(
           \ '--username', [
           \   'Temporary login as USERNAME only in this command execution',
           \ ], {
-          \   'complete': function('gista#api#complete_username'),
+          \   'complete': function('gista#meta#complete_username'),
           \   'conflicts': ['anonymous'],
           \})
     call s:parser.add_argument(
@@ -121,7 +121,7 @@ function! gista#command#command(...) abort
             \ s:D.pick(options, ['apiname']),
             \)
     elseif gista#command#is_registered(name)
-      let session = gista#api#session(options)
+      let session = gista#client#session(options)
       try
         call session.enter()
         " perform a specified command
@@ -153,7 +153,7 @@ function! gista#command#complete(arglead, cmdline, cursorpos, ...) abort
             \ s:D.pick(options, ['apiname']),
             \)
     elseif gista#command#is_registered(name)
-      let session = gista#api#session(options)
+      let session = gista#client#session(options)
       try
         call session.enter()
         " perform a specified command
@@ -167,6 +167,10 @@ function! gista#command#complete(arglead, cmdline, cursorpos, ...) abort
 endfunction
 
 " Register sub commands
+call gista#command#register('status',
+      \ 'gista#command#status#command',
+      \ 'gista#command#status#complete',
+      \)
 call gista#command#register('open',
       \ 'gista#command#open#command',
       \ 'gista#command#open#complete',
@@ -186,6 +190,10 @@ call gista#command#register('post',
 call gista#command#register('patch',
       \ 'gista#command#patch#command',
       \ 'gista#command#patch#complete',
+      \)
+call gista#command#register('rename',
+      \ 'gista#command#rename#command',
+      \ 'gista#command#rename#complete',
       \)
 call gista#command#register('delete',
       \ 'gista#command#delete#command',

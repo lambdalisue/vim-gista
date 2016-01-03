@@ -25,11 +25,11 @@ function! gista#command#logout#call(...) abort
         \}, get(a:000, 0, {}),
         \)
   try
-    call gista#api#switch_client({
+    call gista#client#set({
           \ 'verbose': options.verbose,
           \ 'apiname': options.apiname,
           \})
-    let client = gista#api#get_current_client()
+    let client = gista#client#get()
     call gista#util#prompt#echo(printf(
           \ 'Logout from %s',
           \ client.apiname,
@@ -48,8 +48,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--apiname',
           \ 'An API name', {
-          \   'type': s:A.types.value,
-          \   'complete': function('g:gista#api#complete_apiname'),
+          \   'complete': function('g:gista#meta#complete_apiname'),
           \})
   endif
   return s:parser

@@ -19,38 +19,43 @@ function! s:handle_exception(exception) abort
   " else
   call gista#util#prompt#error(a:exception)
 endfunction
-function! gista#command#delete#call(...) abort
+function! gista#command#rename#call(...) abort
   let options = extend({
         \ 'gistid': '',
+        \ 'gist': {},
         \ 'filename': '',
+        \ 'new_filename': '',
         \ 'force': 0,
         \}, get(a:000, 0, {}),
         \)
   try
-    let gistid = gista#meta#get_valid_gistid(options.gistid)
-    if empty(options.filename)
-      call gista#resource#gists#delete(gistid, options)
-      call gista#util#doautocmd('CacheUpdatePost')
-      let client = gista#client#get()
-      redraw | call gista#util#prompt#echo(printf(
-            \ 'A gist %s is removed from %s',
-            \ gistid, client.apiname,
-            \))
+    if !empty(options.gist)
+      let gistid   = options.gist.id
+      let filename = gista#meta#get_valid_filename(options.gist, options.filename)
     else
-      let filename = gista#meta#get_valid_filename(
-            \ options.gistid, options.filename,
-            \)
-      call gista#resource#gists#patch(gistid, {
-            \ 'force': options.force,
-            \ 'files': { filename : {} },
-            \})
-      call gista#util#doautocmd('CacheUpdatePost')
-      let client = gista#client#get()
-      redraw | call gista#util#prompt#echo(printf(
-            \ 'A %s is removed from a gist %s in %s',
-            \ filename, gistid, client.apiname,
-            \))
+      let gistid   = gista#meta#get_valid_gistid(options.gistid)
+      let filename = gista#meta#get_valid_filename(gistid, options.filename)
     endif
+    if empty(options.new_filename)
+      let options.new_filename = gista#util#prompt#ask(
+            \ filename . ' -> ', filename,
+            \ 'customlist,gista#meta#complete_filename',
+            \)
+    endif
+    let new_filename = gista#meta#get_valid_filename(options.filename)
+
+    let gist = gista#resource#gists#patch(gistid, {
+          \ 'filenames': [filename],
+          \ 'contents': [{
+          \   'filename': new_filename,
+          \ }],
+          \})
+    call gista#util#doautocmd('CacheUpdatePost')
+    let client = gista#client#get()
+    redraw | call gista#util#prompt#echo(printf(
+          \ 'A %s in a gist %s in %s is renamed to %s',
+          \ filename, gistid, client.apiname, new_filename,
+          \))
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
   endtry
@@ -59,12 +64,12 @@ endfunction
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
-          \ 'name': 'Gista delete',
-          \ 'description': 'Delete a gist or a file in a gist',
+          \ 'name': 'Gista rename',
+          \ 'description': 'Rename a filename in a gist',
           \})
     call s:parser.add_argument(
           \ '--force',
-          \ 'Delete a gist even a remote content of the gist is modified', {
+          \ 'Rename a filename in a gist even a remote content of the gist is modified', {
           \   'default': 0,
           \   'deniable': 1,
           \})
@@ -78,31 +83,38 @@ function! s:get_parser() abort
           \ 'A filename', {
           \   'complete': function('g:gista#meta#complete_filename'),
           \})
+    call s:parser.add_argument(
+          \ 'new_filename',
+          \ 'A new filename', {
+          \   'complete': function('g:gista#meta#complete_filename'),
+          \})
   endif
   return s:parser
 endfunction
-function! gista#command#delete#command(...) abort
+function! gista#command#rename#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
     return
   endif
   call gista#meta#assign_gistid(options, '%')
+  call gista#meta#assign_filename(options, '%')
   " extend default options
   let options = extend(
-        \ deepcopy(g:gista#command#delete#default_options),
+        \ deepcopy(g:gista#command#rename#default_options),
         \ options,
         \)
-  call gista#command#delete#call(options)
+  call gista#command#rename#call(options)
 endfunction
-function! gista#command#delete#complete(...) abort
+function! gista#command#rename#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
 endfunction
 
-call gista#define_variables('command#delete', {
+call gista#define_variables('command#rename', {
       \ 'default_options': {},
       \})
+
 
 
 let &cpo = s:save_cpo
