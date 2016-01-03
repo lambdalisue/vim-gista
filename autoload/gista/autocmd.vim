@@ -62,20 +62,20 @@ endfunction
 function! s:on_BufWriteCmd(gista) abort
   let content_type = get(a:gista, 'content_type', '')
   if content_type ==# 'raw'
-    call gista#command#patch#call({
+    let gist = gista#command#patch#call({
           \ '__range__': [line('1'), line('$')],
           \ 'gistid': a:gista.gistid,
-          \ 'cache': !v:cmdbang,
+          \ 'force': v:cmdbang,
           \})
-    if !v:cmdbang
+    if empty(gist)
       call gista#util#prompt#warn(printf(join([
-            \   'Note that the content is saved only to a local cache.',
-            \   'Use ":w!" to post changes to %s',
+            \   'Use ":w!" to post changes to %s forcedly',
             \ ]),
             \ a:gista.apiname,
             \))
+    else
+      set nomodified
     endif
-    set nomodified
   else
     call gista#util#prompt#throw(printf(
           \ 'Unknown content_type "%s" is specified',
@@ -86,18 +86,19 @@ endfunction
 function! s:on_FileWriteCmd(gista) abort
   let content_type = get(a:gista, 'content_type', '')
   if content_type ==# 'raw'
-    call gista#command#patch#call({
+    let gist = gista#command#patch#call({
           \ '__range__': [line("'["), line("']")],
           \ 'gistid': a:gista.gistid,
-          \ 'cache': !v:cmdbang,
+          \ 'force': v:cmdbang,
           \})
-    if !v:cmdbang
+    if empty(gist)
       call gista#util#prompt#warn(printf(join([
-            \   'Note that the content is saved only to a local cache.',
-            \   'Use ":w!" to post changes to %s',
+            \   'Use ":w!" to post changes to %s forcedly',
             \ ]),
             \ a:gista.apiname,
             \))
+    else
+      set nomodified
     endif
   else
     call gista#util#prompt#throw(printf(
@@ -119,7 +120,7 @@ function! gista#autocmd#call(name) abort
   let gista = empty(gista)
         \ ? s:C.getbufvar('<afile>', 'gista', {})
         \ : gista
-  let session = gista#api#session({
+  let session = gista#client#session({
         \ 'apiname':  get(gista, 'apiname', ''),
         \ 'username': get(gista, 'username', 0),
         \})

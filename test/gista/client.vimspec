@@ -2,24 +2,24 @@ let s:V = vital#of('vital')
 let s:F = s:V.import('System.File')
 let s:P = s:V.import('System.Filepath')
 let s:S = s:V.import('Vim.ScriptLocal')
+let s:G = s:V.import('Vim.Guard')
 
-Describe gista#api
+Describe gista#client
   Before all
-    let sfile = s:P.realpath('autoload/gista/api.vim')
+    let sfile = s:P.realpath('autoload/gista/client.vim')
     let sf = s:S.sfuncs(sfile)
     let sv = s:S.svars(sfile)
-    let Guard = gista#vital().import('Vim.Guard')
   End
   Before
-    let guard = Guard.new(
-          \ 'g:gista#api#default_apiname',
-          \ 'g:gista#api#default_username',
+    let guard = s:G.store(
+          \ 'g:gista#client#default_apiname',
+          \ 'g:gista#client#default_username',
           \ ['current_client', sv],
           \ ['registry', sv],
           \ ['G', sv],
           \)
-    let g:gista#api#default_apiname = 'A'
-    let g:gista#api#default_username = ''
+    let g:gista#client#default_apiname = 'A'
+    let g:gista#client#default_username = ''
     let sv.current_client = {}
     let sv.registry = {
           \ 'A': 'http://A',
@@ -109,8 +109,8 @@ Describe gista#api
     End
   End
   Describe s:get_default_apiname()
-    It warn if g:gista#api#default_apiname is invalid
-      let g:gista#api#default_apiname = ''
+    It warn if g:gista#client#default_apiname is invalid
+      let g:gista#client#default_apiname = ''
       redir => raw_content
       call sf.get_default_apiname()
       redir END
@@ -118,7 +118,7 @@ Describe gista#api
       Assert Match(content[0], 'An API name cannot be empty')
       Assert Match(content[1], '"GitHub" will be used as a default API name instead')
 
-      let g:gista#api#default_apiname = 'foo'
+      let g:gista#client#default_apiname = 'foo'
       redir => raw_content
       call sf.get_default_apiname()
       redir END
@@ -127,11 +127,11 @@ Describe gista#api
       Assert Match(content[1], '"GitHub" will be used as a default API name instead')
     End
     It returns a default API name
-      let g:gista#api#default_apiname = 'A'
+      let g:gista#client#default_apiname = 'A'
       let ret = sf.get_default_apiname()
       Assert Equals(ret, 'A')
 
-      let g:gista#api#default_apiname = 'B'
+      let g:gista#client#default_apiname = 'B'
       let ret = sf.get_default_apiname()
       Assert Equals(ret, 'B')
     End
@@ -143,8 +143,8 @@ Describe gista#api
     End
   End
   Describe s:get_default_username({apiname})
-    It warn if g:gista#api#default_username is invalid
-      let g:gista#api#default_username = '{foo}'
+    It warn if g:gista#client#default_username is invalid
+      let g:gista#client#default_username = '{foo}'
       redir => raw_content
       call sf.get_default_username('A')
       redir END
@@ -153,18 +153,18 @@ Describe gista#api
       Assert Match(content[1], 'An anonymous user is used instead')
     End
     It returns a default API username [String]
-      unlet g:gista#api#default_username
-      let g:gista#api#default_username = 'foo'
+      unlet g:gista#client#default_username
+      let g:gista#client#default_username = 'foo'
       let ret = sf.get_default_username('A')
       Assert Equals(ret, 'foo')
 
-      let g:gista#api#default_username = 'bar'
+      let g:gista#client#default_username = 'bar'
       let ret = sf.get_default_username('A')
       Assert Equals(ret, 'bar')
     End
     It returns a default API username [Dictionary]
-      unlet g:gista#api#default_username
-      let g:gista#api#default_username = {
+      unlet g:gista#client#default_username
+      let g:gista#client#default_username = {
             \ '_': 'foo',
             \ 'A': 'bar',
             \}
@@ -260,7 +260,7 @@ Describe gista#api
       let client2 = sf.new_client('A')
       Assert NotSame(client, client2)
     End
-    It call s:login internally when g:gista#api#default_username is specified
+    It call s:login internally when g:gista#client#default_username is specified
       " Mock module script variable to prevent HTTP request
       let client = sf.new_client('A')
       function! client.login(...) abort
@@ -270,7 +270,7 @@ Describe gista#api
       function! sv.G.new(...) abort
         return self._abstract_client
       endfunction
-      let g:gista#api#default_username = 'lambdalisue'
+      let g:gista#client#default_username = 'lambdalisue'
       let client = sf.new_client('A')
       Assert Equals(client._login_args, ['lambdalisue', { 'verbose': 1 }])
     End
@@ -309,18 +309,18 @@ Describe gista#api
 
   Describe #_get_available_apinames()
     It returns a list of keys of s:registry
-      let ret = gista#api#_get_available_apinames()
+      let ret = gista#client#_get_available_apinames()
       Assert Equals(ret, keys(sv.registry))
     End
   End
   Describe #_get_available_usernames({apiname})
     It returns a list of keys of token_cache of a client
-      let client = gista#api#get_current_client()
+      let client = gista#client#get()
       let client.token_cache.set('foo', '')
       let client.token_cache.set('bar', '')
       let client.token_cache.set('hoge', '')
 
-      let ret = gista#api#_get_available_usernames(client.apiname)
+      let ret = gista#client#_get_available_usernames(client.apiname)
       Assert Equals(sort(ret), sort(['foo', 'bar', 'hoge']))
     End
   End
@@ -328,41 +328,41 @@ Describe gista#api
   Describe #register({apiname}, {baseurl})
     It errors when an empty {apiname} is specified
       redir => raw_content
-      call gista#api#register('', 'http://A')
+      call gista#client#register('', 'http://A')
       redir END
       let content = split(raw_content, "\r\\?\n")
       Assert Match(content[0], 'An API name cannot be empty')
     End
     It errors when an {apiname} does not follow the pattern
       redir => raw_content
-      call gista#api#register('{APINAME}', 'http://A')
+      call gista#client#register('{APINAME}', 'http://A')
       redir END
       let content = split(raw_content, "\r\\?\n")
       Assert Match(content[0], 'An API name "{APINAME}" requires to follow')
     End
     It errors when an {apiname} exists in registry
       redir => raw_content
-      call gista#api#register('A', 'http://A')
+      call gista#client#register('A', 'http://A')
       redir END
       let content = split(raw_content, "\r\\?\n")
       Assert Match(content[0], 'An API name "A" has been already registered')
     End
     It errors when an empty {baseurl} is specified
       redir => raw_content
-      call gista#api#register('C', '')
+      call gista#client#register('C', '')
       redir END
       let content = split(raw_content, "\r\\?\n")
       Assert Match(content[0], 'An API baseurl cannot be empty')
     End
     It errors when a {baseurl} does not follow the pattern
       redir => raw_content
-      call gista#api#register('C', 'CCC')
+      call gista#client#register('C', 'CCC')
       redir END
       let content = split(raw_content, "\r\\?\n")
       Assert Match(content[0], 'An API baseurl "CCC" requires to follow')
     End
     It register an {apiname} with a {baseurl}
-      call gista#api#register('C', 'http://C')
+      call gista#client#register('C', 'http://C')
       Assert Equals(sv.registry, {
             \ 'A': 'http://A',
             \ 'B': 'http://B',
@@ -373,115 +373,91 @@ Describe gista#api
   Describe #unregister({apiname})
     It errors when an {apiname} has not registered yet
       redir => raw_content
-      call gista#api#unregister('C')
+      call gista#client#unregister('C')
       redir END
       let content = split(raw_content, "\r\\?\n")
       Assert Match(content[0], 'An API name "C" has not been registered yet')
     End
     It unregister an {apiname}
-      call gista#api#unregister('A')
+      call gista#client#unregister('A')
       Assert Equals(sv.registry, {
             \ 'B': 'http://B',
             \})
     End
   End
 
-  Describe #get_current_client()
-    It returns a client of g:gista#api#default_apiname for the first time
-      let g:gista#api#default_apiname = 'B'
-      let client = gista#api#get_current_client()
+  Describe #get()
+    It returns a client of g:gista#client#default_apiname for the first time
+      let g:gista#client#default_apiname = 'B'
+      let client = gista#client#get()
       Assert Equals(client.apiname, 'B')
     End
-    It returns a current client specified by #switch_client()
-      let g:gista#api#default_apiname = 'A'
-      let client = gista#api#get_current_client()
+    It returns a current client specified by #set()
+      let g:gista#client#default_apiname = 'A'
+      let client = gista#client#get()
       Assert Equals(client.apiname, 'A')
 
-      call gista#api#switch_client('B')
-      let client = gista#api#get_current_client()
+      call gista#client#set('B')
+      let client = gista#client#get()
       Assert Equals(client.apiname, 'B')
-    End
-  End
-  Describe #get_current_apiname()
-    It returns an apiname of the current client
-      let g:gista#api#default_apiname = 'A'
-      let apiname = gista#api#get_current_apiname()
-      Assert Equals(apiname, 'A')
-
-      call gista#api#switch_client('B')
-      let apiname = gista#api#get_current_apiname()
-      Assert Equals(apiname, 'B')
-    End
-  End
-  Describe #get_current_username()
-    It returns an authorized username of the current client
-      let g:gista#api#default_apiname = 'A'
-      let username = gista#api#get_current_username()
-      Assert Equals(username, '')
-
-      " Mimic login
-      let client = gista#api#get_current_client()
-      let client._authorized_username = 'lambdalisue'
-      let username = gista#api#get_current_username()
-      Assert Equals(username, 'lambdalisue')
     End
   End
   
-  Describe #switch_client({apiname}[, {options}])
+  Describe #set({apiname}[, {options}])
     It returns a client of {apiname}
-      let client = gista#api#switch_client('B')
+      let client = gista#client#set('B')
       Assert Equals(client.apiname, 'B')
     End
     It call s:login() internally when {options}.username is specified
-      let client = gista#api#get_current_client()
+      let client = gista#client#get()
       function! client.login(...) abort
         let self._login_args = a:000
       endfunction
 
-      let client = gista#api#switch_client(client.apiname, {'username': 'lambdalisue'})
+      let client = gista#client#set(client.apiname, {'username': 'lambdalisue'})
       Assert Equals(client._login_args, ['lambdalisue', { 'verbose': 1 }])
     End
     It call s:logout() internally when {options}.username is specified but empty
-      let client = gista#api#get_current_client()
+      let client = gista#client#get()
       function! client.logout(...) abort
         let self._logout_args = a:000
       endfunction
 
-      let client = gista#api#switch_client(client.apiname, {'username': ''})
+      let client = gista#client#set(client.apiname, {'username': ''})
       Assert Equals(client._logout_args, [{ 'verbose': 1, 'permanent': 0 }])
 
-      let client = gista#api#switch_client(client.apiname, {'username': '', 'permanent': 1})
+      let client = gista#client#set(client.apiname, {'username': '', 'permanent': 1})
       Assert Equals(client._logout_args, [{ 'verbose': 1, 'permanent': 1 }])
     End
     It switch a current client
-      let client = gista#api#switch_client('B')
-      let current_client = gista#api#get_current_client()
+      let client = gista#client#set('B')
+      let current_client = gista#client#get()
       Assert Same(client, current_client)
     End
   End
   Describe #session({options})
     It returns a session instance
-      let session = gista#api#session({ 'apiname': 'A' })
+      let session = gista#client#session({ 'apiname': 'A' })
       Assert KeyExists(session, 'enter')
       Assert KeyExists(session, 'exit')
     End
 
     Describe A session instance
       It enter/exit a session with .enter()/.exit()
-        let session = gista#api#session({ 'apiname': 'B' })
-        Assert Equals(gista#api#get_current_apiname(), 'A')
+        let session = gista#client#session({ 'apiname': 'B' })
+        Assert Equals(gista#client#get().apiname, 'A')
         call session.enter()
-        Assert Equals(gista#api#get_current_apiname(), 'B')
+        Assert Equals(gista#client#get().apiname, 'B')
         call session.exit()
-        Assert Equals(gista#api#get_current_apiname(), 'A')
+        Assert Equals(gista#client#get().apiname, 'A')
       End
       It throws an exception when .exit() called without .enter()
-        let session = gista#api#session({ 'apiname': 'A' })
+        let session = gista#client#session({ 'apiname': 'A' })
         Throw /session\.enter() has not been called yet/
               \ session.exit()
       End
       It throws an exception when .enter() called twice or more
-        let session = gista#api#session({ 'apiname': 'A' })
+        let session = gista#client#session({ 'apiname': 'A' })
         call session.enter()
         Throw /session\.exit() has not been called yet/
               \ session.enter()
@@ -489,7 +465,7 @@ Describe gista#api
     End
   End
 
-  Describe #throw_api_exception({response})
+  Describe #throw({response})
     It throws an API exception of {response}
       let response = {
             \ 'status': 403,
@@ -497,7 +473,7 @@ Describe gista#api
             \ 'header': [],
             \}
       Throw /403: Forbidden/
-            \ gista#api#throw_api_exception(response)
+            \ gista#client#throw(response)
     End
   End
 End

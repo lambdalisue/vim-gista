@@ -12,4 +12,3 @@ Vim.BufferManager
 ArgumentParser
 Web.API.GitHub
 Vim.Compat
-Vim.Guard

@@ -225,12 +225,12 @@ function! gista#command#list#open(...) abort
         \)
   try
     let lookup = gista#meta#get_valid_lookup(options.lookup)
-    let index  = gista#api#gists#list(lookup, options)
+    let index  = gista#resource#gists#list(lookup, options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return
   endtry
-  let client = gista#api#get_current_client()
+  let client = gista#client#get()
   let apiname = client.apiname
   let username = client.get_authorized_username()
   let opener = empty(options.opener)
@@ -285,7 +285,7 @@ function! gista#command#list#redraw() abort
         \   ? map(gista#util#mapping#help(s:MAPPING_TABLE), '"| " . v:val')
         \   : []
         \])
-  let client = gista#api#get_current_client()
+  let client = gista#client#get()
   let starred_cache = client.starred_cache.get(
         \ client.get_authorized_username(), {}
         \)
@@ -306,12 +306,12 @@ function! gista#command#list#update(...) abort
   let options = extend(b:gista.options, get(a:000, 0, {}))
   try
     let lookup = gista#meta#get_valid_lookup(options.lookup)
-    let index  = gista#api#gists#list(lookup, options)
+    let index  = gista#resource#gists#list(lookup, options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return
   endtry
-  let client = gista#api#get_current_client()
+  let client = gista#client#get()
   let apiname = client.apiname
   let username = client.get_authorized_username()
   let b:gista = {
@@ -355,7 +355,7 @@ function! s:action_edit(...) range abort
         \ g:gista#command#list#entry_openers,
         \ opener, ['edit', 1],
         \)
-  let session = gista#api#session({
+  let session = gista#client#session({
         \ 'apiname': b:gista.apiname,
         \ 'username': b:gista.username,
         \})
@@ -387,7 +387,7 @@ function! s:action_json(...) range abort
         \ g:gista#command#list#entry_openers,
         \ opener, ['edit', 1],
         \)
-  let session = gista#api#session({
+  let session = gista#client#session({
         \ 'apiname': b:gista.apiname,
         \ 'username': b:gista.username,
         \})
@@ -412,7 +412,7 @@ function! s:action_json(...) range abort
 endfunction
 function! s:action_browse(...) range abort
   let action = get(a:000, 0, 'open')
-  let session = gista#api#session({
+  let session = gista#client#session({
         \ 'apiname': b:gista.apiname,
         \ 'username': b:gista.username,
         \})
@@ -435,7 +435,7 @@ function! s:action_delete(...) range abort
   " TODO
   " Show a prompt to ask
   let cache = get(a:000, 0, 1)
-  let session = gista#api#session({
+  let session = gista#client#session({
         \ 'apiname': b:gista.apiname,
         \ 'username': b:gista.username,
         \})
@@ -456,7 +456,7 @@ function! s:action_delete(...) range abort
   endtry
 endfunction
 function! s:action_star(...) range abort
-  let session = gista#api#session({
+  let session = gista#client#session({
         \ 'apiname': b:gista.apiname,
         \ 'username': b:gista.username,
         \})
@@ -476,7 +476,7 @@ function! s:action_star(...) range abort
   endtry
 endfunction
 function! s:action_fork(...) range abort
-  let session = gista#api#session({
+  let session = gista#client#session({
         \ 'apiname': b:gista.apiname,
         \ 'username': b:gista.username,
         \})
@@ -496,7 +496,7 @@ function! s:action_fork(...) range abort
   endtry
 endfunction
 function! s:action_unstar(...) range abort
-  let session = gista#api#session({
+  let session = gista#client#session({
         \ 'apiname': b:gista.apiname,
         \ 'username': b:gista.username,
         \})

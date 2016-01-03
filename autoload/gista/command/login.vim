@@ -26,12 +26,11 @@ function! gista#command#login#call(...) abort
         \}, get(a:000, 0, {}),
         \)
   try
-    call gista#api#switch_client({
+    call gista#client#set(options.apiname, {
           \ 'verbose': options.verbose,
-          \ 'apiname': options.apiname,
           \ 'username': options.username,
           \})
-    let client = gista#api#get_current_client()
+    let client = gista#client#get()
     call gista#util#prompt#echo(printf(
           \ 'Login into %s as %s',
           \ client.apiname,
@@ -51,15 +50,12 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--apiname',
           \ 'An API name', {
-          \   'type': s:A.types.value,
-          \   'complete': function('g:gista#api#complete_apiname'),
+          \   'complete': function('g:gista#meta#complete_apiname'),
           \})
     call s:parser.add_argument(
-          \ 'username',
+          \ '--username',
           \ 'A username of an API account', {
-          \   'type': s:A.types.value,
-          \   'required': 1,
-          \   'complete': function('g:gista#api#complete_username'),
+          \   'complete': function('g:gista#meta#complete_username'),
           \})
   endif
   return s:parser

@@ -4,14 +4,11 @@ set cpo&vim
 let s:V = gista#vital()
 let s:C = s:V.import('System.Cache')
 let s:P = s:V.import('System.Filepath')
-let s:D = s:V.import('Data.Dict')
-let s:J = s:V.import('Web.JSON')
 let s:G = s:V.import('Web.API.GitHub')
 
 let s:registry = {}
 let s:current_client = {}
 
-" Private functions
 function! s:get_client_cache() abort
   if !exists('s:client_cache')
     let s:client_cache = s:C.new('memory')
@@ -25,7 +22,7 @@ function! s:get_token_cache(apiname) abort
   if s:token_cache.has(a:apiname)
     return s:token_cache.get(a:apiname)
   endif
-  let cache_file = expand(s:P.join(g:gista#api#cache_dir, 'token', a:apiname))
+  let cache_file = expand(s:P.join(g:gista#client#cache_dir, 'token', a:apiname))
   let token_cache = s:C.new('singlefile', {
         \ 'cache_file': cache_file,
         \ 'autodump': 1,
@@ -40,7 +37,7 @@ function! s:get_index_cache(apiname) abort
   if s:index_cache.has(a:apiname)
     return s:index_cache.get(a:apiname)
   endif
-  let cache_dir = expand(s:P.join(g:gista#api#cache_dir, 'index', a:apiname))
+  let cache_dir = expand(s:P.join(g:gista#client#cache_dir, 'index', a:apiname))
   let index_cache = s:C.new('file', {
         \ 'cache_dir': cache_dir,
         \})
@@ -54,7 +51,7 @@ function! s:get_gist_cache(apiname) abort
   if s:gist_cache.has(a:apiname)
     return s:gist_cache.get(a:apiname)
   endif
-  let cache_dir = expand(s:P.join(g:gista#api#cache_dir, 'gist', a:apiname))
+  let cache_dir = expand(s:P.join(g:gista#client#cache_dir, 'gist', a:apiname))
   let gist_cache = s:C.new('file', {
         \ 'cache_dir': cache_dir,
         \})
@@ -68,7 +65,7 @@ function! s:get_starred_cache(apiname) abort
   if s:starred_cache.has(a:apiname)
     return s:starred_cache.get(a:apiname)
   endif
-  let cache_dir = expand(s:P.join(g:gista#api#cache_dir, 'starred', a:apiname))
+  let cache_dir = expand(s:P.join(g:gista#client#cache_dir, 'starred', a:apiname))
   let starred_cache = s:C.new('file', {
         \ 'cache_dir': cache_dir,
         \})
@@ -93,7 +90,7 @@ function! s:validate_username(username) abort
         \)
 endfunction
 function! s:get_default_apiname() abort
-  let apiname = g:gista#api#default_apiname
+  let apiname = g:gista#client#default_apiname
   try
     call s:validate_apiname(apiname)
     return apiname
@@ -106,11 +103,14 @@ function! s:get_default_apiname() abort
   endtry
 endfunction
 function! s:get_default_username(apiname) abort
-  if type(g:gista#api#default_username) == type('')
-    let username = g:gista#api#default_username
+  if type(g:gista#client#default_username) == type('')
+    let username = g:gista#client#default_username
   else
-    let default = get(g:gista#api#default_username, '_', '')
-    let username = get(g:gista#api#default_username, a:apiname, default)
+    let default = get(g:gista#client#default_username, '_', '')
+    let username = get(g:gista#client#default_username, a:apiname, default)
+  endif
+  if empty(username)
+    return ''
   endif
   try
     call s:validate_username(username)
@@ -178,18 +178,16 @@ function! s:get_client(apiname) abort
   return client
 endfunction
 
-" Protected function
-function! gista#api#_get_available_apinames() abort
+function! gista#client#_get_available_apinames() abort
   return keys(s:registry)
 endfunction
-function! gista#api#_get_available_usernames(apiname) abort
+function! gista#client#_get_available_usernames(apiname) abort
   call s:validate_apiname(a:apiname)
   let client = s:get_client(a:apiname)
   return client.token_cache.keys()
 endfunction
 
-" Public function
-function! gista#api#register(apiname, baseurl) abort
+function! gista#client#register(apiname, baseurl) abort
   try
     call gista#util#validate#not_empty(a:apiname,
           \ 'An API name cannot be empty',
@@ -215,7 +213,7 @@ function! gista#api#register(apiname, baseurl) abort
     call gista#util#prompt#error(v:exception)
   endtry
 endfunction
-function! gista#api#unregister(apiname) abort
+function! gista#client#unregister(apiname) abort
   try
     call gista#util#validate#key_exists(
           \ a:apiname, s:registry,
@@ -227,23 +225,15 @@ function! gista#api#unregister(apiname) abort
   endtry
 endfunction
 
-function! gista#api#get_current_client() abort
+function! gista#client#get() abort
   if empty(s:current_client)
     let default_apiname  = s:get_default_apiname()
     let s:current_client = s:get_client(default_apiname)
   endif
   return s:current_client
 endfunction
-function! gista#api#get_current_apiname() abort
-  return gista#api#get_current_client().apiname
-endfunction
-function! gista#api#get_current_username() abort
-  return gista#api#get_current_client().get_authorized_username()
-endfunction
-
-function! gista#api#switch_client(apiname, ...) abort
+function! gista#client#set(apiname, ...) abort
   let options = extend({
-        \ 'verbose': 1,
         \ 'username': 0,
         \ 'permanent': 0,
         \}, get(a:000, 0, {})
@@ -260,6 +250,25 @@ function! gista#api#switch_client(apiname, ...) abort
   let s:current_client = client
   return client
 endfunction
+function! gista#client#session(...) abort
+  let options = extend({
+        \ 'apiname': '',
+        \ 'username': 0,
+        \}, get(a:000, 0, {}),
+        \)
+  let apiname = empty(options.apiname)
+        \ ? s:get_default_apiname()
+        \ : options.apiname
+  let session = extend(copy(s:session), {
+        \ 'apiname': apiname,
+        \ 'username': options.username,
+        \})
+  return session
+endfunction
+
+function! gista#client#throw(response) abort
+  call gista#util#prompt#throw(s:G.build_exception_message(a:response))
+endfunction
 
 let s:session = {}
 function! s:session.enter() abort
@@ -269,9 +278,8 @@ function! s:session.enter() abort
           \)
     return
   endif
-  let self._previous_client = gista#api#get_current_client()
-  call gista#api#switch_client(self.apiname, {
-        \ 'verbose': self.verbose,
+  let self._previous_client = gista#client#get()
+  call gista#client#set(self.apiname, {
         \ 'username': self.username,
         \ 'permanent': 0,
         \})
@@ -286,30 +294,10 @@ function! s:session.exit() abort
   let s:current_client = self._previous_client
   unlet self._previous_client
 endfunction
-function! gista#api#session(...) abort
-  let options = extend({
-        \ 'verbose': 1,
-        \ 'apiname': '',
-        \ 'username': 0,
-        \}, get(a:000, 0, {}),
-        \)
-  let apiname = empty(options.apiname)
-        \ ? s:get_default_apiname()
-        \ : options.apiname
-  let session = extend(copy(s:session), {
-        \ 'verbose': options.verbose,
-        \ 'apiname': apiname,
-        \ 'username': options.username,
-        \})
-  return session
-endfunction
 
-function! gista#api#throw_api_exception(response) abort
-  call gista#util#prompt#throw(s:G.build_exception_message(a:response))
-endfunction
 
 " Register APIs
-call gista#api#register('GitHub', 'https://api.github.com')
+call gista#client#register('GitHub', 'https://api.github.com')
 
 " Configure Web.API.GitHub
 call s:G.set_config({
@@ -320,7 +308,7 @@ call s:G.set_config({
       \})
 
 " Configure variables
-call gista#define_variables('api', {
+call gista#define_variables('client', {
       \ 'cache_dir': '~/.cache/vim-gista',
       \ 'default_apiname': 'GitHub',
       \ 'default_username': '',

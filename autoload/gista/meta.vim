@@ -4,6 +4,10 @@ set cpo&vim
 let s:V = gista#vital()
 let s:C = s:V.import('Vim.Compat')
 
+let s:CACHE_DISABLED = 0
+let s:CACHE_ENABLED = 1
+let s:CACHE_FORCED = 2
+
 " A content size limit for downloading via HTTP
 " https://developer.github.com/v3/gists/#truncation
 let s:CONTENT_SIZE_LIMIT = 10 * 1024 * 1024
@@ -25,7 +29,7 @@ function! gista#meta#validate_filename(filename) abort
         \)
 endfunction
 function! gista#meta#validate_lookup(lookup) abort
-  let client = gista#api#get_current_client()
+  let client = gista#client#get()
   let username = client.get_authorized_username()
   if !empty(username)
         \ && (a:lookup ==# username || a:lookup ==# username . '/starred')
@@ -56,7 +60,7 @@ endfunction
 function! gista#meta#get_valid_filename(gist_or_gistid, filename) abort
   if empty(a:filename)
     if type(a:gist_or_gistid) == type('')
-      let client = gista#api#get_current_client()
+      let client = gista#client#get()
       let gistid = gista#meta#get_valid_gistid(a:gist_or_gistid)
       let gist   = client.gist_cache.get(gistid, {})
     else
@@ -92,7 +96,7 @@ function! gista#meta#get_valid_filename(gist_or_gistid, filename) abort
   return filename
 endfunction
 function! gista#meta#get_valid_lookup(lookup) abort
-  let client = gista#api#get_current_client()
+  let client = gista#client#get()
   let username = client.get_authorized_username()
   let lookup = empty(a:lookup)
         \ ? empty(g:gista#command#list#default_lookup)
@@ -109,10 +113,12 @@ function! gista#meta#get_valid_lookup(lookup) abort
 endfunction
 
 function! gista#meta#get_available_gistids() abort
-  let client = gista#api#get_current_client()
+  let client = gista#client#get()
   let lookup = client.get_authorized_username()
   let lookup = empty(lookup) ? 'public' : lookup
-  let index = gista#api#gists#cache#list(lookup)
+  let index = gista#resource#gists#list(lookup, {
+        \ 'cache': s:CACHE_FORCED,
+        \})
   return map(copy(index.entries), 'v:val.id')
 endfunction
 function! gista#meta#get_available_filenames(gist) abort
@@ -124,7 +130,7 @@ function! gista#meta#get_available_filenames(gist) abort
 endfunction
 
 function! gista#meta#complete_apiname(arglead, cmdline, cursorpos, ...) abort
-  let apinames = gista#api#_get_available_apiname()
+  let apinames = gista#client#_get_available_apiname()
   return filter(apinames, 'v:val =~# "^" . a:arglead')
 endfunction
 function! gista#meta#complete_username(arglead, cmdline, cursorpos, ...) abort
@@ -132,11 +138,12 @@ function! gista#meta#complete_username(arglead, cmdline, cursorpos, ...) abort
         \ 'apiname': '',
         \}, get(a:000, 0, {}),
         \)
+  let client = gista#client#get()
   let apiname = empty(options.apiname)
-        \ ? gista#api#get_current_apiname()
+        \ ? client.apiname
         \ : options.apiname
   try
-    let usernames = gista#api#_get_available_username(apiname)
+    let usernames = gista#client#_get_available_username(apiname)
     return filter(usernames, 'v:val =~# "^" . a:arglead')
   catch /^vim-gista: ValidationError:/
     return []
@@ -153,12 +160,20 @@ function! gista#meta#complete_filename(arglead, cmdline, cursorpos, ...) abort
         \ 'gistid': '',
         \}, get(a:000, 0, {}),
         \)
+  let gistid = options.gistid
   try
-    call gista#meta#validate_gistid(options.gistid)
-    let clinet = gista#api#get_current_client()
-    let gist = gista#api#gists#cache#get(options.gistid)
+    call gista#meta#validate_gistid(gistid)
+    let gist = gista#resource#gists#get(gistid, {
+          \ 'cache': s:CACHE_FORCED,
+          \})
     if gist._gista_fetched == 0
-      let gist = gista#api#gists#cache#retrieve_index_entry(options.gistid)
+      let client = gista#client#get()
+      let username = client.get_authorized_username()
+      let gist = gista#resource#gists#_retrieve_entry_entry(client, gistid, [
+            \ username,
+            \ empty(username) ? '' : username . '/starred',
+            \ 'public',
+            \])
     endif
     let filenames = gista#meta#get_available_filenames(gist)
     return filter(filenames, 'v:val =~# "^" . a:arglead')
@@ -168,9 +183,9 @@ function! gista#meta#complete_filename(arglead, cmdline, cursorpos, ...) abort
 endfunction
 function! gista#meta#complete_lookup(arglead, cmdline, cursorpos, ...) abort
   try
-    let clinet = gista#api#get_current_client()
+    let client = gista#client#get()
     let lookups = extend([
-          \ gista#api#get_current_username(),
+          \ client.get_authorized_username(),
           \ 'starred',
           \ 'public',
           \], client.token_cache.keys()

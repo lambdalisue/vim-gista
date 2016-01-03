@@ -22,30 +22,37 @@ endfunction
 function! gista#command#delete#call(...) abort
   let options = extend({
         \ 'gistid': '',
-        \ 'cache': 0,
+        \ 'filename': '',
+        \ 'force': 0,
         \}, get(a:000, 0, {}),
         \)
   try
     let gistid = gista#meta#get_valid_gistid(options.gistid)
-    let gist   = gista#api#gists#delete(gistid, options)
-    let client = gista#api#get_current_client()
-    call gista#util#doautocmd('CacheUpdatePost')
-    redraw
-    if options.cache
-      call gista#util#prompt#echo(printf(
-            \ 'A gist %s is removed from a local cache',
-            \ gist.id,
+    if empty(options.filename)
+      call gista#resource#gists#delete(gistid, options)
+      call gista#util#doautocmd('CacheUpdatePost')
+      let client = gista#client#get()
+      redraw | call gista#util#prompt#echo(printf(
+            \ 'A gist %s is removed from %s',
+            \ gistid, client.apiname,
             \))
     else
-      call gista#util#prompt#echo(printf(
-            \ 'A gist %s is removed from %s',
-            \ gist.id, client.apiname,
+      let filename = gista#meta#get_valid_filename(
+            \ options.gistid, options.filename,
+            \)
+      call gista#resource#gists#patch(gistid, {
+            \ 'force': options.force,
+            \ 'files': { filename : {} },
+            \})
+      call gista#util#doautocmd('CacheUpdatePost')
+      let client = gista#client#get()
+      redraw | call gista#util#prompt#echo(printf(
+            \ 'A %s is removed from a gist %s in %s',
+            \ filename, gistid, client.apiname,
             \))
     endif
-    return gist
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
-    return ''
   endtry
 endfunction
 
@@ -53,11 +60,11 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
           \ 'name': 'Gista delete',
-          \ 'description': 'Delete a gist',
+          \ 'description': 'Delete a gist or a file in a gist',
           \})
     call s:parser.add_argument(
-          \ '--cache',
-          \ 'Delete a gist only from the cache', {
+          \ '--force',
+          \ 'Delete a gist even a remote content of the gist is modified', {
           \   'default': 0,
           \   'deniable': 1,
           \})
@@ -65,7 +72,11 @@ function! s:get_parser() abort
           \ 'gistid',
           \ 'A gist ID', {
           \   'complete': function('g:gista#meta#complete_gistid'),
-          \   'type': s:A.types.value,
+          \})
+    call s:parser.add_argument(
+          \ 'filename',
+          \ 'A filename', {
+          \   'complete': function('g:gista#meta#complete_filename'),
           \})
   endif
   return s:parser

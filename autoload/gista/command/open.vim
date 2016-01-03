@@ -36,8 +36,8 @@ function! gista#command#open#read(...) abort
       let gistid   = gista#meta#get_valid_gistid(options.gistid)
       let filename = gista#meta#get_valid_filename(gistid, options.filename)
     endif
-    let gist = gista#api#gists#get(gistid, options)
-    let file = gista#api#gists#file(gist, filename, options)
+    let gist = gista#resource#gists#get(gistid, options)
+    let file = gista#resource#gists#file(gistid, filename, options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
   endtry
@@ -65,13 +65,13 @@ function! gista#command#open#edit(...) abort
       let gistid   = gista#meta#get_valid_gistid(options.gistid)
       let filename = gista#meta#get_valid_filename(gistid, options.filename)
     endif
-    let gist = gista#api#gists#get(gistid, options)
-    let file = gista#api#gists#file(gist, filename, options)
+    let gist = gista#resource#gists#get(gistid, options)
+    let file = gista#resource#gists#file(gistid, filename, options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return
   endtry
-  let client = gista#api#get_current_client()
+  let client = gista#client#get()
   let apiname = client.apiname
   let username = client.get_authorized_username()
   let b:gista = {
@@ -85,7 +85,7 @@ function! gista#command#open#edit(...) abort
         \ split(file.content, '\r\?\n'),
         \ printf('%s.%s', tempname(), fnamemodify(filename, ':e')),
         \)
-  if gista#api#gists#get_gist_owner(gist) ==# username
+  if gista#resource#gists#get_gist_owner(gist) ==# username
     augroup vim_gista_write_file
       autocmd! * <buffer>
       autocmd BufWriteCmd  <buffer> call gista#autocmd#call('BufWriteCmd')
@@ -140,7 +140,7 @@ function! gista#command#open#bufname(...) abort
     call s:handle_exception(v:exception)
     return
   endtry
-  let client = gista#api#get_current_client()
+  let client = gista#client#get()
   let apiname = client.apiname
   return printf('gista-file:%s:%s:%s',
         \ client.apiname, gistid, filename,
@@ -168,13 +168,11 @@ function! s:get_parser() abort
           \ 'gistid',
           \ 'A gist ID', {
           \   'complete': function('g:gista#meta#complete_gistid'),
-          \   'type': s:A.types.value,
           \})
     call s:parser.add_argument(
           \ 'filename',
           \ 'A filename', {
           \   'complete': function('g:gista#meta#complete_filename'),
-          \   'type': s:A.types.value,
           \})
   endif
   return s:parser

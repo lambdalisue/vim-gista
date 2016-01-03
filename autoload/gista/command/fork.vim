@@ -27,9 +27,9 @@ function! gista#command#fork#call(...) abort
         \)
   try
     let gistid = gista#meta#get_valid_gistid(options.gistid)
-    let gist = gista#api#fork#post(gistid, options)
-    let client = gista#api#get_current_client()
+    let gist = gista#resource#forks#post(gistid, options)
     call gista#util#doautocmd('CacheUpdatePost')
+    let client = gista#client#get()
     redraw
     call gista#util#prompt#echo(printf(
           \ 'A gist %s in %s is forked to %s',

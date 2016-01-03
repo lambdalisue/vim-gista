@@ -19,7 +19,7 @@ function! s:interactive_description(options) abort
   if empty(a:options.description) && !g:gista#command#post#allow_empty_description
     call gista#util#prompt#throw(
           \ 'An empty description is not allowed',
-          \ 'See ":help g:gista#api#gists#patch_allow_empty_description" for detail',
+          \ 'See ":help g:gista#command#post#allow_empty_description" for detail',
           \)
   endif
 endfunction
@@ -54,12 +54,12 @@ function! gista#command#post#call(...) abort
         \ { 'content': content },
         \]
   try
-    let gist = gista#api#gists#post(
+    let gist = gista#resource#gists#post(
           \ options.filenames,
           \ options.contents,
           \ options,
           \)
-    let client = gista#api#get_current_client()
+    let client = gista#client#get()
     let bufname = gista#command#open#bufname({
           \ 'gistid': gist.id,
           \ 'filename': filename,
