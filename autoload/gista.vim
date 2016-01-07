@@ -22,6 +22,12 @@ function! gista#define_variables(prefix, defaults) abort
   endfor
 endfunction
 
+function! gista#indicate(options, message) abort
+  if get(a:options, 'verbose')
+    redraw | call gista#util#prompt#echo(a:message)
+  endif
+endfunction
+
 call gista#define_variables('', {
       \ 'debug': 0,
       \ 'develop': 1,
