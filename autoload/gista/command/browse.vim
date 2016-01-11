@@ -117,9 +117,9 @@ function! gista#command#browse#command(...) abort
         \ deepcopy(g:gista#command#browse#default_options),
         \ options,
         \)
-  if options.yank
+  if get(options, 'yank')
     call gista#command#browse#yank(options)
-  elseif options.echo
+  elseif get(options, 'echo')
     call gista#command#browse#echo(options)
   else
     call gista#command#browse#open(options)

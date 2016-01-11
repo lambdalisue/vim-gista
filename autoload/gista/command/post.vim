@@ -48,6 +48,9 @@ function! gista#command#post#call(...) abort
         \)
   call s:interactive_description(options)
   let filename = fnamemodify(gista#meta#guess_filename('%'), ':t')
+  let filename = empty(filename)
+        \ ? 'gista-file'
+        \ : filename
   let content  = join(call('getline', options.__range__), "\n")
   let options.filenames = [ filename ]
   let options.contents  = [

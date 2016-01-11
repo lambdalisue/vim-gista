@@ -385,7 +385,12 @@ function! gista#resource#gists#post(filenames, contents, ...) abort
         \ 'public': options.public ? s:J.true : s:J.false,
         \ 'files': {},
         \}
+  let counter = 1
   for [filename, content] in s:L.zip(a:filenames, a:contents)
+    if empty(filename)
+      let filename = printf('gista-file%d', counter)
+      let counter += 1
+    endif
     let gist.files[filename] = content
   endfor
 
