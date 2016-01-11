@@ -27,6 +27,9 @@ function! gista#command#patch#call(...) abort
         \)
   let filename = fnamemodify(gista#meta#guess_filename('%'), ':t')
   let content  = join(call('getline', options.__range__), "\n")
+  let content  = content =~# '\r?\n$'
+        \ ? content
+        \ : content . "\n"
   let options.filenames = [ filename ]
   let options.contents  = [
         \ { 'content': content },

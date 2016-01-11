@@ -52,6 +52,9 @@ function! gista#command#post#call(...) abort
         \ ? 'gista-file'
         \ : filename
   let content  = join(call('getline', options.__range__), "\n")
+  let content  = content =~# '\r?\n$'
+        \ ? content
+        \ : content . "\n"
   let options.filenames = [ filename ]
   let options.contents  = [
         \ { 'content': content },
