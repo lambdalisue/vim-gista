@@ -7,6 +7,7 @@ let s:A = s:V.import('ArgumentParser')
 function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
+        \ '^vim-gista: Cancel',
         \ '^vim-gista: Login canceled',
         \ '^vim-gista: ValidationError:',
         \]
@@ -29,15 +30,10 @@ function! gista#command#open#read(...) abort
         \}, get(a:000, 0, {}),
         \)
   try
-    if !empty(options.gist)
-      let gistid   = options.gist.id
-      let filename = gista#meta#get_valid_filename(options.gist, options.filename)
-    else
-      let gistid   = gista#meta#get_valid_gistid(options.gistid)
-      let filename = gista#meta#get_valid_filename(gistid, options.filename)
-    endif
-    let gist = gista#resource#gists#get(gistid, options)
-    let file = gista#resource#gists#file(gistid, filename, options)
+    let gistid   = gista#option#get_valid_gistid(options)
+    let filename = gista#option#get_valid_filename(options)
+    let gist = gista#resource#remote#get(gistid, options)
+    let file = gista#resource#remote#file(gist, filename, options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
   endtry
@@ -58,15 +54,10 @@ function! gista#command#open#edit(...) abort
         \}, get(a:000, 0, {})
         \)
   try
-    if !empty(options.gist)
-      let gistid   = options.gist.id
-      let filename = gista#meta#get_valid_filename(options.gist, options.filename)
-    else
-      let gistid   = gista#meta#get_valid_gistid(options.gistid)
-      let filename = gista#meta#get_valid_filename(gistid, options.filename)
-    endif
-    let gist = gista#resource#gists#get(gistid, options)
-    let file = gista#resource#gists#file(gistid, filename, options)
+    let gistid   = gista#option#get_valid_gistid(options)
+    let filename = gista#option#get_valid_filename(options)
+    let gist = gista#resource#remote#get(gistid, options)
+    let file = gista#resource#remote#file(gist, filename, options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return
@@ -85,7 +76,7 @@ function! gista#command#open#edit(...) abort
         \ split(file.content, '\r\?\n'),
         \ printf('%s.%s', tempname(), fnamemodify(filename, ':e')),
         \)
-  if gista#resource#gists#get_gist_owner(gist) ==# username
+  if get(get(gist, 'owner', {}), 'login', '') ==# username
     augroup vim_gista_write_file
       autocmd! * <buffer>
       autocmd BufWriteCmd  <buffer> call gista#autocmd#call('BufWriteCmd')
@@ -129,13 +120,8 @@ function! gista#command#open#bufname(...) abort
         \}, get(a:000, 0, {})
         \)
   try
-    if !empty(options.gist)
-      let gistid   = options.gist.id
-      let filename = gista#meta#get_valid_filename(options.gist, options.filename)
-    else
-      let gistid   = gista#meta#get_valid_gistid(options.gistid)
-      let filename = gista#meta#get_valid_filename(gistid, options.filename)
-    endif
+    let gistid   = gista#option#get_valid_gistid(options)
+    let filename = gista#option#get_valid_filename(options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return
@@ -167,12 +153,12 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#meta#complete_gistid'),
+          \   'complete': function('g:gista#option#complete_gistid'),
           \})
     call s:parser.add_argument(
           \ 'filename',
           \ 'A filename', {
-          \   'complete': function('g:gista#meta#complete_filename'),
+          \   'complete': function('g:gista#option#complete_filename'),
           \})
   endif
   return s:parser
@@ -183,8 +169,8 @@ function! gista#command#open#command(...) abort
   if empty(options)
     return
   endif
-  call gista#meta#assign_gistid(options, '%')
-  call gista#meta#assign_filename(options, '%')
+  call gista#option#assign_gistid(options, '%')
+  call gista#option#assign_filename(options, '%')
   " extend default options
   let options = extend(
         \ deepcopy(g:gista#command#open#default_options),

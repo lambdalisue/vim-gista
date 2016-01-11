@@ -48,7 +48,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--apiname',
           \ 'An API name', {
-          \   'complete': function('g:gista#meta#complete_apiname'),
+          \   'complete': function('gista#option#complete_apiname'),
           \})
   endif
   return s:parser

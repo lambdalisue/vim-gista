@@ -178,10 +178,10 @@ function! s:get_client(apiname) abort
   return client
 endfunction
 
-function! gista#client#_get_available_apinames() abort
+function! gista#client#get_available_apinames() abort
   return keys(s:registry)
 endfunction
-function! gista#client#_get_available_usernames(apiname) abort
+function! gista#client#get_available_usernames(apiname) abort
   call s:validate_apiname(a:apiname)
   let client = s:get_client(a:apiname)
   return client.token_cache.keys()

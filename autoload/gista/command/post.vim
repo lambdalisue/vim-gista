@@ -24,10 +24,10 @@ function! s:interactive_description(options) abort
   endif
 endfunction
 
-
 function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
+        \ '^vim-gista: Cancel',
         \ '^vim-gista: Login canceled',
         \ '^vim-gista: ValidationError:',
         \]
@@ -47,7 +47,7 @@ function! gista#command#post#call(...) abort
         \}, get(a:000, 0, {}),
         \)
   call s:interactive_description(options)
-  let filename = fnamemodify(gista#meta#guess_filename('%'), ':t')
+  let filename = fnamemodify(gista#option#guess_filename('%'), ':t')
   let filename = empty(filename)
         \ ? 'gista-file'
         \ : filename
@@ -60,7 +60,7 @@ function! gista#command#post#call(...) abort
         \ { 'content': content },
         \]
   try
-    let gist = gista#resource#gists#post(
+    let gist = gista#resource#remote#post(
           \ options.filenames,
           \ options.contents,
           \ options,
@@ -73,7 +73,7 @@ function! gista#command#post#call(...) abort
     silent execute printf('file %s', bufname)
     call gista#util#doautocmd('CacheUpdatePost')
     redraw
-    call gista#util#prompt#echo(printf(
+    call gista#indicate(options, printf(
           \ 'A content of the current buffer is posted to a gist %s in %s',
           \ gist.id, client.apiname,
           \))

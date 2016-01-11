@@ -10,7 +10,9 @@ let s:config.authorize_scopes = []
 let s:config.authorize_note = printf('vim@%s:%s', hostname(), localtime())
 let s:config.authorize_note_url = ''
 let s:config.skip_authentication = 0
-let s:config.retrieve_python = has('python') || has('python3')
+let s:config.retrieve_python =
+      \ (v:version >= 704 || (v:version == 703 && has('patch601')))
+      \ && has('python') || has('python3')
 let s:config.retrieve_python_nprocess = 50
 let s:config.retrieve_per_page = 100
 let s:config.retrieve_indicator =
@@ -256,6 +258,9 @@ function! s:_retrieve_vim(client, settings) abort " {{{
 endfunction " }}}
 " @vimlint(EVL102, 1, l:kwargs)
 function! s:_retrieve_python(client, settings) abort " {{{
+  if !(v:version >= 704 || (v:version == 703 && has('patch601')))
+    call s:_throw('Vim 7.3.600 or earlier is not supported')
+  endif
   let kwargs = extend(copy(a:settings.param), {
         \ 'verbose': a:settings.verbose,
         \ 'url': a:client.get_absolute_url(a:settings.url),

@@ -38,8 +38,12 @@ let s:MAPPING_TABLE = {
       \ '<Plug>(gista-browse-open)': 'Browse a URL of a selected gist in a system browser',
       \ '<Plug>(gista-browse-yank)': 'Yank a URL of a selected gist',
       \ '<Plug>(gista-browse-echo)': 'Echo a URL of a selected gist',
-      \ '<Plug>(gista-delete)': 'Delete a selected gist from a local cache',
-      \ '<Plug>(gista-DELETE)': 'Delete a selected gist from the remote',
+      \ '<Plug>(gista-rename)': 'Rename a file in a selected gist',
+      \ '<Plug>(gista-RENAME)': 'Rename a file in a selected gist (forcedly)',
+      \ '<Plug>(gista-remove)': 'Remove a file in a selected gist from the remote',
+      \ '<Plug>(gista-REMOVE)': 'Remove a file in a selected gist from the remote (forcedly)',
+      \ '<Plug>(gista-delete)': 'Delete a selected gist from the remote',
+      \ '<Plug>(gista-DELETE)': 'Delete a selected gist from the remote (forcedly)',
       \ '<Plug>(gista-fork)': 'Fork a selected gist',
       \ '<Plug>(gista-star)': 'Star a selected gist',
       \ '<Plug>(gista-unstar)': 'Unstar a selected gist',
@@ -54,11 +58,10 @@ function! s:format_entry(entry, starred_cache) abort
   let gistid = a:entry.public
         \ ? 'gistid:' . a:entry.id
         \ : 'gistid:' . s:PRIVATE_GISTID
-  let fetched  = a:entry._gista_fetched  ? '=' : '-'
-  "let modified = a:entry._gista_modified ? '*' : ' '
-  let modified = get(a:starred_cache, a:entry.id) ? '*' : ' '
+  let fetched = a:entry._gista_fetched  ? '=' : '-'
+  let starred = get(a:starred_cache, a:entry.id) ? '*' : ' '
   let mode    = s:get_current_mode(a:entry)
-  let prefix = fetched . ' ' . mode . ' ' . modified . ' '
+  let prefix = fetched . ' ' . mode . ' ' . starred . ' '
   let suffix = ' ' . gistid
   let width = winwidth(0) - strdisplaywidth(prefix . suffix)
   let description = empty(a:entry.description)
@@ -72,6 +75,22 @@ endfunction
 function! s:get_entry(index) abort
   let index = a:index - s:entry_offset
   return index >= 0 ? get(b:gista.entries, index, {}) : {}
+endfunction
+function! s:sort_entries(entries, ...) abort
+  let field = get(a:000, 0, '')
+  if empty(field)
+    let index = s:get_current_mode_index()
+    let field = s:MODES[index]
+  endif
+  let namespace = {
+        \ 'field': field
+        \}
+  return reverse(sort(a:entries, function('s:_sort_entries'), namespace))
+endfunction
+function! s:_sort_entries(lhs, rhs) dict abort
+  let lhs = a:lhs[self.field]
+  let rhs = a:rhs[self.field]
+  return lhs ==# rhs ? 0 : lhs > rhs ? 1 : -1
 endfunction
 
 function! s:get_current_mode_index() abort
@@ -164,10 +183,18 @@ function! s:define_plugin_mappings() abort
         \ :call <SID>action('browse', 'yank')<CR>
   noremap <buffer><silent> <Plug>(gista-browse-echo)
         \ :call <SID>action('browse', 'echo')<CR>
+  noremap <buffer><silent> <Plug>(gista-rename)
+        \ :call <SID>action('rename', 0)<CR>
+  noremap <buffer><silent> <Plug>(gista-RENAME)
+        \ :call <SID>action('rename', 1)<CR>
+  noremap <buffer><silent> <Plug>(gista-remove)
+        \ :call <SID>action('remove', 0)<CR>
+  noremap <buffer><silent> <Plug>(gista-REMOVE)
+        \ :call <SID>action('remove', 1)<CR>
   noremap <buffer><silent> <Plug>(gista-delete)
-        \ :call <SID>action('delete', 1)<CR>
-  noremap <buffer><silent> <Plug>(gista-DELETE)
         \ :call <SID>action('delete', 0)<CR>
+  noremap <buffer><silent> <Plug>(gista-DELETE)
+        \ :call <SID>action('delete', 1)<CR>
   noremap <buffer><silent> <Plug>(gista-star)
         \ :call <SID>action('star')<CR>
   noremap <buffer><silent> <Plug>(gista-unstar)
@@ -194,16 +221,21 @@ function! s:define_default_mappings() abort
   map <buffer> pj <Plug>(gista-json-preview)
   map <buffer> bb <Plug>(gista-browse-open)
   map <buffer> yy <Plug>(gista-browse-yank)
+  map <buffer> rr <Plug>(gista-rename)
+  map <buffer> RR <Plug>(gista-RENAME)
+  map <buffer> df <Plug>(gista-remove)
+  map <buffer> DF <Plug>(gista-REMOVE)
   map <buffer> dd <Plug>(gista-delete)
   map <buffer> DD <Plug>(gista-DELETE)
   map <buffer> ++ <Plug>(gista-star)
   map <buffer> -- <Plug>(gista-unstar)
-  map <buffer> FF <Plug>(gista-fork)
+  map <buffer> ff <Plug>(gista-fork)
 endfunction
 
 function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
+        \ '^vim-gista: Cancel',
         \ '^vim-gista: Login canceled',
         \ '^vim-gista: ValidationError:',
         \]
@@ -223,8 +255,8 @@ function! gista#command#list#call(...) abort
         \}, get(a:000, 0, {})
         \)
   try
-    let lookup = gista#meta#get_valid_lookup(options.lookup)
-    let index  = gista#resource#gists#list(lookup, options)
+    let lookup = gista#option#get_valid_lookup(options)
+    let index  = gista#resource#remote#list(lookup, options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return
@@ -239,8 +271,8 @@ function! gista#command#list#open(...) abort
         \}, get(a:000, 0, {})
         \)
   try
-    let lookup = gista#meta#get_valid_lookup(options.lookup)
-    let index  = gista#resource#gists#list(lookup, options)
+    let lookup = gista#option#get_valid_lookup(options)
+    let index  = gista#resource#remote#list(lookup, options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return
@@ -263,7 +295,7 @@ function! gista#command#list#open(...) abort
         \ 'apiname': apiname,
         \ 'username': username,
         \ 'lookup': lookup,
-        \ 'entries': index.entries,
+        \ 'entries': s:sort_entries(index.entries),
         \ 'options': s:D.omit(options, ['cache']),
         \ 'content_type': 'list',
         \}
@@ -290,8 +322,6 @@ function! gista#command#list#redraw() abort
           \ 'redraw() requires to be called in a gista-list buffer'
           \)
   endif
-  redraw
-  call gista#util#prompt#echo('Formatting gist entries to display ...')
   let prologue = s:L.flatten([
         \ g:gista#command#list#show_status_string_in_prologue
         \   ? [gista#command#list#get_status_string() . ' | Press ? to toggle a mapping help']
@@ -304,13 +334,15 @@ function! gista#command#list#redraw() abort
   let starred_cache = client.starred_cache.get(
         \ client.get_authorized_username(), {}
         \)
+  redraw
+  call gista#util#prompt#echo('Formatting gist entries to display ...')
   let contents = map(
         \ copy(b:gista.entries),
         \ 's:format_entry(v:val, starred_cache)'
         \)
   let s:entry_offset = len(prologue)
   call gista#util#buffer#edit_content(extend(prologue, contents))
-  redraw
+  redraw | echo
 endfunction
 function! gista#command#list#update(...) abort
   if &filetype !=# 'gista-list'
@@ -320,8 +352,8 @@ function! gista#command#list#update(...) abort
   endif
   let options = extend(b:gista.options, get(a:000, 0, {}))
   try
-    let lookup = gista#meta#get_valid_lookup(options.lookup)
-    let index  = gista#resource#gists#list(lookup, options)
+    let lookup = gista#option#get_valid_lookup(options)
+    let index  = gista#resource#remote#list(lookup, options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return
@@ -334,7 +366,7 @@ function! gista#command#list#update(...) abort
         \ 'apiname': apiname,
         \ 'username': username,
         \ 'lookup': lookup,
-        \ 'entries': index.entries,
+        \ 'entries': s:sort_entries(index.entries),
         \ 'options': options,
         \ 'content_type': 'list',
         \}
@@ -349,11 +381,22 @@ function! s:on_WinEnter() abort
     call gista#command#list#redraw()
   endif
 endfunction
+function! s:on_GistaCacheUpdatePost() abort
+  let winnum = winnr()
+  keepjump windo
+        \ if &filetype ==# 'gista-list' |
+        \   call s:action_update(1) |
+        \ endif
+  execute printf('keepjump %dwincmd w', winnum)
+endfunction
 
 function! s:action(name, ...) range abort
   let fname = printf('s:action_%s', a:name)
   if !exists('*' . fname)
-    throw printf('vim-gista: Unknown action name "%s" is called.', a:name)
+    call gista#util#prompt#throw(printf(
+          \ 'Unknown action name "%s" is called.',
+          \ a:name,
+          \))
   endif
   " Call action function with a:firstline and a:lastline propagation
   execute printf(
@@ -446,10 +489,52 @@ function! s:action_browse(...) range abort
     call session.exit()
   endtry
 endfunction
+function! s:action_rename(...) range abort
+  let force = get(a:000, 0, 1)
+  let session = gista#client#session({
+        \ 'apiname': b:gista.apiname,
+        \ 'username': b:gista.username,
+        \})
+  try
+    call session.enter()
+    for n in range(a:firstline, a:lastline)
+      let entry = s:get_entry(n - 1)
+      if empty(entry)
+        continue
+      endif
+      call gista#command#rename#call({
+            \ 'gist': entry,
+            \ 'force': force,
+            \})
+    endfor
+  finally
+    call session.exit()
+  endtry
+endfunction
+function! s:action_remove(...) range abort
+  let force = get(a:000, 0, 1)
+  let session = gista#client#session({
+        \ 'apiname': b:gista.apiname,
+        \ 'username': b:gista.username,
+        \})
+  try
+    call session.enter()
+    for n in range(a:firstline, a:lastline)
+      let entry = s:get_entry(n - 1)
+      if empty(entry)
+        continue
+      endif
+      call gista#command#remove#call({
+            \ 'gist': entry,
+            \ 'force': force,
+            \})
+    endfor
+  finally
+    call session.exit()
+  endtry
+endfunction
 function! s:action_delete(...) range abort
-  " TODO
-  " Show a prompt to ask
-  let cache = get(a:000, 0, 1)
+  let force = get(a:000, 0, 1)
   let session = gista#client#session({
         \ 'apiname': b:gista.apiname,
         \ 'username': b:gista.username,
@@ -463,7 +548,7 @@ function! s:action_delete(...) range abort
       endif
       call gista#command#delete#call({
             \ 'gistid': entry.id,
-            \ 'cache': cache,
+            \ 'force': force,
             \})
     endfor
   finally
@@ -566,7 +651,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'lookup',
           \ 'Gists lookup', {
-          \   'complete': function('gista#meta#complete_lookup'), 
+          \   'complete': function('gista#option#complete_lookup'), 
           \})
     call s:parser.add_argument(
           \ '--cache',
@@ -656,13 +741,13 @@ function! gista#command#list#get_status_string() abort
         \ s:MODES[s:get_current_mode_index()]
         \)
 endfunction
+function! gista#command#list#sort_entries(...) abort
+  return call('s:sort_entries', a:000)
+endfunction
 
 augroup vim_gista_update_list
   autocmd!
-  autocmd User GistaCacheUpdatePost windo
-        \ if &filetype ==# 'gista-list' |
-        \   call s:action_update(1) |
-        \ endif
+  autocmd User GistaCacheUpdatePost call s:on_GistaCacheUpdatePost()
 augroup END
 
 call gista#define_variables('command#list', {

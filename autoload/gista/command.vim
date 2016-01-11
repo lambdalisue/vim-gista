@@ -52,13 +52,13 @@ function! s:get_parser() abort
           \ '--apiname', [
           \   'A temporary API name used only in this command execution',
           \ ], {
-          \   'complete': function('gista#meta#complete_apiname'),
+          \   'complete': function('gista#option#complete_apiname'),
           \})
     call s:parser.add_argument(
           \ '--username', [
           \   'Temporary login as USERNAME only in this command execution',
           \ ], {
-          \   'complete': function('gista#meta#complete_username'),
+          \   'complete': function('gista#option#complete_username'),
           \   'conflicts': ['anonymous'],
           \})
     call s:parser.add_argument(
@@ -72,11 +72,13 @@ function! s:get_parser() abort
           \   'An action name of vim-gista. The following actions are available:',
           \   '- login  : Login to a specified username of a specified API',
           \   '- logout : Logout from a specified API',
+          \   '- status : Show a current API status',
           \   '- open   : Get and open a file of a gist',
           \   '- json   : Get and open a gist as a json file',
           \   '- list   : List gist entries of a lookup',
           \   '- post   : Post content(s) to a gist',
           \   '- patch  : Post content to an existing gist',
+          \   '- remove : Remove a file of an existing gist',
           \   '- delete : Delete an existing gist',
           \   '- browse : Browse an existing gist in a system browser',
           \   '- fork   : Fork an existing gist',
@@ -194,6 +196,10 @@ call gista#command#register('patch',
 call gista#command#register('rename',
       \ 'gista#command#rename#command',
       \ 'gista#command#rename#complete',
+      \)
+call gista#command#register('remove',
+      \ 'gista#command#remove#command',
+      \ 'gista#command#remove#complete',
       \)
 call gista#command#register('delete',
       \ 'gista#command#delete#command',

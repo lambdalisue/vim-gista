@@ -7,6 +7,7 @@ let s:A = s:V.import('ArgumentParser')
 function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
+        \ '^vim-gista: Cancel',
         \ '^vim-gista: Login canceled',
         \ '^vim-gista: ValidationError:',
         \]
@@ -22,35 +23,18 @@ endfunction
 function! gista#command#delete#call(...) abort
   let options = extend({
         \ 'gistid': '',
-        \ 'filename': '',
         \ 'force': 0,
         \}, get(a:000, 0, {}),
         \)
   try
-    let gistid = gista#meta#get_valid_gistid(options.gistid)
-    if empty(options.filename)
-      call gista#resource#gists#delete(gistid, options)
-      call gista#util#doautocmd('CacheUpdatePost')
-      let client = gista#client#get()
-      redraw | call gista#util#prompt#echo(printf(
-            \ 'A gist %s is removed from %s',
-            \ gistid, client.apiname,
-            \))
-    else
-      let filename = gista#meta#get_valid_filename(
-            \ options.gistid, options.filename,
-            \)
-      call gista#resource#gists#patch(gistid, {
-            \ 'force': options.force,
-            \ 'files': { filename : {} },
-            \})
-      call gista#util#doautocmd('CacheUpdatePost')
-      let client = gista#client#get()
-      redraw | call gista#util#prompt#echo(printf(
-            \ 'A %s is removed from a gist %s in %s',
-            \ filename, gistid, client.apiname,
-            \))
-    endif
+    let gistid = gista#option#get_valid_gistid(options)
+    call gista#resource#remote#delete(gistid, options)
+    call gista#util#doautocmd('CacheUpdatePost')
+    let client = gista#client#get()
+    call gista#indicate(options, printf(
+          \ 'A gist %s is deleted from %s',
+          \ gistid, client.apiname,
+          \))
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
   endtry
@@ -60,7 +44,7 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
           \ 'name': 'Gista delete',
-          \ 'description': 'Delete a gist or a file in a gist',
+          \ 'description': 'Delete a gist',
           \})
     call s:parser.add_argument(
           \ '--force',
@@ -71,12 +55,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#meta#complete_gistid'),
-          \})
-    call s:parser.add_argument(
-          \ 'filename',
-          \ 'A filename', {
-          \   'complete': function('g:gista#meta#complete_filename'),
+          \   'complete': function('g:gista#option#complete_gistid'),
           \})
   endif
   return s:parser
@@ -87,7 +66,7 @@ function! gista#command#delete#command(...) abort
   if empty(options)
     return
   endif
-  call gista#meta#assign_gistid(options, '%')
+  call gista#option#assign_gistid(options, '%')
   " extend default options
   let options = extend(
         \ deepcopy(g:gista#command#delete#default_options),

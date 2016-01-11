@@ -7,6 +7,7 @@ let s:A = s:V.import('ArgumentParser')
 function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
+        \ '^vim-gista: Cancel',
         \ '^vim-gista: Login canceled',
         \ '^vim-gista: ValidationError:',
         \]
@@ -24,11 +25,11 @@ function! gista#command#unstar#call(...) abort
         \}, get(a:000, 0, {}),
         \)
   try
-    let gistid = gista#meta#get_valid_gistid(options.gistid)
+    let gistid = gista#option#get_valid_gistid(options)
     let client = gista#client#get()
-    call gista#resource#star#delete(gistid, options)
+    call gista#resource#remote#unstar(gistid, options)
     call gista#util#doautocmd('CacheUpdatePost')
-    call gista#util#prompt#echo(printf(
+    call gista#indicate(options, printf(
           \ 'A gist %s in %s is unstarred',
           \ gistid, client.apiname,
           \))
@@ -46,7 +47,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#meta#complete_gistid'),
+          \   'complete': function('g:gista#option#complete_gistid'),
           \})
   endif
   return s:parser
@@ -57,7 +58,7 @@ function! gista#command#unstar#command(...) abort
   if empty(options)
     return
   endif
-  call gista#meta#assign_gistid(options, '%')
+  call gista#option#assign_gistid(options, '%')
   " extend default options
   let options = extend(
         \ deepcopy(g:gista#command#unstar#default_options),

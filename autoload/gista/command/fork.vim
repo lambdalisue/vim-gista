@@ -8,6 +8,7 @@ let s:A = s:V.import('ArgumentParser')
 function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
+        \ '^vim-gista: Cancel',
         \ '^vim-gista: Login canceled',
         \ '^vim-gista: ValidationError:',
         \]
@@ -26,12 +27,11 @@ function! gista#command#fork#call(...) abort
         \}, get(a:000, 0, {}),
         \)
   try
-    let gistid = gista#meta#get_valid_gistid(options.gistid)
-    let gist = gista#resource#forks#post(gistid, options)
+    let gistid = gista#option#get_valid_gistid(options)
+    let gist = gista#resource#remote#fork(gistid, options)
     call gista#util#doautocmd('CacheUpdatePost')
     let client = gista#client#get()
-    redraw
-    call gista#util#prompt#echo(printf(
+    call gista#indicate(options, printf(
           \ 'A gist %s in %s is forked to %s',
           \ gistid, client.apiname, gist.id,
           \))
@@ -51,7 +51,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#meta#complete_gistid'),
+          \   'complete': function('g:gista#option#complete_gistid'),
           \})
   endif
   return s:parser
@@ -62,7 +62,7 @@ function! gista#command#fork#command(...) abort
   if empty(options)
     return
   endif
-  call gista#meta#assign_gistid(options, '%')
+  call gista#option#assign_gistid(options, '%')
   " extend default options
   let options = extend(
         \ deepcopy(g:gista#command#fork#default_options),

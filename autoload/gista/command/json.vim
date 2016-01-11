@@ -8,6 +8,7 @@ let s:A = s:V.import('ArgumentParser')
 function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
+        \ '^vim-gista: Cancel',
         \ '^vim-gista: Login canceled',
         \ '^vim-gista: ValidationError:',
         \]
@@ -27,8 +28,8 @@ function! gista#command#json#read(...) abort
         \}, get(a:000, 0, {}),
         \)
   try
-    let gistid = gista#meta#get_valid_gistid(options.gistid)
-    let gist = gista#resource#gists#get(gistid, options)
+    let gistid = gista#option#get_valid_gistid(options)
+    let gist = gista#resource#remote#get(gistid, options)
     let content = split(
           \ s:J.encode(gist, { 'indent': 2 }),
           \ "\r\\?\n"
@@ -50,8 +51,8 @@ function! gista#command#json#edit(...) abort
         \}, get(a:000, 0, {})
         \)
   try
-    let gistid = gista#meta#get_valid_gistid(options.gistid)
-    let gist = gista#resource#gists#get(gistid, options)
+    let gistid = gista#option#get_valid_gistid(options)
+    let gist = gista#resource#remote#get(gistid, options)
     let content = split(
           \ s:J.encode(gist, { 'indent': 2 }),
           \ "\r\\?\n"
@@ -103,7 +104,7 @@ function! gista#command#json#bufname(...) abort
         \}, get(a:000, 0, {})
         \)
   try
-    let gistid = gista#meta#get_valid_gistid(options.gistid)
+    let gistid = gista#option#get_valid_gistid(options)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return
@@ -119,7 +120,7 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
     let s:parser = s:A.new({
           \ 'name': 'Gista json',
-          \ 'description': 'Open a JSON of a particular gist',
+          \ 'description': 'Open a JSON content of a gist',
           \})
     call s:parser.add_argument(
           \ '--opener',
@@ -135,7 +136,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#meta#complete_gistid'),
+          \   'complete': function('g:gista#option#complete_gistid'),
           \   'type': s:A.types.value,
           \})
   endif
@@ -147,7 +148,7 @@ function! gista#command#json#command(...) abort
   if empty(options)
     return
   endif
-  call gista#meta#assign_gistid(options, '%')
+  call gista#option#assign_gistid(options, '%')
   " extend default options
   let options = extend(
         \ deepcopy(g:gista#command#json#default_options),

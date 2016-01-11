@@ -5,16 +5,10 @@ let s:V = gista#vital()
 let s:F = s:V.import('System.File')
 let s:A = s:V.import('ArgumentParser')
 
-function! s:get_absolute_url(gistid, filename) abort
-    let gistid = gista#meta#get_valid_gistid(a:gistid)
-    let gist   = gista#resource#gists#get(gistid)
-    let filename = tolower(substitute(a:filename, '\.', '-', 'g'))
-    return gist.html_url . (empty(filename) ? '' : '#file-' . filename)
-endfunction
-
 function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
+        \ '^vim-gista: Cancel',
         \ '^vim-gista: Login canceled',
         \ '^vim-gista: ValidationError:',
         \]
@@ -34,11 +28,11 @@ function! gista#command#browse#call(...) abort
         \}, get(a:000, 0, {}),
         \)
   try
-    let gistid = gista#meta#get_valid_gistid(options.gistid)
+    let gistid = gista#option#get_valid_gistid(options)
     let filename = empty(options.filename)
           \ ? ''
-          \ : gista#meta#get_valid_filename(gistid, options.filename)
-    let gist = gista#resource#gists#get(gistid)
+          \ : gista#option#get_valid_filename(option)
+    let gist = gista#resource#remote#get(gistid)
     if has_key(gist, 'html_url')
       return gist.html_url . (
             \ empty(filename)
@@ -84,7 +78,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--filename',
           \ 'A filename', {
-          \   'complete': function('g:gista#meta#complete_filename'),
+          \   'complete': function('g:gista#option#complete_filename'),
           \})
     call s:parser.add_argument(
           \ '--echo',
@@ -99,7 +93,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#meta#complete_gistid'),
+          \   'complete': function('g:gista#option#complete_gistid'),
           \})
   endif
   return s:parser
@@ -110,8 +104,8 @@ function! gista#command#browse#command(...) abort
   if empty(options)
     return
   endif
-  call gista#meta#assign_gistid(options, '%')
-  call gista#meta#assign_filename(options, '%')
+  call gista#option#assign_gistid(options, '%')
+  call gista#option#assign_filename(options, '%')
   " extend default options
   let options = extend(
         \ deepcopy(g:gista#command#browse#default_options),
@@ -133,7 +127,6 @@ endfunction
 call gista#define_variables('command#browse', {
       \ 'default_options': {},
       \})
-
 
 
 let &cpo = s:save_cpo

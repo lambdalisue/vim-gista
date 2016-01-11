@@ -7,6 +7,7 @@ let s:A = s:V.import('ArgumentParser')
 function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
+        \ '^vim-gista: Cancel',
         \ '^vim-gista: Login canceled',
         \ '^vim-gista: ValidationError:',
         \]
@@ -29,30 +30,28 @@ function! gista#command#rename#call(...) abort
         \}, get(a:000, 0, {}),
         \)
   try
-    if !empty(options.gist)
-      let gistid   = options.gist.id
-      let filename = gista#meta#get_valid_filename(options.gist, options.filename)
-    else
-      let gistid   = gista#meta#get_valid_gistid(options.gistid)
-      let filename = gista#meta#get_valid_filename(gistid, options.filename)
-    endif
+    let gistid   = gista#option#get_valid_gistid(options)
+    let filename = gista#option#get_valid_filename(options)
     if empty(options.new_filename)
       let options.new_filename = gista#util#prompt#ask(
             \ filename . ' -> ', filename,
-            \ 'customlist,gista#meta#complete_filename',
+            \ 'customlist,gista#option#complete_filename',
             \)
     endif
-    let new_filename = gista#meta#get_valid_filename(options.filename)
+    let new_filename = options.new_filename
 
-    let gist = gista#resource#gists#patch(gistid, {
+    let gist = gista#resource#remote#get(gistid, options)
+    let gist = gista#resource#remote#patch(gistid, {
+          \ 'force': options.force,
           \ 'filenames': [filename],
           \ 'contents': [{
           \   'filename': new_filename,
+          \   'content': gist.files[filename].content,
           \ }],
           \})
     call gista#util#doautocmd('CacheUpdatePost')
     let client = gista#client#get()
-    redraw | call gista#util#prompt#echo(printf(
+    call gista#indicate(options, printf(
           \ 'A %s in a gist %s in %s is renamed to %s',
           \ filename, gistid, client.apiname, new_filename,
           \))
@@ -76,17 +75,17 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
-          \   'complete': function('g:gista#meta#complete_gistid'),
+          \   'complete': function('g:gista#option#complete_gistid'),
           \})
     call s:parser.add_argument(
           \ 'filename',
           \ 'A filename', {
-          \   'complete': function('g:gista#meta#complete_filename'),
+          \   'complete': function('g:gista#option#complete_filename'),
           \})
     call s:parser.add_argument(
           \ 'new_filename',
           \ 'A new filename', {
-          \   'complete': function('g:gista#meta#complete_filename'),
+          \   'complete': function('g:gista#option#complete_filename'),
           \})
   endif
   return s:parser
@@ -97,8 +96,8 @@ function! gista#command#rename#command(...) abort
   if empty(options)
     return
   endif
-  call gista#meta#assign_gistid(options, '%')
-  call gista#meta#assign_filename(options, '%')
+  call gista#option#assign_gistid(options, '%')
+  call gista#option#assign_filename(options, '%')
   " extend default options
   let options = extend(
         \ deepcopy(g:gista#command#rename#default_options),
@@ -114,7 +113,6 @@ endfunction
 call gista#define_variables('command#rename', {
       \ 'default_options': {},
       \})
-
 
 
 let &cpo = s:save_cpo

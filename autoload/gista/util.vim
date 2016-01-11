@@ -16,6 +16,10 @@ function! gista#util#doautocmd(name) abort
   call s:C.doautocmd(expr, 1)
 endfunction
 
+function! gista#util#ensure_eol(text) abort
+  return a:text =~# '\n$' ? a:text : a:text . "\n"
+endfunction
+
 let &cpo = s:save_cpo
 unlet! s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
