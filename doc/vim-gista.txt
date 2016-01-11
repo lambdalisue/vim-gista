@@ -110,15 +110,15 @@ re-input your GitHub password until you permanently logout from GitHub API
 (See |:Gista-logout|).
 
 If you would like to login your GitHub Enterprise API, use
-|gista#api#register()| function to register your API like:
+|gista#client#register()| function to register your API like:
 >
-	call gista#api#register('GHE', 'https://your.ghe.api.url')
+	call gista#client#register('GHE', 'https://your.ghe.api.url')
 <
 And specify 'GHE' to '--apiname' option like:
 >
 	:Gista login --apiname=GHE YOUR_USER_NAME
 <
-Note that you need to call |gista#api#register()| everytime when you want to
+Note that you need to call |gista#client#register()| everytime when you want to
 use your GHE accout so use your |vimrc| file to call the command.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -222,8 +222,8 @@ All commands provide -h/--help to quickly show an usage of the command.
 :Gista login [--apiname={APINAME}] {username}
 
 	Login into API of {APINAME} with {username}. If {APINAME} is omited,
-	a current {APINAME} or |g:gista#api#default_apiname| is used.
-	If {username} is omited, |g:gista#api#default_username| is used.
+	a current {APINAME} or |g:gista#client#default_apiname| is used.
+	If {username} is omited, |g:gista#client#default_username| is used.
 	All posterior commands use an user account authorized with this
 	command.
 	See |vim-gista-authorization| if you would like to use your GitHub
@@ -237,7 +237,7 @@ All commands provide -h/--help to quickly show an usage of the command.
 
 	Logout from API and use an anonymous account of {APINAME} for
 	posterior commands. If {APINAME} is omited, a current {APINAME} or
-	|g:gista#api#default_apiname| is used.
+	|g:gista#client#default_apiname| is used.
 	All posterior commands use an anonymous account of {APINAME}.
 	See |vim-gista-authorization| if you would like to use your GitHub
 	Enterprise API.
@@ -345,13 +345,28 @@ All commands provide -h/--help to quickly show an usage of the command.
 	detail.)
 	Use |:Gista-post| instead to create a new gist with a content.
 
-						*vim-gista-Gista-delete*
-:Gista delete [--[no-]force]			*:Gista-delete*
+						*vim-gista-Gista-rename*
+:Gista rename [--[no-]force]			*:Gista-rename*
+       [{gistid}] [{filename}] [{new_filename}]
+
+	Rename a {filename} of a gist.
+	It checks if a remote content of the gist is updated unless
+	--force option is specified.
+
+						*vim-gista-Gista-remove*
+:Gista remove [--[no-]force]			*:Gista-remove*
        [{gistid}] [{filename}]
 
-	Delete a gist or a file in a gist. If {filename} is omited, it delete
-	a gist {gistid}. Otherwise it delete {filename} in a gist {gistid}.
-	It checks if a remote content of the gist is updated or not unless
+	Remove a {filename} of a gist.
+	It checks if a remote content of the gist is updated unless
+	--force option is specified.
+
+						*vim-gista-Gista-delete*
+:Gista delete [--[no-]force]			*:Gista-delete*
+       [{gistid}]
+
+	Delete a gist.
+	It checks if a remote content of the gist is updated unless
 	--force option is specified.
 
 						*vim-gista-Gista-browse*
@@ -384,17 +399,17 @@ g:gista#develop			*g:gista#develop*
 
 	1 to use vim-gista in debug or develop mode.
 
-g:gista#api#cache_dir		*g:gista#api#cache_dir*
+g:gista#client#cache_dir		*g:gista#client#cache_dir*
 
 	A directory path for storing caches.
 	Default is '~/.cache/vim-gista'
 
-g:gista#api#default_apiname	*g:gista#api#default_apiname*
+g:gista#client#default_apiname	*g:gista#client#default_apiname*
 
 	A default API name used in |:Gista-login| command.
 	Default is 'GitHub'.
 
-g:gista#api#default_username	*g:gista#api#default_username*
+g:gista#client#default_username	*g:gista#client#default_username*
 
 	A default username used in |:Gista-login| command.
 	Default is ''.

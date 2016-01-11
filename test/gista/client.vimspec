@@ -307,20 +307,20 @@ Describe gista#client
     End
   End
 
-  Describe #_get_available_apinames()
+  Describe #get_available_apinames()
     It returns a list of keys of s:registry
-      let ret = gista#client#_get_available_apinames()
+      let ret = gista#client#get_available_apinames()
       Assert Equals(ret, keys(sv.registry))
     End
   End
-  Describe #_get_available_usernames({apiname})
+  Describe #get_available_usernames({apiname})
     It returns a list of keys of token_cache of a client
       let client = gista#client#get()
       let client.token_cache.set('foo', '')
       let client.token_cache.set('bar', '')
       let client.token_cache.set('hoge', '')
 
-      let ret = gista#client#_get_available_usernames(client.apiname)
+      let ret = gista#client#get_available_usernames(client.apiname)
       Assert Equals(sort(ret), sort(['foo', 'bar', 'hoge']))
     End
   End

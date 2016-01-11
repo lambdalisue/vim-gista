@@ -1,0 +1,535 @@
+let s:V = vital#of('vital')
+let s:F = s:V.import('System.File')
+let s:P = s:V.import('System.Filepath')
+let s:C = s:V.import('System.Cache.Memory')
+let s:J = s:V.import('Web.JSON')
+let s:S = s:V.import('Vim.ScriptLocal')
+let s:G = s:V.import('Vim.Guard')
+
+Describe gista#resource#local
+  Before all
+    let sfile = s:P.realpath('autoload/gista/resource/local.vim')
+    let sf = s:S.sfuncs(sfile)
+    let sv = s:S.svars(sfile)
+  End
+  Before
+    let client = gista#client#get()
+    let guard = s:G.store(
+          \ ['gist_cache', client],
+          \ ['index_cache', client],
+          \ ['request', client],
+          \ ['retrieve', client],
+          \)
+    let client.gist_cache = s:C.new()
+    let client.index_cache = s:C.new()
+    function! client.request(...) abort
+      let self._request_args = a:000
+      return self._request_response
+    endfunction
+    function! client.retrieve(...) abort
+      let self._retrieve_args = a:000
+      return self._retrieve_response
+    endfunction
+  End
+  After
+    call guard.restore()
+  End
+
+  Describe s:pick_necessary_params_of_index_entry_file({content})
+    It returns a reduced {content}
+      let content = {
+            \ 'size': 10,
+            \ 'type': 'foo',
+            \ 'language': 'bar',
+            \ 'unknown': '',
+            \}
+      let ret = sf.pick_necessary_params_of_index_entry_file(content)
+      Assert Equals(ret, {
+            \ 'size': 10,
+            \ 'type': 'foo',
+            \ 'language': 'bar',
+            \})
+    End
+  End
+  Describe s:pick_necessary_params_of_index_entry({entry})
+    It returns a reduced {entry} with '_gista_XXX'
+      let entry = {
+            \ 'id': 0,
+            \ 'description': 'foo',
+            \ 'public': 1,
+            \ 'files': {
+            \   'foo.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \     'content': [],
+            \   },
+            \   'bar.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \     'content': [],
+            \   },
+            \ },
+            \ 'created_at': 'today',
+            \ 'updated_at': 'today',
+            \ '_gista_fetched': 1,
+            \ 'unknown': 'unknown',
+            \}
+      let ret = sf.pick_necessary_params_of_index_entry(entry)
+      Assert Equals(ret, {
+            \ 'id': 0,
+            \ 'description': 'foo',
+            \ 'public': 1,
+            \ 'files': {
+            \   'foo.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \   },
+            \   'bar.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \   },
+            \ },
+            \ 'created_at': 'today',
+            \ 'updated_at': 'today',
+            \ '_gista_fetched': 1,
+            \})
+    End
+    It returns a reduced {entry} with default '_gista_XXX' if missing
+      let entry = {
+            \ 'id': 0,
+            \ 'description': 'foo',
+            \ 'public': 1,
+            \ 'files': {
+            \   'foo.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \     'content': [],
+            \   },
+            \   'bar.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \     'content': [],
+            \   },
+            \ },
+            \ 'created_at': 'today',
+            \ 'updated_at': 'today',
+            \ 'unknown': 'unknown',
+            \}
+      let ret = sf.pick_necessary_params_of_index_entry(entry)
+      Assert Equals(ret, {
+            \ 'id': 0,
+            \ 'description': 'foo',
+            \ 'public': 1,
+            \ 'files': {
+            \   'foo.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \   },
+            \   'bar.txt': {
+            \     'size': 10,
+            \     'type': 'foo',
+            \     'language': 'bar',
+            \   },
+            \ },
+            \ 'created_at': 'today',
+            \ 'updated_at': 'today',
+            \ '_gista_fetched': 0,
+            \})
+    End
+  End
+
+  Describe s:assign_index_entries({client}, {gists}, {lookup})
+    Before
+      let gists = [
+            \ gista#resource#local#get_pseudo_gist('A'),
+            \ gista#resource#local#get_pseudo_gist('B'),
+            \ gista#resource#local#get_pseudo_gist('C'),
+            \ gista#resource#local#get_pseudo_gist('D'),
+            \]
+      call sf.append_index_entry(client, 'public', gists[0], {})
+      call sf.append_index_entry(client, 'public', gists[1], {})
+      call sf.append_index_entry(client, 'public', gists[2], {})
+      call sf.append_index_entry(client, 'public', gists[3], {})
+    End
+    It update {gists} in a index.entries of {client}
+      let updated_gists = [
+            \ extend(
+            \   gista#resource#local#get_pseudo_gist('B'), {
+            \   '_gista_fetched': 1,
+            \ }),
+            \ extend(
+            \   gista#resource#local#get_pseudo_gist('C'), {
+            \   '_gista_fetched': 1,
+            \ }),
+            \]
+      let index = client.index_cache.get('public', {})
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['D', 'C', 'B', 'A'],
+            \)
+      Assert False(index.entries[0]._gista_fetched)
+      Assert False(index.entries[1]._gista_fetched)
+      Assert False(index.entries[2]._gista_fetched)
+      Assert False(index.entries[3]._gista_fetched)
+
+      let index = sf.assign_index_entries(client, 'public', updated_gists, {})
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['B', 'C'],
+            \)
+      Assert  True(index.entries[0]._gista_fetched)
+      Assert  True(index.entries[1]._gista_fetched)
+    End
+  End
+  Describe s:append_index_entries({client}, {gists}, {lookup})
+    Before
+      let gists = [
+            \ gista#resource#local#get_pseudo_gist('A'),
+            \ gista#resource#local#get_pseudo_gist('B'),
+            \ gista#resource#local#get_pseudo_gist('C'),
+            \ gista#resource#local#get_pseudo_gist('D'),
+            \]
+      call sf.append_index_entry(client, 'public', gists[0], {})
+      call sf.append_index_entry(client, 'public', gists[1], {})
+      call sf.append_index_entry(client, 'public', gists[2], {})
+      call sf.append_index_entry(client, 'public', gists[3], {})
+    End
+    It update {gists} in a index.entries of {client}
+      let updated_gists = [
+            \ extend(
+            \   gista#resource#local#get_pseudo_gist('B'), {
+            \   '_gista_fetched': 1,
+            \ }),
+            \ extend(
+            \   gista#resource#local#get_pseudo_gist('C'), {
+            \   '_gista_fetched': 1,
+            \ }),
+            \]
+      let index = client.index_cache.get('public', {})
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['D', 'C', 'B', 'A'],
+            \)
+      Assert False(index.entries[0]._gista_fetched)
+      Assert False(index.entries[1]._gista_fetched)
+      Assert False(index.entries[2]._gista_fetched)
+      Assert False(index.entries[3]._gista_fetched)
+
+      let index = sf.append_index_entries(client, 'public', updated_gists, {})
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['B', 'C', 'D', 'A'],
+            \)
+      Assert  True(index.entries[0]._gista_fetched)
+      Assert  True(index.entries[1]._gista_fetched)
+      Assert False(index.entries[2]._gista_fetched)
+      Assert False(index.entries[3]._gista_fetched)
+    End
+  End
+
+  Describe s:retrieve_index_entry({client}, {gistid}, {lookups})
+    Before
+      let gists = [
+            \ gista#resource#local#get_pseudo_gist('A'),
+            \ gista#resource#local#get_pseudo_gist('B'),
+            \ gista#resource#local#get_pseudo_gist('C'),
+            \]
+      call sf.append_index_entry(client, 'public', gists[0], {})
+      call sf.append_index_entry(client, 'public', gists[1], {})
+      call sf.append_index_entry(client, 'public', gists[2], {})
+    End
+    It retrieve an entry of {gistid} in a index.entries of {client}
+      let index = client.index_cache.get('public', {})
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['C', 'B', 'A'],
+            \)
+      Assert False(index.entries[0]._gista_fetched)
+      Assert False(index.entries[1]._gista_fetched)
+      Assert False(index.entries[2]._gista_fetched)
+
+      let entry = sf.retrieve_index_entry(client, 'public', 'B', {})
+      Assert Equals(entry.id, 'B')
+    End
+  End
+  Describe s:append_index_entry({client}, {gist}, {lookups})
+    Before
+      let gists = [
+            \ gista#resource#local#get_pseudo_gist('A'),
+            \ gista#resource#local#get_pseudo_gist('B'),
+            \ gista#resource#local#get_pseudo_gist('C'),
+            \]
+    End
+    It add {gist} to a index.entries of {client}
+      call sf.append_index_entry(client, 'public', gists[0], {})
+      call sf.append_index_entry(client, 'public', gists[1], {})
+      call sf.append_index_entry(client, 'public', gists[2], {})
+
+      let index = client.index_cache.get('public', {})
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['C', 'B', 'A'],
+            \)
+    End
+    It update (remove and add) {gist} of a index.entries of {client}
+      call sf.append_index_entry(client, 'public', gists[0], {})
+      call sf.append_index_entry(client, 'public', gists[1], {})
+      call sf.append_index_entry(client, 'public', gists[2], {})
+
+      let index = client.index_cache.get('public', {})
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['C', 'B', 'A'],
+            \)
+      Assert False(index.entries[0]._gista_fetched)
+      Assert False(index.entries[1]._gista_fetched)
+      Assert False(index.entries[2]._gista_fetched)
+
+      let gist = extend(gista#resource#local#get_pseudo_gist('B'), {
+            \ '_gista_fetched': 1,
+            \})
+      call sf.append_index_entry(client, 'public', gist, {})
+      let index = client.index_cache.get('public', {})
+
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['B', 'C', 'A'],
+            \)
+      Assert True(index.entries[0]._gista_fetched)
+      Assert False(index.entries[1]._gista_fetched)
+      Assert False(index.entries[2]._gista_fetched)
+    End
+  End
+  Describe s:update_index_entry({client}, {gist}, {lookups})
+    Before
+      let gists = [
+            \ gista#resource#local#get_pseudo_gist('A'),
+            \ gista#resource#local#get_pseudo_gist('B'),
+            \ gista#resource#local#get_pseudo_gist('C'),
+            \]
+      call sf.append_index_entry(client, 'public', gists[0], {})
+      call sf.append_index_entry(client, 'public', gists[1], {})
+      call sf.append_index_entry(client, 'public', gists[2], {})
+    End
+    It replace {gist} of a index.entries of {client}
+      let index = client.index_cache.get('public', {})
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['C', 'B', 'A'],
+            \)
+      Assert False(index.entries[0]._gista_fetched)
+      Assert False(index.entries[1]._gista_fetched)
+      Assert False(index.entries[2]._gista_fetched)
+
+      let gist = extend(gista#resource#local#get_pseudo_gist('B'), {
+            \ '_gista_fetched': 1,
+            \})
+      call sf.update_index_entry(client, 'public', gist, {})
+      let index = client.index_cache.get('public', {})
+
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['C', 'B', 'A'],
+            \)
+      Assert False(index.entries[0]._gista_fetched)
+      Assert True(index.entries[1]._gista_fetched)
+      Assert False(index.entries[2]._gista_fetched)
+    End
+    It does not add {gist} of a index.entries of {client}
+      let index = client.index_cache.get('public', {})
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['C', 'B', 'A'],
+            \)
+      Assert False(index.entries[0]._gista_fetched)
+      Assert False(index.entries[1]._gista_fetched)
+      Assert False(index.entries[2]._gista_fetched)
+
+      let gist = gista#resource#local#get_pseudo_gist('D')
+      call sf.update_index_entry(client, 'public', gist, {})
+      let index = client.index_cache.get('public', {})
+
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['C', 'B', 'A'],
+            \)
+      Assert False(index.entries[0]._gista_fetched)
+      Assert False(index.entries[1]._gista_fetched)
+      Assert False(index.entries[2]._gista_fetched)
+    End
+  End
+  Describe s:remove_index_entry({client}, {gistid}, {lookups})
+    Before
+      let gists = [
+            \ gista#resource#local#get_pseudo_gist('A'),
+            \ gista#resource#local#get_pseudo_gist('B'),
+            \ gista#resource#local#get_pseudo_gist('C'),
+            \]
+      call sf.append_index_entry(client, 'public', gists[0], {})
+      call sf.append_index_entry(client, 'public', gists[1], {})
+      call sf.append_index_entry(client, 'public', gists[2], {})
+    End
+    It remove {gistid} of a index.entries of {client}
+      let index = client.index_cache.get('public', {})
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['C', 'B', 'A'],
+            \)
+      Assert False(index.entries[0]._gista_fetched)
+      Assert False(index.entries[1]._gista_fetched)
+      Assert False(index.entries[2]._gista_fetched)
+
+      let gist = gista#resource#local#get_pseudo_gist('B')
+      call sf.remove_index_entry(client, 'public', gist.id, {})
+      let index = client.index_cache.get('public', {})
+
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['C', 'A'],
+            \)
+    End
+    It does not remove {gistid} of a index.entries of {client} if missing
+      let index = client.index_cache.get('public', {})
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['C', 'B', 'A'],
+            \)
+      Assert False(index.entries[0]._gista_fetched)
+      Assert False(index.entries[1]._gista_fetched)
+      Assert False(index.entries[2]._gista_fetched)
+
+      let gist = gista#resource#local#get_pseudo_gist('D')
+      call sf.remove_index_entry(client, 'public', gist.id, {})
+      let index = client.index_cache.get('public', {})
+
+      Assert Equals(
+            \ map(copy(index.entries), 'v:val.id'),
+            \ ['C', 'B', 'A'],
+            \)
+      Assert False(index.entries[0]._gista_fetched)
+      Assert False(index.entries[1]._gista_fetched)
+      Assert False(index.entries[2]._gista_fetched)
+    End
+  End
+
+  Describe s:append_gist({client}, {gist}, {options})
+    It add {gist} into a gist_cache of {client}
+      let gist = extend(gista#resource#local#get_pseudo_gist('A'), {
+            \ '_gista_fetched': 1,
+            \})
+      Assert False(client.gist_cache.has('A'))
+      call sf.append_gist(client, gist, {})
+      Assert True(client.gist_cache.has('A'))
+      Assert Equals(client.gist_cache.get('A'), gist)
+    End
+  End
+  Describe s:remove_gist({client}, {gistid}, {options})
+    Before
+      let gist = extend(gista#resource#local#get_pseudo_gist('A'), {
+            \ '_gista_fetched': 1,
+            \})
+      call sf.append_gist(client, gist, {})
+    End
+    It remove {gist} from a gist_cache of {client}
+      Assert True(client.gist_cache.has('A'))
+      Assert Equals(client.gist_cache.get('A'), gist)
+      call sf.remove_gist(client, gist.id, {})
+      Assert False(client.gist_cache.has('A'))
+    End
+  End
+  Describe s:remove_gists({client}, {gistids}, {options})
+    Before
+      let gists = [
+            \ gista#resource#local#get_pseudo_gist('A'),
+            \ gista#resource#local#get_pseudo_gist('B'),
+            \ gista#resource#local#get_pseudo_gist('C'),
+            \]
+      call sf.append_gist(client, gists[0], {})
+      call sf.append_gist(client, gists[1], {})
+      call sf.append_gist(client, gists[2], {})
+    End
+    It remove {gists} from a gist_cache of {client}
+      Assert True(client.gist_cache.has('A'))
+      Assert True(client.gist_cache.has('B'))
+      Assert True(client.gist_cache.has('C'))
+      Assert Equals(client.gist_cache.get('A'), gists[0])
+      Assert Equals(client.gist_cache.get('B'), gists[1])
+      Assert Equals(client.gist_cache.get('C'), gists[2])
+      call sf.remove_gists(client, map(copy(gists), 'v:val.id'), {})
+      Assert False(client.gist_cache.has('A'))
+      Assert False(client.gist_cache.has('B'))
+      Assert False(client.gist_cache.has('C'))
+    End
+  End
+
+  Describe gista#resource#local#get_pseudo_index({gistid})
+    It returns a pseudo index
+      let ret = gista#resource#local#get_pseudo_index()
+      Assert Equals(ret, {
+            \ 'entries': [],
+            \ '_gista_fetched': 0,
+            \})
+    End
+  End
+  Describe gista#resource#local#get_pseudo_index_entry({gistid})
+    It returns a pseudo (index) entry
+      let ret = gista#resource#local#get_pseudo_index_entry('100')
+      Assert Equals(ret, {
+            \ 'id': '100',
+            \ 'description': '',
+            \ 'public': 0,
+            \ 'files': {},
+            \ 'created_at': '',
+            \ 'updated_at': '',
+            \ '_gista_fetched': 0,
+            \})
+    End
+  End
+  Describe gista#resource#local#get_pseudo_index_entry_file()
+    It returns a pseudo entry file
+      let ret = gista#resource#local#get_pseudo_index_entry_file()
+      Assert Equals(ret, {
+            \ 'size': 0,
+            \ 'type': '',
+            \ 'language': '',
+            \})
+    End
+  End
+  Describe gista#resource#local#get_pseudo_gist({gistid})
+    It returns a pseudo gist
+      let ret = gista#resource#local#get_pseudo_gist('A')
+      Assert Equals(ret, {
+            \ 'id': 'A',
+            \ 'description': '',
+            \ 'public': 0,
+            \ 'files': {},
+            \ 'created_at': '',
+            \ 'updated_at': '',
+            \ '_gista_fetched': 0,
+            \ '_gista_last_modified': '',
+            \})
+    End
+  End
+  Describe gista#resource#local#get_pseudo_gist_file()
+    It returns a pseudo gist file
+      let ret = gista#resource#local#get_pseudo_gist_file()
+      Assert Equals(ret, {
+            \ 'size': 0,
+            \ 'type': '',
+            \ 'language': '',
+            \ 'truncated': 1,
+            \ 'content': '',
+            \ 'raw_url': '',
+            \})
+    End
+  End
+
+
+End
