@@ -89,6 +89,7 @@ vim-plug (junegunn/vim-plug) to install this plugin like:
 	" neobundle.vim (lazy)
 	NeoBundle 'lambdalisue/vim-gista', {
 	  \ 'on_cmd': 'Gista',
+	  \ 'on_func': 'gista#',
 	  \}
 <
 Or install the repository into your |runtimepath| manually.
