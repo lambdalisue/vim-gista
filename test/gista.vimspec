@@ -1,0 +1,56 @@
+Describe gista
+  Describe #define_variables({prefix}, {defaults})
+    It define 'g:gista#{key}' variables when {prefix} is empty
+      let defaults = {
+            \ 'foo': 'bar',
+            \ 'bar': 0,
+            \}
+      let ret = gista#define_variables('', defaults)
+      Assert exists('g:gista#foo')
+      Assert exists('g:gista#bar')
+
+      Assert Equals(g:gista#foo, defaults.foo)
+      Assert Equals(g:gista#bar, defaults.bar)
+
+      " finalize
+      unlet g:gista#foo
+      unlet g:gista#bar
+    End
+
+    It define 'g:gista#{prefix}#{key}' variables when {prefix} is NOT empty
+      let defaults = {
+            \ 'foo': 'bar',
+            \ 'bar': 0,
+            \}
+      let ret = gista#define_variables('hello', defaults)
+      Assert exists('g:gista#hello#foo')
+      Assert exists('g:gista#hello#bar')
+
+      Assert Equals(g:gista#hello#foo, defaults.foo)
+      Assert Equals(g:gista#hello#bar, defaults.bar)
+
+      " finalize
+      unlet g:gista#hello#foo
+      unlet g:gista#hello#bar
+    End
+
+    It won't overwrite the existing variables
+      let defaults = {
+            \ 'foo': 'bar',
+            \ 'bar': 0,
+            \}
+      let g:gista#foo = 'hello'
+      let g:gista#bar = 1
+      let ret = gista#define_variables('', defaults)
+      Assert exists('g:gista#foo')
+      Assert exists('g:gista#bar')
+
+      Assert Equals(g:gista#foo, 'hello')
+      Assert Equals(g:gista#bar, 1)
+
+      " finalize
+      unlet g:gista#foo
+      unlet g:gista#bar
+    End
+  End
+End

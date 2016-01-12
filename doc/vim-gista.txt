@@ -1,8 +1,8 @@
 *vim-gista.txt* A plugin which helps user to manipulate gists
 
-Version: 0.1.17
+Version: 2.0.0
 Author:  Alisue <lambdalisue@hashnote.net>		*vim-gista-author*
-Support: Vim 7.3 and above
+Support: Vim 7.4 and above
 License: MIT license  {{{
 	Copyright (c) 2014 Alisue, hashnote.net
 
@@ -29,1095 +29,520 @@ License: MIT license  {{{
 =============================================================================
 CONTENTS					*vim-gista-contents*
 
-Introduction		|vim-gista-introduction|
+Introduction			|vim-gista-introduction|
+Requirement			|vim-gista-requirement|
 Install				|vim-gista-install|
 Usage				|vim-gista-usage|
-	Authentication		|vim-gista-usage-authentication|
-	Listing				|vim-gista-usage-listing|
-	Opening				|vim-gista-usage-opening|
-	Posting				|vim-gista-usage-posting|
-	Editing				|vim-gista-usage-editing|
-	Deleting			|vim-gista-usage-deleting|
-	Star/Unstar			|vim-gista-usage-star|
-	Forking				|vim-gista-usage-forking|
-	Browsing			|vim-gista-usage-browsing|
-	Anonymous-mode			|vim-gista-usage-anonymous-mode|
+  Authorization			|vim-gista-authorization|
+  List				|vim-gista-list|
+  Open				|vim-gista-open|
+  Post				|vim-gista-post|
 Interface			|vim-gista-interface|
-	Options				|vim-gista-interface-options|
-	Commands			|vim-gista-interface-commands|
-	Mappings			|vim-gista-interface-mappings|
-	Highlights			|vim-gista-interface-highlights|
-Unite interface		|vim-gista-unite-interface|
-	Sources				|vim-gista-unite-interface-sources|
-	Kinds				|vim-gista-unite-interface-kinds|
-	Actions				|vim-gista-unite-interface-actions|
-	Filters				|vim-gista-unite-interface-filters|
-	Highlights			|vim-gista-unite-interface-highlights|
+  Command			|vim-gista-command|
+  Variable			|vim-gista-variable|
 
 ==============================================================================
 INTRODUCTION					*vim-gista-introduction*
 
-*vim-gista* is a plugin for manipulating Gists.
-It provide the following features:
+*vim-gista* is a plugin for manipulating Gist. It provides the following
+features:
 
-1.	Listing gists
-	-	Authenticated user's gist entries
-	-	Authenticated user's starred gist entries
-	-	Gist entries of a particular user
-	-	Gist entries in Gist web
-	-	Listing gist entries in Unite (require 'Shougo/unite.vim')
-2.	Opening gists
-	-	Open files of an authenticated user
-	-	Open files of a particular user
-	-	Open files of a gist with a browser (require
-		'tyru/open-browser.vim')
-3.	Posting gists
-	-	Create a new gist from a current buffer
-	-	Create a new gist from all opened+listed+visible buffers
-4.	Editing gists
-	-	A file content of a gist
-	-	A description of a gist
-	-	Rename a file of a gist
-	-	Remove a file of a gist
-5.	Deleting gists
-6.	Giving/taking a star to a gist
-7.	Forking a gist
+- Open a gist
+  - Open a file content of a gist
+  - Open a JSON content of a gist
+- Post a gist
+  - Post a content of the current buffer to a new gist
+  - Patch a content of the current buffer to an existing gist
+- Delete a gist
+  - Remove a file in a gist
+  - Delete a gist itself
+- Star/Unstar a gist
+- Fork a gist
 
-The original concepts and strategies are taken from 'mattn/gist.vim'; however
-the most of these are aggressively modified to establish vim-gista new
-implementations.
+==============================================================================
+REQUIREMENT					*vim-gista-requirement*
 
-References:
--   Gist: https://gist.github.com/
--   mattn/gist.vim: https://github.com/mattn/gist-vim
--   Shougo/unite.vim: https://github.com/Shougo/unite.vim
--   tyru/open-browser.vim: https://github.com/tyru/open-browser.vim
+One of the following is required for communicating with Gist API.
+
+- Vim compiled with |+python| (Recommended)
+- cURL (http://curl.haxx.se)
+- wget (https://www.gnu.org/software/wget)
+
+To enable fast feching in |:Gista-list|, you need a Vim compiled with
+|+python| or |+python3|.
+Note that Vim compiled with |+python3| without cURL or wget is not supported for
+now. The recommended environment is a Vim compiled with |+python| or a Vim
+compiled with |+python3| with cURL or wget.
 
 
 ==============================================================================
 INSTALL						*vim-gista-install*
 
-First of all, |vim-gista| use 'cURL' or 'Wget' to communicate with Gist API
-thus make sure that one of those commands is available in your system.
-
--   cURL - http://curl.haxx.se/
--   Wget - https://www.gnu.org/software/wget/
-
-The repository (https://github.com/lambdalisue/vim-gista) follow a standard
-vim plugin's directory structure thus you can use Vundle.vim or neobundle.vim
-to install |vim-gista| like:
+Use any Vim plugin manager such as neobundle.vim (Shougo/neobundle.vim) or
+vim-plug (junegunn/vim-plug) to install this plugin like:
 >
-	" Vundle.vim
-	Plugin 'lambdalisue/vim-gista'
+	" vim-plug
+	Plug 'lambdalisue/vim-gista'
 
 	" neobundle.vim
 	NeoBundle 'lambdalisue/vim-gista'
-
-	" neobundle.vim (Lazy)
-	NeoBundleLazy 'lambdalisue/vim-gista', {
-		\ 'autoload': {
-		\	'commands': ['Gista'],
-		\	'mappings': '<Plug>(gista-',
-		\	'unite_sources': 'gista',
-		\}}
-<
-Additionally, |vim-gista| require 'Shougo/unite.vim' and 'tyru/open-browser.vim'
-to enable all features thus make sure that these plugins are loaded before the
-plugins like:
->
-	" Vundle.vim
-	Plugin 'Shougo/unite.vim'
-	Plugin 'tyru/open-browser.vim'
-	Plugin 'lambdalisue/vim-gista'
-
-	" neobundle.vim
+	" neobundle.vim (lazy)
 	NeoBundle 'lambdalisue/vim-gista', {
-		\ 'depends': [
-		\	'Shougo/unite.vim',
-		\	'tyru/open-browser.vim',
-		\]}
+	  \ 'on_cmd': 'Gista',
+	  \ 'on_func': 'gista#',
+	  \}
+<
+Or install the repository into your |runtimepath| manually.
 
-	" neobundle.vim (Lazy)
-	NeoBundleLazy 'lambdalisue/vim-gista', {
-		\ 'depends': [
-		\	'Shougo/unite.vim',
-		\	'tyru/open-browser.vim',
-		\ ],
-		\ 'autoload': {
-		\	'commands': ['Gista'],
-		\	'mappings': '<Plug>(gista-',
-		\	'unite_sources': 'gista',
-		\}}
-<
-If you are not using any vim plugin manager, you can copy the repository to
-your $VIM directory to enable the plugin but I really recommend you to try one
-of those vim plugin managers.
-
-Once you installed |vim-gista|, specify your GitHub username to
-|g:gista#github_user| variable like the code below. |vim-gista| use that
-username in API authentication step.
->
-	let g:gista#github_user = 'your GitHub user name'
-<
-If nothing is specified to |g:gista#github_user| or |g:github_user|,
-|vim-gista| try to get your username from git profile ('github.user') thus you
-can specify your username in git command like:
->
-	$ git config --global github.user <your GitHub user name>
-<
 
 ==============================================================================
 USAGE						*vim-gista-usage*
 
 ------------------------------------------------------------------------------
-Authentication					*vim-gista-usage-authentication*
+AUTHORIZATION					*vim-gista-authorization*
 
-If you execute any |vim-gista| commands, functions, or mappings, |vim-gista|
-ask you to fill your GitHub password (or your GitHub username if you have not
-specified it yet) at first time.
-The filled password will be used to create a new personal access token for
-|vim-gista| and the created personal access token is saved in your file
-system (the filled password will never be stored.)
-
-If you prefer to specify a personal access token directory, call
-|:Gista-login| like below and input your personal access token as a
-username:
+Call |:Gista-login| to login your account like:
 >
-	:Gista --login
+	:Gista login YOUR_GITHUB_USER_NAME
 <
-If you want to temporary logout, call |:Gista-logout| without any
-arguments. If you want to logout permanently, call the function with a
-argument like below:
->
-	:Gista --logout --permanently
-<
-If will delete a stored personal access token from your file system.
+It requires your GitHub password to create a personal access token for the
+first time. Once the personal access token is created, you won't need to
+re-input your GitHub password until you permanently logout from GitHub API
+(See |:Gista-logout|).
 
+If you would like to login your GitHub Enterprise API, use
+|gista#client#register()| function to register your API like:
+>
+	call gista#client#register('GHE', 'https://your.ghe.api.url')
+<
+And specify 'GHE' to '--apiname' option like:
+>
+	:Gista login --apiname=GHE YOUR_USER_NAME
+<
+Note that you need to call |gista#client#register()| everytime when you want to
+use your GHE accout so use your |vimrc| file to call the command.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+TEMPORAL AUTHORIZATION			*vim-gista-temporal-authorization*
+
+All commands except |:Gista-login| and |:Gista-logout| support a temporal
+authorization. For example, if you would like to open a private gist of your
+second account, use --username option to temporary login to your second
+account like:
+>
+	:Gista --username=YOUR_SECOND_ACCOUNT open GISTID
+<
+If you would like to post a current content to your GHE, use '--apiname' to
+temporary login to your second API like:
+>
+	:Gista --apiname=GHE --username=YOUR_GHE_ACCOUNT post
+<
+If you would like to post a gist as an anonymous user, use '--anonymous' to
+temporary logout from your account like:
+>
+	:Gista --anonymous post
+<
+Note that --apiname, --username, and --anonymous options requires to be
+specify to |:Gista| command, namely before {command}.
 
 ------------------------------------------------------------------------------
-Listing						*vim-gista-usage-listing*
+LIST					*vim-gista-list*
 
-To list your public and private gist entries, run one of the following
-commands (short form or long form):
+Call |:Gista-list| to list your personal gists like:
 >
-	:Gista -l
-	:Gista --list
+	:Gista list
 <
-It will recursively download your gist entries at first time thus you may need
-to be really patient if you have tons of gists. The entries are cached and the
-cache will be used for rest of the processions. These cache will be updated
-automatically when there are any new or modified gists.
-
-Once all your gist entries are downloaded, a buffer named 'gista:list' will be
-opened. You can manipulate your gists with following keys (See
-|g:gista#enable_default_mappings|.)
-
-*vim-gista-default-mappings*
-
-	<F1>		:<C-u>help vim-gista-default-mappings<CR>
-	<C-l>		|<Plug>(gista-action-update)|
-	<C-l><C-l>	|<Plug>(gista-action-update-nocache)|
-	<CR>		|<Plug>(gista-action-open)|
-	<S-CR>		|<Plug>(gista-action-browser)|
-	+		|<Plug>(gista-action-star)|
-	-		|<Plug>(gista-action-unstar)|
-	?		|<Plug>(gista-action-is-starred)|
-	r		|<Plug>(gista-action-rename)|
-	D		|<Plug>(gista-action-smart-delete)|
-	F		|<Plug>(gista-action-fork)|
-	e		|<Plug>(gista-action-edit)|
-	s		|<Plug>(gista-action-split)|
-	v		|<Plug>(gista-action-vsplit)|
-	E		|<Plug>(gista-action-edit-nocache)|
-	S		|<Plug>(gista-action-split-nocache)|
-	V		|<Plug>(gista-action-vsplit-nocache)|
-	b		|<Plug>(gista-action-browser)|
-	yy		|<Plug>(gista-action-yank)|
-
-If you want to list a particular user's gist entries, give the username to the
-command like:
+It automatically fetch gists of your account or public gists when you have
+not login. If you would like to list starred gists, use 'starred' like:
 >
-	:Gista -l lambdalisue
-	:Gista --list lambdalisue
+	:Gista list starred
 <
-If you specify 'starred' or 'public' like a username, you will see starred
-gist entries of your GitHub account or public gist entries in Gist web
-respectively:
-Note: Public gist entries are not downloaded recursively and not cached, due
-to the amount of the gists.
+If you would like to list a public gists or gists of a particular user, use
+'public' or a username like
 >
-	:Gista -l starred
-	:Gista -l public
+	:Gista list public
+	:Gista list USERNAME
 <
-You can specify a particular page with '--page PAGE' option. When the page is
-specified, gist entries existing in the page will be downloaded (and never be
-recursively downloaded and cached.)
->
-	:Gista -l --page 2
-<
-If you want to refresh the gist entries (check update and download new or 
-modified gist entries), hit <C-l> (|<Plug>(gista-action-update)|) on the
-'gist:list' buffer.
-If you want to re-build a cache of your gist entries, use '--nocache' option
-then all gist entries are recursively re-downloaded and the cache will be
-rebuilt by the new downloads.
->
-	:Gista -l --nocache
-<
-Or hit <C-l><C-l> (|<Plug>(gista-action-update-nocache)|) on the 'gist:list'
-buffer.
+See |:Gista-list| for detail.
 
 ------------------------------------------------------------------------------
-Opening						*vim-gista-usage-opening*
+OPEN					*vim-gista-open*
 
-If you want to open a gist on the 'gist:list' buffer, hit <CR> to open the
-gist with default opener (See |g:gista#gist_default_opener| and
-|g:gista#gist_default_opener_in_action|.) If you want to specify the way to
-open the buffer, hit e, s, or v for 'edit', 'split', or 'vsplit' respectively.
-
-If you are the owner of the gist, the gist will be tightly connected to the
-buffer, otherwise it will be loosely connected to the buffer. If a buffer is
-tightly or loosely connected to a gist, you can get the gist informations with
-(the following functions are assumed to be used in statusline):
+Call |:Gista-open| to open a gist like:
 >
-	:echo gista#statusline#components#gistid()	" return Gist ID
-	:echo gista#statusline#components#filename()	" return filename
-	:echo gista#statusline#components#gistinfo()	" return both
-
-If the buffer is tightly connected, you can upload changes on the buffer with
-posting commands like (See |g:gista#update_on_write| for more details):
->
-	" Short
-	:Gista
-	" Long
-	:Gista --post
-	" g:gista#update_on_write = 1
-	:w
-	" g:gista#update_on_write = 2
-	:w!
+	:Gista open GISTID
 <
-If you provide a new filename with |:write| command, the buffer will be
-disconnected from the gist and you will get a new local copy of the gist.
->
-	:w a_new_filename.txt
-<
-Or if you just want to disconnect, use the following command then the buffer
-will be liberate from the gist.
->
-	:Gista --disconnect
-
-You can open a particular gist via Gist ID as well. Provide a Gist ID with
-'--gistid' option and open the gist like:
->
-	:Gista -o --gistid XXXXXXXXXX
-	:Gista --open --gistid XXXXXXXX
-<
-Then all files in the gist will be opened with default opener (See
-|g:gista#gist_default_opener|.) If you want to open particular files, you can
-specify filenames with '--filename' option as a semi-colon separated filenames
+If you would like to see a JSON content of a gist, use |:Gista-json| instead
 like:
 >
-	:Gista -o --gistid XXXXXXXX --filename "A.txt;B.txt;C.txt"
+	:Gista json GISTID
 <
-If you want to revert your change or want to re-download the gist.
-Hit a upper case of open commands (E, S, V) on the gist:list buffer or call
-open command with a bang (!) like below:
+If you would like to open a remote content of the gist, use |:Gista-browse|
+like:
 >
-	:Gista! -o
+	:Gista browse GISTID
 <
-Then it will open the gist connected to the current buffer again without using
-cache.
-
+See |:Gista-open|, |:Gista-json|, or |:Gista-browse| for detail.
 
 ------------------------------------------------------------------------------
-Posting						*vim-gista-usage-posting*
+POST					*vim-gista-post*
 
-If you want to create a new gist, execute one of the commands below. The
-commands will create a new gist with a content (or selected content) of a
-current buffer:
+Call |:Gista-post| to post a content of the current buffer to a new gist like:
 >
-	:Gista
-	:Gista --post
-	:'<.'>Gista
-	:'<.'>Gista --post
+	:Gista post
 <
-After you create a new gist, the current buffer will be connected to the gist
-(See |g:gista#auto_connect_after_post| and |vim-gista-usage-opening|).
-
-If the current buffer is already connected to a gist or a Gist ID is written
-in the content (in 'GistID: XXXXXXXX' format) or is specified with '--gistid'
-option, the command will save changes rather than posting as a new gist.
-
-If you want to specify a description in the command, use '-d' or
-'--description' option to specify:
+If you would like to post a content of the current buffer to an existing gist,
+use |:Gista-patch| like:
 >
-	:Gista -d "Description with a short option"
-	:Gista --description "Description with a long option"
+	:Gista patch GISTID
 <
-If you want to specify a visibility, use '-p' or '--private' to make the
-gist private, use '-P' or '--public' to make the gist public (the default
-visibility is determined from the value of |g:gista#post_private|.
-Note: Gist API does not provide a way to modify the visibility of an existing
-gist thus you cannot change the visibility of a gist in vim-gista interface.
->
-	:Gista -p -d "This is a private gist"
-	:Gista --private -d "This is a private gist"
-	:Gista -P -d "This is a public gist"
-	:Gista --public -d "This is a public gist"
-<
-If you want to update the gist as an anonymous gist, use '--anonymous'
-option
->
-	:Gista --anonymous
-<
-If you want to create a new gist with all opened buffer. Specify '--multiple'
-to the command like
->
-	:Gista --multiple
-<
-Again, if the gist ID is specified to the command, the command will post all
-opened buffer to the specified gist (it will replace the content if a same
-filename file exists on the gist).
-
-------------------------------------------------------------------------------
-Editing						*vim-gista-usage-editing*
-
-If the current buffer is connected to the gist (if you open or post the gist),
-all changes you saved will be uploaded to the gist (See
-|g:gista#update_on_write|).
-If you want to update the changes via a command, see |vim-gista-usage-posting|
-section.
-
-						*vim-gista-usage-renaming*
-If you want to rename the filename, hit 'r' (|<Plug>(gista-action-rename)|) on
-the target file in the gist:list buffer.
-Or if you want to rename the filename of the gist connected to the current
-buffer, use the command below:
->
-	:Gista --rename
-	:Gista --rename NEW_FILENAME
-<
-If you don't specify a new filename, vim-gista will ask it.
-
-						*vim-gista-usage-removing*
-If you want to remove a file, hit 'D' (|<Plug>(gista-action-smart-delete)| or
-|<Plug>(gista-action-remove)|) on the target file in the gist:list buffer.
-Or if you want to remove the file of the gist connected to the current buffer,
-use the command below:
->
-	:Gista --remove
-<
-Remove command cannot be undone thus confirmation dialog will comes up.
-
-
-------------------------------------------------------------------------------
-Deleting					*vim-gista-usage-deleting*
-
-If you want to delete a gist, hit 'D' (|<Plug>(gista-action-smart-delete)| or
-|<Plug>(gista-action-delete)|) on the target gist in the gist:list buffer.
-Or if you want to delete the gist connected to the current buffer, use the
-command below:
->
-	:Gista --delete
-<
-Delete command cannot be undone thus confirmation dialog will comes up.
-
-------------------------------------------------------------------------------
-Star/Unstar					*vim-gista-usage-star*
-						*vim-gista-usage-unstar*
-If you want to star/unstar a gist, hit '+' or '-' (|<Plug>(gista-action-star)|
-or |<Plug>(gista-action-unstar)|) on the target gist in the gist:list buffer.
-Or if you want to star/unstar the gist connected to the current buffer, use
-the commands below:
->
-	:Gista --star
-	:Gista --unstar
-<
-If you want to display if the gist is starred, use the following command or
-hit '?' (|<Plug>(gista-action-is-starred)|) in the gist:list buffer.
->
-	:Gista --is-starred
-<
-
-------------------------------------------------------------------------------
-Forking						*vim-gista-usage-forking*
-
-If you want to fork a gist, hit 'F' (|<Plug>(gista-action-fork)|) on the target
-gist in the gist:list buffer.
-Or if you want to fork the gist connected to the current buffer, use the
-command below:
->
-	:Gista --fork
-<
-
-------------------------------------------------------------------------------
-Browsing					*vim-gista-usage-browsing*
-
-If you want to browse a gist in your browser, hit 'b'
-(|<Plug>(gista-action-browse)|) on the target gist in the gist:list buffer.
-Or if you want to browse the gist connected to the current buffer, use one of
-the commands below:
->
-	:Gista -b
-	:Gista --browse
-<
-This feature require 'tyru/open-browser.vim'.
-You can yank the URL of the current connected gist with:
->
-	:Gista --yank-url
-<
-
-------------------------------------------------------------------------------
-Anonymous mode				*vim-gista-usage-anonymous-mode*
-
-If user specify |g:gista#github_user| to 'anonymous', vim-gista works on an
-anonymous mode.
-If anonymous mode, user can
-
-- List a specific user's gist entries
-- Open a specific user's gist
-- Post a gist as an anonymous gist
-
+See |:Gista-post| or |:Gista-patch| for detail.
 
 ==============================================================================
 INTERFACE					*vim-gista-interface*
 
 ------------------------------------------------------------------------------
-Options						*vim-gista-interface-options*
+COMMAND						*vim-gista-command*
 
-					*g:gista#github_user*
-g:gista#github_user
-	A username of your GitHub account. If this value is not specified,
-	vim-gista try to determine your username from
+Note:
+All commands provide -h/--help to quickly show an usage of the command.
 
-	1.	A value of g:github_user
-	2.	A git profile (See |vim-gista-install| section)
+						*vim-gista-Gista*
+						*:Gista*
+:Gista [--apiname={APINAME}]
+       [--username={USERNAME}]
+       [--anonymous]
+       {command}
 
-	If you set this value to 'anonymous', vim-gista works on anonymous
-	mode (see |vim-gista-usage-anonymous-mode|).
+	An entry command of vim-gista. Users can temporary login/logout with
+	options of this command for {command}.
+	See |vim-gista-temporal-authorization| for more detail.
 
-					*g:gista#gist_api_url*
-g:gista#gist_api_url
-	A Gist API url. If this value is not specified, vim-gista try to
-	determine it from g:gist_api_url.
-	The default value is 'https://gist.github.com'
-
-					*g:gista#directory*
-g:gista#directory
-	Specify a directory to store vim-gista configurations.
-	The default value is expand('~/.gista/'); the absolute path of it.
-
-					*g:gista#token_directory*
-g:gista#token_directory
-	Specify a directory to store a GitHub access token of vim-gista.
-	The default value is |g:gista#directory| . 'tokens/'
-
-					*g:gista#gist_entries_cache_directory*
-g:gista#gist_entries_cache_directory
-	Specify a directory to store a cached gist entries.
-	The default value is |g:gista#directory| . 'gists/'
-
-					*g:gist_default_filename*
-g:gista#gist_default_filename
-	A default filename used for posting a gist if the buffer does not have
-	a filename.
-	The default value is 'gist-file'.
-
-	Note:
-	'gistfile' (a name used in 'mattn/gist.vim') is not recommended while
-	GitHub Inc. does not recommended. See a Gist API web page for the
-	detail.
-
-					*g:gista#list_opener*
-g:gista#list_opener
-	The open command to use open a gist list window.
-	The default value is 'topleft 20 split +set\ winfixheight'.
-
-					*g:gista#gist_openers*
-g:gista#gist_openers
-	The open command dictionary to use open a gist.
-	The default value is equals to the following code:
->
-		let g:gista#gist_opener = {
-			\ 'edit': 'edit',
-			\ 'split': 'rightbelow split',
-			\ 'vsplit': 'rightbelow vsplit',
-			\}
-<
-
-					*g:gista#gist_openers_in_action*
-g:gista#gist_openers_in_action
-	The open command to use open a gist, used in the gist list window
-	The default value is equal to |g:gista#gist_openers|.
-
-					*g:gista#close_list_after_open*
-g:gista#close_list_after_open
-	If it is 1, the gist list window will automatically be closed after a
-	gist buffer is opened.
-	The default value is 0.
-
-					*g:gista#auto_connect_after_post*
-g:gista#auto_connect_after_post
-	Automatically connect the buffer to the corresponding gist when after
-	the buffer content is posted.
-	The default value is 1.
-
-					*g:gista#update_on_write*
-g:gista#update_on_write
-	If it is 2, the gist will be updated with ':w!' command.
-	If it is 1, the gist will be updated with ':w' command.
-	If it is 0, the gist never be updated with autocmd.
-	The default value is 2.
-
-					*g:gista#enable_default_keymaps*
-g:gista#enable_default_keymaps
-	Enable the default keymaps in the gist list window.
-	The default keymap will be defined in gist list window as listed below
->
-		nmap <buffer> <F1>  :<C-u>help vim-gista-default-mappings<CR>
-		nmap <buffer> <C-l>      <Plug>(gista-action-update)
-		nmap <buffer> <C-l><C-l> <Plug>(gista-action-update-nocache)
-		nmap <buffer> r          <Plug>(gista-action-rename)
-		nmap <buffer> D          <Plug>(gista-action-smart-delete)
-		nmap <buffer> +          <Plug>(gista-action-star)
-		nmap <buffer> -          <Plug>(gista-action-unstar)
-		nmap <buffer> ?          <Plug>(gista-action-is-starred)
-		nmap <buffer> F          <Plug>(gista-action-fork)
-		nmap <buffer> <CR>       <Plug>(gista-action-open)
-		nmap <buffer> <S-CR>     <Plug>(gista-action-browse)
-		nmap <buffer> e          <Plug>(gista-action-edit)
-		nmap <buffer> s          <Plug>(gista-action-split)
-		nmap <buffer> v          <Plug>(gista-action-vsplit)
-		nmap <buffer> E          <Plug>(gista-action-edit-nocache)
-		nmap <buffer> S          <Plug>(gista-action-split-nocache)
-		nmap <buffer> V          <Plug>(gista-action-vsplit-nocache)
-		nmap <buffer> b          <Plug>(gista-action-browse)
-		nmap <buffer> yy         <Plug>(gista-action-yank)
-<
-	The default value is 1.
-
-					*g:gista#post_private*
-g:gista#post_private
-	If it is 1 then post a gist as a private gist in default.
-	The default value is 0.
-
-					*g:gista#interactive_description*
-g:gista#interactive_description
-	If it is 2, ask user to input a description of gists always.
-	If it is 1, ask user to input a description of gists when the gist
-	does not have a description.
-	If it is 0, never ask user to input a description.
-	The default value is 1.
-
-					*g:gista#interactive_visibility*
-g:gista#interactive_visibility
-	If it is 2, ask user to input a visibility of gists always.
-	If it is 1, ask user to input a visibility of gists when the gist does
-	not have a publish status (only when posting a new gist).
-	If it is 0, never ask user to input a publish status.
-	The default value is 1.
-	
-				*g:gista#include_invisible_buffer_in_multiple*
-g:gista#include_invisible_buffer_in_multiple
-	Include invisible (hidden) buffers to post when '--multiple' option is
-	specified.
-	The default value is 0.
-
-					*g:gista#unite_smart_open_threshold*
-g:gista#unite_smart_open_threshold
-	A threshold for the number of files in gist. If the number if higher
-	than this value, 'smart_open' action in |unite/actions/gista| will
-	execute 'select' action, otherwise it execute 'open' action.
-	The default value is 1.
-
-					*g:gista#gistid_yank_format*
-g:gista#gistid_yank_format
-	This format is used when user yank a Gist ID on gist:list buffer or
-	Unite interface.
-	'{gistid}' is substituted to the actual Gist ID.
-	The default value is '{gistid}'
-
-					*g:gista#gistid_yank_format_with_file*
-g:gista#gistid_yank_format_with_file
-	This format is used when user yank a Gist ID and filename on gist:list
-	buffer or Unite interface.
-	'{gistid}' and '{filename}' are substituted to the actual Gist ID and
-	filename respectively.
-	The default value is '{gistid}/{filename}'
-
-					*g:gista#gistid_yank_format_in_post*
-g:gista#gistid_yank_format_in_post
-	This format is used for auto yank when user post a new gist.
-	'{gistid}' is substituted to the actual Gist ID.
-	See |g:gista#auto_yank_gistid_after_post|.
-	The default value is 'GistID: {gistid}'
-
-					*g:gista#gistid_yank_format_in_save*
-g:gista#gistid_yank_format_in_save
-	This format is used for auto yank when user save a gist.
-	'{gistid}' is substituted to the actual Gist ID.
-	See |g:gista#auto_yank_gistid_after_save|.
-	The default value is 'GistID: {gistid}'
-
-					*g:gista#default_yank_method*
-g:gista#default_yank_method
-	A default yank method. This value need to be one of the following
-
-	- 'gistid': To yank a Gist ID
-	- 'url': To yank a URL
-
-	This value is used in |Gista-yank|, |<Plug>(gista-action-yank)|, and
-	'yank' action in Unite interface.
-
-					*g:gista#auto_yank_after_post*
-g:gista#auto_yank_after_post
-	This value should be a boolean or one of the values in
-	|g:gista#default_yank_method|.
-	If this value is not 0, a Gist ID or URL will be yanked after post.
-
-					*g:gista#auto_yank_after_save*
-g:gista#auto_yank_after_save
-	This value should be a boolean or one of the values in
-	|g:gista#default_yank_method|.
-	If this value is not 0, a Gist ID or URL will be yanked after save.
-
-					*g:gista#disable_python_client*
-g:gista#disable_python_client
-	Disable Python client in HTTP connection.
-	The default value is 1.
-
-					*g:gista#suppress_acwrite_info_message*
-g:gista#suppress_acwrite_info_message
-	Suppress acwrite info message of owned files.
-	The default value is 0.
-
-			*g:gista#suppress_not_owner_acwrite_info_message*
-g:gista#suppress_not_owner_acwrite_info_message
-	Suppress acwrite info message of not owned files.
-	The default value is 0.
-
-					*g:gista#warn_in_partial_save*
-g:gista#warn_in_partial_save
-	Show a warning message and confirmation dialog if user tried to save
-	a partial part of content to the connected gist.
-	The default value is 1.
-
-					*g:gista#get_with_authentication*
-g:gista#get_with_authentication
-	In usual, you can get gists with no authentication. But you need to be
-	authenticated in certain circumstances such as strictly restricted
-	Github Enterprise. You may try this option in such time.
-	The default value is 0.
-
-------------------------------------------------------------------------------
-Commands				*vim-gista-interface-commands*
-
+						*vim-gista-Gista-login*
 						*:Gista-login*
-:Gista --login [{username}]
-	Login into Gist API with {username}. If no {username} is specified, it
-	will ask user to fill.
+:Gista login [--apiname={APINAME}] {username}
 
+	Login into API of {APINAME} with {username}. If {APINAME} is omited,
+	a current {APINAME} or |g:gista#client#default_apiname| is used.
+	If {username} is omited, |g:gista#client#default_username| is used.
+	All posterior commands use an user account authorized with this
+	command.
+	See |vim-gista-authorization| if you would like to use your GitHub
+	Enterprise API.
+	See |vim-gista-temporal-authorization| if you would like to temporary
+	login into API.
+
+						*vim-gista-Gista-logout*
 						*:Gista-logout*
-:Gista --logout [--permanently]
-	Logout from Gist API. If '--permanently' option is specified, it will
-	delete a personal access token cache from your file system.
+:Gista logout [--apiname=APINAME]
 
-						*:Gista-list*
-:Gista -l [{lookup}] [--page {PAGE}] [--nocache]
-:Gista --list [{lookup}] [--page {PAGE}] [--nocache]
-	List gist entries of {lookup}. If no {lookup} is specified, a username
-	of current authenticated user or |g:gista#github_user| is used.
+	Logout from API and use an anonymous account of {APINAME} for
+	posterior commands. If {APINAME} is omited, a current {APINAME} or
+	|g:gista#client#default_apiname| is used.
+	All posterior commands use an anonymous account of {APINAME}.
+	See |vim-gista-authorization| if you would like to use your GitHub
+	Enterprise API.
+	See |vim-gista-temporal-authorization| if you would like to temporary
+	logout from API.
 
-	It will download gist entries recursively except if '--page' option is
-	specified or {lookup} is 'public'.
-	If '--page' option is specified, it will download gist entries in
-	{PAGE}.
-	If '--nocache' option is specified, it will rebuild the cache.
+						*vim-gista-Gista-open*
+:Gista open [--opener={OPENER}] [--[no-]cache]	*:Gista-open*
+            [{gistid}] [{filename}]
 
-						*:Gista-open*
-:Gista -o [--gistid {gistid}] [--filename {filename}]
-:Gista --open [--gistid {gistid}] [--filename {filename}]
-	Open a gist specified by {gistid}. If no {gistid} is specified, the
-	command try to find it from the current buffer. It use a connected
-	gist id if the buffer is connect, otherwise it try to find
-	'GistID: XXXXXXXX' format string in the buffer.
+	Open a {filename} of {gistid}. In an opened buffer, users can post
+	content changes with |:write| command if the current user and the
+	owner of the gist is equal. Otherwise the buffer is opened as
+	un-|modifiable| buffer.
 
-	If no '--filename' is specified, it open all files in the gist.
-	Otherwise it open files specified in {filename} as a semi-colon
-	separated filenames.
+						*vim-gista-Gista-json*
+:Gista json [--opener={OPENER}] [--[no-]cache]	*:Gista-json*
+            [{gistid}]
 
-						*:Gista-post*
-:Gista [--gistid {gistid}]
-		\ [-p/--private | -P/--public | -a/--anonymous]
-		\ [-d/--description {description}]
-		\ [--multiple]
-:Gista --post [--gistid {gistid}]
-		\ [-p/--private | -P/--public | -a/--anonymous]
-		\ [-d/--description {description}]
-		\ [--multiple]
-	Create a new gist or update changes of an existing gists with a
-	current buffer. If {gistid} is specified, 'GistID: XXXXXXXX' is found
-	on the current buffer, or the current buffer is connected to a gist,
-	it update the changes to the gist. Otherwise it create a new one.
+	Open a JSON content of {gistid}. An opened buffer is opened as
+	un-|modifiable| buffer.
+	Note that the content of the buffer is different when |g:gista#debug|
+	is 1 to see a debug information.
 
-	You can specify visibility with '--private' or '--public' options. If
-	'--private' is specified, it will create a new gist as a private gist.
-	If you want to create a gist as an anonymous gist, specify
-	'--anonymous' option.
-	Note: Gist API does not provide a way to modify the visibility of an
-	existing gist thus '--private' or '--public' works only for creation.
+						*vim-gista-Gista-list*
+:Gista[!] list [--[no-]cache]			*:Gista-list*
+          [--[no-]since[={SINCE}]]
+          [--[no-]python]
+          [{lookup}]
 
-	You can specify a description of a gist with '--description' option or
-	the command ask you to fill a description when there is no description
-	is specified (see |g:gista#interactive_description|).
+	Open a gista-list window to show gists in {lookup}.
+	Use --[no-]cache and/or --[no-]since option to control request like:
+>
+	:Gista list
+	" => Request gists only when a corresponding cahce does not exist
+	:Gista list --no-cache
+	" => Request created/updated gists since the last access
+	:Gista list --no-cache --since=SINCE
+	" => Request created/updated gists since {SINCE}
+	:Gista list --no-cache --no-since
+	" => Request entire gists
+	:Gista! list
+	" => Request entire gists (same as --no-cache --no-since)
+<
+	Note that --since option is not supported for 'public' gists, naemly
+	it always request entire gists (up to 3000 gists) of 'public' when
+	--no-cache option is specified.
 
-	If you want to create a gist with all visible buffers, specify
-	'--multiple' option then a new gist will contains all
-	opened+listed+visible buffers (see
-	|g:gista#include_invisible_buffer_in_multiple|).
+	When the Vim was compiled with |+python| and/or |+python3|, an extra
+	option, --[no-]python, becomes available. The option stands for
+	enabling a Python fetcher which request pages of gists in multi-thread
+	technology to drastically improve the response. If you would like to
+	use a default fetcher, use --no-python option.
 
-						*:Gista-yank*
-:Gista --yank
-:Gista --yank {method}
-	Yank a gist ID or URL of the gist connected from the current buffer,
-	determined from {method}.
-	If no {method} is specified, the value of
-	|g:gista#default_yank_method| will be used.
-	{method} required to be a value in |g:gista#default_yank_method|.
-	If |clipboard| is enable, it will also yank the text into |v:register|
-	thus if you use 'unnamed' or 'unnamedplus', the text will be copied
-	into the system clipboard.
+	In gista-list window, the following content will be shown:
+>
+	  ┌ API name
+	  │       ┌ Lookup
+	  │       │                  ┌ The current mode
+	  │       │                  │
+	GitHub:lambdalisue | Mode: updated_at | Press ? to toggle a ma...
+	- 15/12/31(07:08:22)   [3] test.vi... gistid:bb408da1b3fb100d6c1a
+	= 15/12/27(17:58:56) * [2] benchma... gistid:c84fe3e0b306a2bc8578
+	│       │          │ │     │                     │
+	│       │          │ │     │                     └ GistID
+	│       │          │ │     └ Description
+	│       │          │ └ The number of files
+	│       │          └ Is starred marker (*: starred)
+	│       └ A created_at/updated_at of the gist (depends on the Mode:)
+	└ Fetched marker (-: Unfetched, =: fetched)
+<
+	Note that you have to fetch starred gists first to enable "Is starred
+	marker" like:
+>
+	:Gista list
+	" => All of your gists are shown. No "Is starred marker" are shown
+	:Gista list starred
+	" => All starred gists shwon
+	:Gista list
+	" => All of your gists are shown. "Is starred marker" are shown
+<
+	Press ? in gista-list window to see what kind of key mappings are
+	available.
 
-						*:Gista-yank-gistid*
-:Gista --yank-gistid
-	Yank a gist ID (and filename) of the gist connected from the current
-	buffer.
-	If |clipboard| is enable, it will also yank the text into |v:register|
-	thus if you use 'unnamed' or 'unnamedplus', the text will be copied
-	into the system clipboard.
+						*vim-gista-Gista-post*
+:Gista post [--description={DESCRIPTION}]	*:Gista-post*
+       [--public|--private]
 
-						*:Gista-yank-url*
-:Gista --yank-url
-	Yank a URL of the gist connected from the current buffer.
-	If |clipboard| is enable, it will also yank the text into |v:register|
-	thus if you use 'unnamed' or 'unnamedplus', the text will be copied
-	into the system clipboard.
+	Post a content of the current buffer to a new gist in the current API.
+	Note that this command apply a new filename to the current buffer so
+	use |Ctrl-^| to switch to previous filename (See |alternate-file| for
+	detail.)
+	Use |:Gista-patch| instead to add/modify a content of an existing gist.
 
-------------------------------------------------------------------------------
-Mappings					*vim-gista-interface-mappings*
+						*vim-gista-Gista-patch*
+:Gista patch [--description={DESCRIPTION}]	*:Gista-patch*
+       [--[no-]force]
+       [{gistid}]
 
-					*<Plug>(gista-update)*
-<Plug>(gista-update)
-	Update gist entries.
+	Post a content of the current buffer to an existing gist in the
+	current API. It checks if a remote content of the gist is updated or
+	not unless --force option is specified.
+	Note that this command apply a new filename to the current buffer so
+	use |Ctrl-^| to switch to previous filename (See |alternate-file| for
+	detail.)
+	Use |:Gista-post| instead to create a new gist with a content.
 
-					*<Plug>(gista-update-nocache)*
-<Plug>(gista-update-nocache)
-	Similar to |<Plug>(gista-update)| but it update gist entries without
-	using an existing cache and rebuild the cache.
+						*vim-gista-Gista-rename*
+:Gista rename [--[no-]force]			*:Gista-rename*
+       [{gistid}] [{filename}] [{new_filename}]
 
-					*<Plug>(gista-action-update)*
-<Plug>(gista-action-update)
-	Update gist entries if called in a gist:list buffer.
-	Use |<Plug>(gista-update)| instead to update gist entries outside of a 
-	gist:list buffer
+	Rename a {filename} of a gist.
+	It checks if a remote content of the gist is updated unless
+	--force option is specified.
 
-					*<Plug>(gista-action-update-nocache)*
-<Plug>(gista-action-update-nocache)
-	Similar to |<Plug>(gista-action-update)| but it update gist entries
-	without using an existing cache and rebuild the cache.
-	Use |<Plug>(gista-update-nocache)| instead to update gist entries
-	outside of a gist:list buffer
+						*vim-gista-Gista-remove*
+:Gista remove [--[no-]force]			*:Gista-remove*
+       [{gistid}] [{filename}]
 
-					*<Plug>(gista-action-open)*
-<Plug>(gista-action-open)
-	Open a selected gist with a default opener if called in a gist:list
-	buffer. The default opener is determined by
-	|g:gista#gist_default_opener_in_action|
+	Remove a {filename} of a gist.
+	It checks if a remote content of the gist is updated unless
+	--force option is specified.
 
-					*<Plug>(gista-action-edit)*
-<Plug>(gista-action-edit)
-	Open a selected gist with an 'edit' opener if called in a gist:list
-	buffer.
+						*vim-gista-Gista-delete*
+:Gista delete [--[no-]force]			*:Gista-delete*
+       [{gistid}]
 
-					*<Plug>(gista-action-split)*
-<Plug>(gista-action-split)
-	Open a selected gist with an 'split' opener if called in a gist:list
-	buffer.
+	Delete a gist.
+	It checks if a remote content of the gist is updated unless
+	--force option is specified.
 
-					*<Plug>(gista-action-vsplit)*
-<Plug>(gista-action-vsplit)
-	Open a selected gist with an 'vsplit' opener if called in a gist:list
-	buffer.
+						*vim-gista-Gista-browse*
+:Gista browse [--filename={FILENAME}]		*:Gista-browse*
+       [--echo|--yank] [{gistid}]
 
-					*<Plug>(gista-action-open-nocache)*
-<Plug>(gista-action-open-nocache)
-	Open a selected gist with a default opener if called in a gist:list
-	buffer. It is similar to |<Plug>(gista-action-open)| but it won't use
-	a cached gist and re-download the gist for opening. Useful to revert
-	the changes.
-	The default opener is determined by
-	|g:gista#gist_default_opener_in_action|
+	Browse a remote URL of a gist {gistid} in a system default browser
+	unless --echo or --yank option is specified.
 
-					*<Plug>(gista-action-edit-nocache)*
-<Plug>(gista-action-edit-nocache)
-	Open a selected gist with an 'edit' opener if called in a gist:list
-	buffer.
-	It won't use a cached gist and re-download the gist for opening.
-	Useful to revert the changes.
+						*vim-gista-Gista-fork*
+:Gista fork [{gistid}]				*:Gista-fork*
 
-					*<Plug>(gista-action-split-nocache)*
-<Plug>(gista-action-split-nocache)
-	Open a selected gist with an 'split' opener if called in a gist:list
-	buffer.
-	It won't use a cached gist and re-download the gist for opening.
-	Useful to revert the changes.
+	Fork a gist {gistid} to the current user in the current API.
 
-					*<Plug>(gista-action-vsplit-nocache)*
-<Plug>(gista-action-vsplit-nocache)
-	Open a selected gist with an 'vsplit' opener if called in a gist:list
-	buffer.
-	It won't use a cached gist and re-download the gist for opening.
-	Useful to revert the changes.
+						*vim-gista-Gista-star*
+:Gista star [{gistid}]				*:Gista-star*
 
-					*<Plug>(gista-action-rename)*
-<Plug>(gista-action-rename)
-	Rename a selected gist file if called in a gist:list buffer.
+	Star a gist {gistid}
 
-					*<Plug>(gista-action-remove)*
-<Plug>(gista-action-remove)
-	Remove a selected gist file if called in a gist:list buffer.
+						*vim-gista-Gista-unstar*
+:Gista unstar [{gistid}]			*:Gista-unstar*
 
-					*<Plug>(gista-action-delete)*
-<Plug>(gista-action-delete)
-	Delete a selected gist if called in a gist:list buffer.
-
-					*<Plug>(gista-action-star)*
-					*<Plug>(gista-action-unstar)*
-<Plug>(gista-action-star)
-<Plug>(gista-action-unstar)
-	Star/Unstar a selected gist if called in a gist:list buffer.
-
-					*<Plug>(gista-action-is-starred)*
-<Plug>(gista-action-is-starred)
-	Check if the gist is starred or not if called in a gist:list buffer.
-
-					*<Plug>(gista-action-fork)*
-<Plug>(gista-action-fork)
-	Fork a selected gist if called in a gist:list buffer.
-
-					*<Plug>(gista-action-browse)*
-<Plug>(gista-action-browse)
-	Open a browser with a selected gist or gist file if called in a
-	gist:list buffer. It require 'tyru/open-browser.vim'.
-
-
-					*<Plug>(gista-action-yank)*
-<Plug>(gista-action-yank)
-	Yank a gist ID (and filename) of selected gist or file.
-	It will yank the text to |v:register| as well if |clipboard| is enable.
-
+	Unstar a gist {gistid}
 
 ------------------------------------------------------------------------------
-Highlights				*vim-gista-interface-highlights*
+VARIABLE					*vim-gista-variable*
 
-							*hl-GistaTitle*
-GistaTitle
-	A highlight used to indicate a title of messages.
-	It is linked to 'Title' in default.
+g:gista#debug			*g:gista#debug*
+g:gista#develop			*g:gista#develop*
 
-							*hl-GistaError*
-GistaError
-	A highlight used to indicate a error (message).
-	It is linked to |hl-ErrorMsg| in default.
+	1 to use vim-gista in debug or develop mode.
 
-							*hl-GistaWarning*
-GistaWarning
-	A highlight used to indicate a warning (message).
-	It is linked to |hl-WarningMsg| in default.
+g:gista#client#cache_dir		*g:gista#client#cache_dir*
 
-							*hl-GistaInfo*
-GistaInfo
-	A highlight used to indicate a information (message).
-	It is linked to 'Comment' in default.
+	A directory path for storing caches.
+	Default is '~/.cache/vim-gista'
 
-							*hl-GistaQuestion*
-GistaQuestion
-	A highlight used to indicate a question (message).
-	It is linked to |hl-Question| in default.
+g:gista#client#default_apiname	*g:gista#client#default_apiname*
 
-							*hl-GistaGistID*
-GistaGistID
-	A highlight used to indicate a gist ID.
-	It is linked to 'Tag' in default.
+	A default API name used in |:Gista-login| command.
+	Default is 'GitHub'.
 
-							*hl-GistaPrivate*
-GistaPrivate
-	A highlight used to indicate a private mark.
-	It is linked to |hl-ErrorMsg| in default.
+g:gista#client#default_username	*g:gista#client#default_username*
 
-							*hl-GistaDate*
-GistaDate
-	A highlight used to indicate a date.
-	It is linked to 'Comment' in default.
+	A default username used in |:Gista-login| command.
+	Default is ''.
 
-							*hl-GistaTime*
-GistaTime
-	A highlight used to indicate a time.
-	It is linked to 'Comment' in default.
+			*g:gista#command#json#default_opener*
+			*g:gista#command#open#default_opener*
+			*g:gista#command#list#default_opener*
+g:gista#command#json#default_opener
+g:gista#command#open#default_opener
+g:gista#command#list#default_opener
 
-							*hl-GistaFiles*
-GistaFiles
-	A highlight used to indicate a files.
-	It is linked to 'Comment' in default.
+	A default opener for |:Gista-json|, |:Gista-open|, or |:Gista-list|.
+	The default value is 'edit' for |:Gista-json| or |:Gista-open|,
+	'topleft 15 split' for |:Gista-list|.
 
-							*hl-GistaComment*
-GistaComment
-	A highlight used to indicate a comment.
-	It is linked to 'Comment' in default.
+			*g:gista#command#list#default_lookup*
+g:gista#command#list#default_lookup
 
-							*hl-GistaStatement*
-GistaStatement
-	A highlight used to indicate a statement.
-	It is linked to 'Statement' in default.
+	A default lookup for |:Gista-list|. The value is used when no {lookup}
+	is specified. If the value is empty, the current username is used.
+	The default value is ''.
+
+			*g:gista#command#list#default_mode*
+g:gista#command#list#default_mode
+
+	A default mode for |:Gista-list|.
+	The default value is 'updated_at'.
+
+			*g:gista#command#list#default_mapping_visibility*
+g:gista#command#list#default_mapping_visibility
+
+	1 to show mapping in gista-list window when |:Gista-list| command is
+	executed.
+	The default value is 0.
+
+			*g:gista#command#list#default_entry_opener*
+g:gista#command#list#default_entry_opener
+
+	A key name in |g:gista#command#list#entry_openers| used to open a
+	selected gist entry.
+	The opener is used for |<Plug>(gista-open)| or |<Plug>(gista-json)|.
+	The default value is 'edit'.
+
+			*g:gista#command#list#entry_openers*
+g:gista#command#list#entry_openers
+
+	A dictionary of opener commands for opening entries in gista-list
+	window. The value of the dictionary is a |List| which first item is a
+	command and the second item is 0 or 1 to indicate whether focus anchor
+	before opening.
+	The default value is:
+>
+	let g:gista#command#list#entry_openers = {
+	      \ 'edit':    ['edit', 1],
+	      \ 'above':   ['above', 1],
+	      \ 'below':   ['below', 1],
+	      \ 'left':    ['left', 1],
+	      \ 'right':   ['right', 1],
+	      \ 'tab':     ['tab', 0],
+	      \ 'preview': ['preview', 0],
+	      \}
+<
+			*g:gista#command#list#enable_default_mappings*
+g:gista#command#list#enable_default_mappings
+
+	1 to enable default key mappings in a gista-list window.
+	See |vim-gista-mappings| if you would like to assign your custom
+	mappings.
+	The default value is 1.
+
+			*g:gista#command#list#show_status_string_in_prologue*
+g:gista#command#list#show_status_string_in_prologue
+
+	1 to show status string in a prologue of gista-list window.
+	The default value is 1.
+
+			*g:gista#command#post#default_public*
+g:gista#command#post#default_public
+
+	1 to post a gist as a public gist.
+	The default value is 1.
+
+			*g:gista#command#post#interactive_description*
+g:gista#command#post#interactive_description
+
+	1 to ask a description when user does not specify a description with
+	--description=DESCRIPTION option. Note that an empty description is
+	not allowed when |g:gista#command#post#allow_empty_description| is 0.
+	The default value is 1.
+
+			*g:gista#command#post#allow_empty_description*
+g:gista#command#post#allow_empty_description
+
+	1 to allow an empty description. Otherwise posting will be canceled
+	when an empty description is specified.
+	The default value is 0.
+
+			*g:gista#command#browse#default_options*
+			*g:gista#command#delete#default_options*
+			*g:gista#command#fork#default_options*
+			*g:gista#command#json#default_options*
+			*g:gista#command#list#default_options*
+			*g:gista#command#login#default_options*
+			*g:gista#command#logout#default_options*
+			*g:gista#command#open#default_options*
+			*g:gista#command#patch#default_options*
+			*g:gista#command#post#default_options*
+			*g:gista#command#star#default_options*
+			*g:gista#command#unstar#default_options*
+g:gista#command#browse#default_options
+g:gista#command#delete#default_options
+g:gista#command#fork#default_options
+g:gista#command#json#default_options
+g:gista#command#list#default_options
+g:gista#command#login#default_options
+g:gista#command#logout#default_options
+g:gista#command#open#default_options
+g:gista#command#patch#default_options
+g:gista#command#post#default_options
+g:gista#command#star#default_options
+g:gista#command#unstar#default_options
+
+	A |Dictionary| used to extend options of each command.
+	See -h/--help of each command to figure out what option is available.
+	For example, use |g:gista#command#list#default_options| to request
+	updated gists always like:
+>
+	" Always request updated gists in :Gista list
+	let g:gista#command#list#default_options = {
+	      \ 'cache': 0,
+	      \}
+<
 
 ==============================================================================
-UNITE INTERFACE					*vim-gista-unite-interface*
-
-------------------------------------------------------------------------------
-Sources					*vim-gista-unite-interface-sources*
-
-						*unite/sources/gista*
-unite/sources/gista
-	List gist entries of a specified user. You can specify a user with
-	argument like
->
-		:Unite gista:lambdalisue
-<
-						*unite/sources/gista_file*
-unite/sources/gista_file
-	List gist files of a particular gist. It is not listed and is used as
-	a internal unite source of |unite/sources/gista|.
-
-------------------------------------------------------------------------------
-Kinds					*vim-gista-unite-interface-kinds*
-
-						*unite/kinds/gista*
-unite/kinds/gista
-	A kind which indicate a Gist of gista. This kind inherit
-	|unite-kind-openable| and |unite-kind-uri|.
-
-						*unite/kinds/gista-file*
-unite/kinds/gista-file
-	A kind which indicate a gist file of gista. This kind inherit
-	|unite-kind-openable| and |unite-kind-uri|.
-
-------------------------------------------------------------------------------
-Actions					*vim-gista-unite-interface-actions*
-
-						*unite/actions/gista*
-unite/actions/gista
-	|unite/kinds/gista| define the following actions (the kind also have
-	other actions which defined in |unite-kinds-openable| and 
-	|unite-kinds-uri|.)
-
-	open		Open files in the gist
-	select		Open Unite interface to select files in the gist
-	delete		Delete the gist
-	star		Star the gist
-	unstar		Unstar the gist
-	fork		Fork the gist (it does not work with authenticated
-			user's gist)
-	yank		Yank a Gist ID or URL (determined from
-			|g:gista#default_yank_method|)
-	yank_gistid	Yank a Gist ID
-	yank_url	Yank a URL
-	smart_open	Do 'select' or 'open', determined from the number of
-			files in the gist.
-			See |g:gista#unite_smart_open_threshold|
-	smart_xxxx	'xxxx' is one of the following and similar to
-			'smart_open' but execute a corresponding action.
-
-			tabopen, choose, tabdrop, split, vsplit, left, right,
-			above, below, persist_open, tabsplit
-
-						*unite/actions/gista_file*
-unite/actions/gista_file
-	|unite/kinds/gista| define the following actions (the kind also have
-	other actions which defined in |unite-kinds-openable| and
-	|unite-kinds-uri|.)
-
-	open		Open the file
-	rename		Rename the file
-	delete		Delete the file
-	yank		Yank a Gist ID or URL (determined from
-			|g:gista#default_yank_method|)
-	yank_gistid	Yank a Gist ID
-	yank_url	Yank a URL
-
-						*unite/actions/post_to_gist*
-unite/actions/post_to_gist
-	This action is indicated as a custom action of |unite-kind-file| and
-	|unite-kind-buffer|. You can post selected files/buffers to create a new
-	gist.
-
-------------------------------------------------------------------------------
-Filters					*vim-gista-unite-interface-filters*
-
-				*unite/filters/converter_gista_full*
-unite/filters/converter_gista_full
-	A 'gista' converter which display all informations about the gist.
-
-				*unite/filters/converter_gista_short*
-unite/filters/converter_gista_short
-	A 'gista' converter which display minimum informations about the gist.
-	a Gist ID and an updated datetime are omitted.
-
-				*unite/filters/converter_gista_without_gistid*
-unite/filters/converter_gista_without_gistid
-	A 'gista' converter which display informations about the gist, without
-	a Gist ID.
-
-				*unite/filters/converter_gista_without_datetime*
-unite/filters/converter_gista_without_datetime
-	A 'gista' converter which display informations about the gist, without
-	an updated datetime.
-
-				*unite/filters/converter_gista_without_date*
-unite/filters/converter_gista_without_date
-	A 'gista' converter which display informations about the gist, without
-	an updated date.
-
-				*unite/filters/converter_gista_without_time*
-unite/filters/converter_gista_without_time
-	A 'gista' converter which display informations about the gist, without
-	an updated time.
-
-------------------------------------------------------------------------------
-Highlights				*vim-gista-unite-interface-highlights*
-
-					*hl-uniteSource__gista_fnum*
-uniteSource__gista_fnum
-	A highlight used to indicate the number of files in the gist.
-	It is linked to |hl-GistaStatement| in default.
-
-					*hl-uniteSource__gista_gistid*
-uniteSource__gista_gistid
-	A highlight used to indicate a gist ID of the gist.
-	It is linked to |hl-GistaGistID| in default.
-
-					*hl-uniteSource__gista_private*
-uniteSource__gista_private
-	A highlight used to indicate a private mark on the gist.
-	It is linked to |hl-GistaPrivate| in default.
-
-					*hl-uniteSource__gista_date*
-uniteSource__gista_date
-	A highlight used to indicate a created/updated date on the gist.
-	It is linked to |hl-GistaDate| in default.
-
-					*hl-uniteSource__gista_time*
-uniteSource__gista_time
-	A highlight used to indicate a created/updated time on the gist.
-	It is linked to |hl-GistaTime| in default.
-
 vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl:noet

@@ -1,0 +1,479 @@
+let s:V = vital#of('vital')
+let s:F = s:V.import('System.File')
+let s:P = s:V.import('System.Filepath')
+let s:S = s:V.import('Vim.ScriptLocal')
+let s:G = s:V.import('Vim.Guard')
+
+Describe gista#client
+  Before all
+    let sfile = s:P.realpath('autoload/gista/client.vim')
+    let sf = s:S.sfuncs(sfile)
+    let sv = s:S.svars(sfile)
+  End
+  Before
+    let guard = s:G.store(
+          \ 'g:gista#client#default_apiname',
+          \ 'g:gista#client#default_username',
+          \ ['current_client', sv],
+          \ ['registry', sv],
+          \ ['G', sv],
+          \)
+    let g:gista#client#default_apiname = 'A'
+    let g:gista#client#default_username = ''
+    let sv.current_client = {}
+    let sv.registry = {
+          \ 'A': 'http://A',
+          \ 'B': 'http://B',
+          \}
+  End
+  After
+    call guard.restore()
+  End
+  Describe s:get_client_cache()
+    It returns a cache system
+      let ret = sf.get_client_cache()
+      Assert KeyExists(ret, 'has')
+      Assert KeyExists(ret, 'get')
+      Assert KeyExists(ret, 'set')
+      Assert KeyExists(ret, 'remove')
+      Assert KeyExists(ret, 'clear')
+      let ret2 = sf.get_client_cache()
+      Assert Same(ret, ret2)
+    End
+  End
+  Describe s:get_token_cache({apiname})
+    It returns a unique cache system of {apiname}
+      let ret = sf.get_token_cache('A')
+      Assert KeyExists(ret, 'has')
+      Assert KeyExists(ret, 'get')
+      Assert KeyExists(ret, 'set')
+      Assert KeyExists(ret, 'remove')
+      Assert KeyExists(ret, 'clear')
+      let ret2 = sf.get_token_cache('A')
+      Assert Same(ret, ret2)
+      let ret3 = sf.get_token_cache('B')
+      Assert NotSame(ret, ret3)
+    End
+  End
+  Describe s:get_token_cache({apiname})
+    It returns a unique cache system of {apiname}
+      let ret = sf.get_token_cache('A')
+      Assert KeyExists(ret, 'has')
+      Assert KeyExists(ret, 'get')
+      Assert KeyExists(ret, 'set')
+      Assert KeyExists(ret, 'remove')
+      Assert KeyExists(ret, 'clear')
+      let ret2 = sf.get_token_cache('A')
+      Assert Same(ret, ret2)
+      let ret3 = sf.get_token_cache('B')
+      Assert NotSame(ret, ret3)
+    End
+  End
+  Describe s:get_gist_cache({apiname})
+    It returns a unique cache system of {apiname}
+      let ret = sf.get_gist_cache('A')
+      Assert KeyExists(ret, 'has')
+      Assert KeyExists(ret, 'get')
+      Assert KeyExists(ret, 'set')
+      Assert KeyExists(ret, 'remove')
+      Assert KeyExists(ret, 'clear')
+      let ret2 = sf.get_gist_cache('A')
+      Assert Same(ret, ret2)
+      let ret3 = sf.get_gist_cache('B')
+      Assert NotSame(ret, ret3)
+    End
+  End
+  Describe s:get_starred_cache({apiname})
+    It returns a unique cache system of {apiname}
+      let ret = sf.get_starred_cache('A')
+      Assert KeyExists(ret, 'has')
+      Assert KeyExists(ret, 'get')
+      Assert KeyExists(ret, 'set')
+      Assert KeyExists(ret, 'remove')
+      Assert KeyExists(ret, 'clear')
+      let ret2 = sf.get_starred_cache('A')
+      Assert Same(ret, ret2)
+      let ret3 = sf.get_starred_cache('B')
+      Assert NotSame(ret, ret3)
+    End
+  End
+
+  Describe s:validate_apiname({apiname})
+    It throws an exception when {apiname} is empty
+      Throw /An API name cannot be empty/
+            \ sf.validate_apiname('')
+    End
+    It throws an exception when {apiname} is not registered yet
+      Throw /An API name "foo" has not been registered yet/
+            \ sf.validate_apiname('foo')
+    End
+  End
+  Describe s:get_default_apiname()
+    It warn if g:gista#client#default_apiname is invalid
+      let g:gista#client#default_apiname = ''
+      redir => raw_content
+      call sf.get_default_apiname()
+      redir END
+      let content = split(raw_content, "\r\\?\n")
+      Assert Match(content[0], 'An API name cannot be empty')
+      Assert Match(content[1], '"GitHub" will be used as a default API name instead')
+
+      let g:gista#client#default_apiname = 'foo'
+      redir => raw_content
+      call sf.get_default_apiname()
+      redir END
+      let content = split(raw_content, "\r\\?\n")
+      Assert Match(content[0], 'An API name "foo" has not been registered yet')
+      Assert Match(content[1], '"GitHub" will be used as a default API name instead')
+    End
+    It returns a default API name
+      let g:gista#client#default_apiname = 'A'
+      let ret = sf.get_default_apiname()
+      Assert Equals(ret, 'A')
+
+      let g:gista#client#default_apiname = 'B'
+      let ret = sf.get_default_apiname()
+      Assert Equals(ret, 'B')
+    End
+  End
+  Describe s:validate_username({username})
+    It throws an exception when {username} does not follow the pattern
+      Throw /An API username "{foo}" requires to follow/
+            \ sf.validate_username('{foo}')
+    End
+  End
+  Describe s:get_default_username({apiname})
+    It warn if g:gista#client#default_username is invalid
+      let g:gista#client#default_username = '{foo}'
+      redir => raw_content
+      call sf.get_default_username('A')
+      redir END
+      let content = split(raw_content, "\r\\?\n")
+      Assert Match(content[0], 'An API username "{foo}" requires to follow')
+      Assert Match(content[1], 'An anonymous user is used instead')
+    End
+    It returns a default API username [String]
+      unlet g:gista#client#default_username
+      let g:gista#client#default_username = 'foo'
+      let ret = sf.get_default_username('A')
+      Assert Equals(ret, 'foo')
+
+      let g:gista#client#default_username = 'bar'
+      let ret = sf.get_default_username('A')
+      Assert Equals(ret, 'bar')
+    End
+    It returns a default API username [Dictionary]
+      unlet g:gista#client#default_username
+      let g:gista#client#default_username = {
+            \ '_': 'foo',
+            \ 'A': 'bar',
+            \}
+      let ret = sf.get_default_username('A')
+      Assert Equals(ret, 'bar')
+      let ret = sf.get_default_username('B')
+      Assert Equals(ret, 'foo')
+    End
+  End
+
+  Describe s:login({client}, {username}, {options)
+    It call {client}.login() internally
+      let client = sf.new_client('A')
+      function! client.login(username, options) abort
+        let self._login_kwargs = {
+              \ 'username': a:username,
+              \ 'options': a:options,
+              \}
+      endfunction
+      call sf.login(client, 'username', { 'foo': 'bar', 'verbose': 0 })
+      " NOTE:
+      "   Unknown keys of {options} are internally omitted
+      Assert Equals(client._login_kwargs, {
+            \ 'username': 'username',
+            \ 'options': {
+            \   'verbose': 0,
+            \ },
+            \})
+    End
+    It throws an exception when login failed
+      let client = sf.new_client('A')
+      function! client.login(username, options) abort
+        throw 'vital: Web.API.GitHub: 403 Forbidden'
+      endfunction
+      Throw /vim-gista: 403 Forbidden/
+            \ sf.login(client, 'username', {})
+    End
+  End
+  Describe s:logout({client}, {options})
+    It call {client}.logout() internally
+      let client = sf.new_client('A')
+      function! client.logout(options) abort
+        let self._logout_kwargs = {
+              \ 'options': a:options,
+              \}
+      endfunction
+      call sf.logout(client, { 'foo': 'bar', 'verbose': 0, 'permanent': 1 })
+      " NOTE:
+      "   Unknown keys of {options} are internally omitted
+      Assert Equals(client._logout_kwargs, {
+            \ 'options': {
+            \   'verbose': 0,
+            \   'permanent': 1,
+            \ },
+            \})
+    End
+    It throws an exception when logout failed
+      let client = sf.new_client('A')
+      function! client.logout(options) abort
+        throw 'vital: Web.API.GitHub: 403 Forbidden'
+      endfunction
+      Throw /vim-gista: 403 Forbidden/
+            \ sf.logout(client, {})
+    End
+  End
+  Describe s:new_client({apiname})
+    It returns a fresh extended Web.API.GitHub client of {apiname}
+      let client = sf.new_client('A')
+      " Web.API.GitHub interface
+      Assert KeyExists(client, 'get_authorize_scopes')
+      Assert KeyExists(client, 'get_authorize_note')
+      Assert KeyExists(client, 'get_authorize_note_url')
+      Assert KeyExists(client, 'get_absolute_url')
+      Assert KeyExists(client, 'is_authorized')
+      Assert KeyExists(client, 'get_token')
+      Assert KeyExists(client, 'get_header')
+      Assert KeyExists(client, 'get_authorized_username')
+      Assert KeyExists(client, 'login')
+      Assert KeyExists(client, 'logout')
+      Assert KeyExists(client, 'request')
+      Assert KeyExists(client, 'head')
+      Assert KeyExists(client, 'get')
+      Assert KeyExists(client, 'post')
+      Assert KeyExists(client, 'patch')
+      Assert KeyExists(client, 'put')
+      Assert KeyExists(client, 'delete')
+      Assert KeyExists(client, 'retrieve')
+      " Extended interface
+      Assert KeyExists(client, 'apiname')
+      Assert KeyExists(client, 'index_cache')
+      Assert KeyExists(client, 'gist_cache')
+      " it always return a fresh instance
+      let client2 = sf.new_client('A')
+      Assert NotSame(client, client2)
+    End
+    It call s:login internally when g:gista#client#default_username is specified
+      " Mock module script variable to prevent HTTP request
+      let client = sf.new_client('A')
+      function! client.login(...) abort
+        let self._login_args = a:000
+      endfunction
+      let sv.G._abstract_client = client
+      function! sv.G.new(...) abort
+        return self._abstract_client
+      endfunction
+      let g:gista#client#default_username = 'lambdalisue'
+      let client = sf.new_client('A')
+      Assert Equals(client._login_args, ['lambdalisue', { 'verbose': 1 }])
+    End
+  End
+  Describe s:get_client({apiname})
+    It returns an unique extended Web.API.GitHub client of {apiname}
+      let client = sf.get_client('A')
+      " Web.API.GitHub interface
+      Assert KeyExists(client, 'get_authorize_scopes')
+      Assert KeyExists(client, 'get_authorize_note')
+      Assert KeyExists(client, 'get_authorize_note_url')
+      Assert KeyExists(client, 'get_absolute_url')
+      Assert KeyExists(client, 'is_authorized')
+      Assert KeyExists(client, 'get_token')
+      Assert KeyExists(client, 'get_header')
+      Assert KeyExists(client, 'get_authorized_username')
+      Assert KeyExists(client, 'login')
+      Assert KeyExists(client, 'logout')
+      Assert KeyExists(client, 'request')
+      Assert KeyExists(client, 'head')
+      Assert KeyExists(client, 'get')
+      Assert KeyExists(client, 'post')
+      Assert KeyExists(client, 'patch')
+      Assert KeyExists(client, 'put')
+      Assert KeyExists(client, 'delete')
+      Assert KeyExists(client, 'retrieve')
+      " Extended interface
+      Assert KeyExists(client, 'apiname')
+      Assert KeyExists(client, 'index_cache')
+      Assert KeyExists(client, 'gist_cache')
+      " it always return an unique instance
+      let client2 = sf.get_client('A')
+      Assert Same(client, client2)
+    End
+  End
+
+  Describe #get_available_apinames()
+    It returns a list of keys of s:registry
+      let ret = gista#client#get_available_apinames()
+      Assert Equals(ret, keys(sv.registry))
+    End
+  End
+  Describe #get_available_usernames({apiname})
+    It returns a list of keys of token_cache of a client
+      let client = gista#client#get()
+      let client.token_cache.set('foo', '')
+      let client.token_cache.set('bar', '')
+      let client.token_cache.set('hoge', '')
+
+      let ret = gista#client#get_available_usernames(client.apiname)
+      Assert Equals(sort(ret), sort(['foo', 'bar', 'hoge']))
+    End
+  End
+
+  Describe #register({apiname}, {baseurl})
+    It errors when an empty {apiname} is specified
+      redir => raw_content
+      call gista#client#register('', 'http://A')
+      redir END
+      let content = split(raw_content, "\r\\?\n")
+      Assert Match(content[0], 'An API name cannot be empty')
+    End
+    It errors when an {apiname} does not follow the pattern
+      redir => raw_content
+      call gista#client#register('{APINAME}', 'http://A')
+      redir END
+      let content = split(raw_content, "\r\\?\n")
+      Assert Match(content[0], 'An API name "{APINAME}" requires to follow')
+    End
+    It errors when an {apiname} exists in registry
+      redir => raw_content
+      call gista#client#register('A', 'http://A')
+      redir END
+      let content = split(raw_content, "\r\\?\n")
+      Assert Match(content[0], 'An API name "A" has been already registered')
+    End
+    It errors when an empty {baseurl} is specified
+      redir => raw_content
+      call gista#client#register('C', '')
+      redir END
+      let content = split(raw_content, "\r\\?\n")
+      Assert Match(content[0], 'An API baseurl cannot be empty')
+    End
+    It errors when a {baseurl} does not follow the pattern
+      redir => raw_content
+      call gista#client#register('C', 'CCC')
+      redir END
+      let content = split(raw_content, "\r\\?\n")
+      Assert Match(content[0], 'An API baseurl "CCC" requires to follow')
+    End
+    It register an {apiname} with a {baseurl}
+      call gista#client#register('C', 'http://C')
+      Assert Equals(sv.registry, {
+            \ 'A': 'http://A',
+            \ 'B': 'http://B',
+            \ 'C': 'http://C',
+            \})
+    End
+  End
+  Describe #unregister({apiname})
+    It errors when an {apiname} has not registered yet
+      redir => raw_content
+      call gista#client#unregister('C')
+      redir END
+      let content = split(raw_content, "\r\\?\n")
+      Assert Match(content[0], 'An API name "C" has not been registered yet')
+    End
+    It unregister an {apiname}
+      call gista#client#unregister('A')
+      Assert Equals(sv.registry, {
+            \ 'B': 'http://B',
+            \})
+    End
+  End
+
+  Describe #get()
+    It returns a client of g:gista#client#default_apiname for the first time
+      let g:gista#client#default_apiname = 'B'
+      let client = gista#client#get()
+      Assert Equals(client.apiname, 'B')
+    End
+    It returns a current client specified by #set()
+      let g:gista#client#default_apiname = 'A'
+      let client = gista#client#get()
+      Assert Equals(client.apiname, 'A')
+
+      call gista#client#set('B')
+      let client = gista#client#get()
+      Assert Equals(client.apiname, 'B')
+    End
+  End
+  
+  Describe #set({apiname}[, {options}])
+    It returns a client of {apiname}
+      let client = gista#client#set('B')
+      Assert Equals(client.apiname, 'B')
+    End
+    It call s:login() internally when {options}.username is specified
+      let client = gista#client#get()
+      function! client.login(...) abort
+        let self._login_args = a:000
+      endfunction
+
+      let client = gista#client#set(client.apiname, {'username': 'lambdalisue'})
+      Assert Equals(client._login_args, ['lambdalisue', { 'verbose': 1 }])
+    End
+    It call s:logout() internally when {options}.username is specified but empty
+      let client = gista#client#get()
+      function! client.logout(...) abort
+        let self._logout_args = a:000
+      endfunction
+
+      let client = gista#client#set(client.apiname, {'username': ''})
+      Assert Equals(client._logout_args, [{ 'verbose': 1, 'permanent': 0 }])
+
+      let client = gista#client#set(client.apiname, {'username': '', 'permanent': 1})
+      Assert Equals(client._logout_args, [{ 'verbose': 1, 'permanent': 1 }])
+    End
+    It switch a current client
+      let client = gista#client#set('B')
+      let current_client = gista#client#get()
+      Assert Same(client, current_client)
+    End
+  End
+  Describe #session({options})
+    It returns a session instance
+      let session = gista#client#session({ 'apiname': 'A' })
+      Assert KeyExists(session, 'enter')
+      Assert KeyExists(session, 'exit')
+    End
+
+    Describe A session instance
+      It enter/exit a session with .enter()/.exit()
+        let session = gista#client#session({ 'apiname': 'B' })
+        Assert Equals(gista#client#get().apiname, 'A')
+        call session.enter()
+        Assert Equals(gista#client#get().apiname, 'B')
+        call session.exit()
+        Assert Equals(gista#client#get().apiname, 'A')
+      End
+      It throws an exception when .exit() called without .enter()
+        let session = gista#client#session({ 'apiname': 'A' })
+        Throw /session\.enter() has not been called yet/
+              \ session.exit()
+      End
+      It throws an exception when .enter() called twice or more
+        let session = gista#client#session({ 'apiname': 'A' })
+        call session.enter()
+        Throw /session\.exit() has not been called yet/
+              \ session.enter()
+      End
+    End
+  End
+
+  Describe #throw({response})
+    It throws an API exception of {response}
+      let response = {
+            \ 'status': 403,
+            \ 'statusText': 'Forbidden',
+            \ 'header': [],
+            \}
+      Throw /403: Forbidden/
+            \ gista#client#throw(response)
+    End
+  End
+End

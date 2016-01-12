@@ -14,18 +14,18 @@ let s:is_mac = !s:is_windows && !s:is_cygwin
       \   (!isdirectory('/proc') && executable('sw_vers')))
 
 " Get the directory separator.
-function! s:separator()
+function! s:separator() abort
   return fnamemodify('.', ':p')[-1 :]
 endfunction
 
 " Get the path separator.
 let s:path_separator = s:is_windows ? ';' : ':'
-function! s:path_separator()
+function! s:path_separator() abort
   return s:path_separator
 endfunction
 
 " Get the path extensions
-function! s:path_extensions()
+function! s:path_extensions() abort
   if !exists('s:path_extensions')
     if s:is_windows
       if exists('$PATHEXT')
@@ -46,17 +46,17 @@ function! s:path_extensions()
 endfunction
 
 " Convert all directory separators to "/".
-function! s:unify_separator(path)
+function! s:unify_separator(path) abort
   return substitute(a:path, s:path_sep_pattern, '/', 'g')
 endfunction
 
 " Get the full path of command.
 if exists('*exepath')
-  function! s:which(str)
+  function! s:which(str) abort
     return exepath(a:str)
   endfunction
 else
-  function! s:which(command, ...)
+  function! s:which(command, ...) abort
     let pathlist = a:command =~# s:path_sep_pattern ? [''] :
     \              !a:0                  ? split($PATH, s:path_separator) :
     \              type(a:1) == type([]) ? copy(a:1) :
@@ -77,7 +77,7 @@ else
             let full = glob(substitute(
             \               toupper(full), '\u:\@!', '[\0\L\0]', 'g'), 1)
           endif
-          if full != ''
+          if full !=# ''
             return full
           endif
         endif
@@ -90,7 +90,7 @@ endif
 
 " Split the path with directory separator.
 " Note that this includes the drive letter of MS Windows.
-function! s:split(path)
+function! s:split(path) abort
   return split(a:path, s:path_sep_pattern)
 endfunction
 
@@ -98,7 +98,7 @@ endfunction
 " join('foo', 'bar')            => 'foo/bar'
 " join('foo/', 'bar')           => 'foo/bar'
 " join('/foo/', ['bar', 'buz/']) => '/foo/bar/buz/'
-function! s:join(...)
+function! s:join(...) abort
   let sep = s:separator()
   let path = ''
   for part in a:000
@@ -112,28 +112,28 @@ endfunction
 
 " Check if the path is absolute path.
 if s:is_windows
-  function! s:is_absolute(path)
+  function! s:is_absolute(path) abort
     return a:path =~? '^[a-z]:[/\\]'
   endfunction
 else
-  function! s:is_absolute(path)
+  function! s:is_absolute(path) abort
     return a:path[0] ==# '/'
   endfunction
 endif
 
-function! s:is_relative(path)
+function! s:is_relative(path) abort
   return !s:is_absolute(a:path)
 endfunction
 
 " Return the parent directory of the path.
 " NOTE: fnamemodify(path, ':h') does not return the parent directory
 " when path[-1] is the separator.
-function! s:dirname(path)
+function! s:dirname(path) abort
   let path = a:path
   let orig = a:path
 
   let path = s:remove_last_separator(path)
-  if path == ''
+  if path ==# ''
     return orig    " root directory
   endif
 
@@ -144,12 +144,12 @@ endfunction
 " Return the basename of the path.
 " NOTE: fnamemodify(path, ':h') does not return basename
 " when path[-1] is the separator.
-function! s:basename(path)
+function! s:basename(path) abort
   let path = a:path
   let orig = a:path
 
   let path = s:remove_last_separator(path)
-  if path == ''
+  if path ==# ''
     return orig    " root directory
   endif
 
@@ -158,9 +158,9 @@ function! s:basename(path)
 endfunction
 
 " Remove the separator at the end of a:path.
-function! s:remove_last_separator(path)
+function! s:remove_last_separator(path) abort
   let sep = s:separator()
-  let pat = (sep == '\' ? '\\' : '/') . '\+$'
+  let pat = (sep ==# '\' ? '\\' : '/') . '\+$'
   return substitute(a:path, pat, '', '')
 endfunction
 
@@ -168,10 +168,57 @@ endfunction
 " Return true if filesystem ignores alphabetic case of a filename.
 " Return false otherwise.
 let s:is_case_tolerant = filereadable(expand('<sfile>:r') . '.VIM')
-function! s:is_case_tolerant()
+function! s:is_case_tolerant() abort
   return s:is_case_tolerant
 endfunction
 
+
+function! s:abspath(path) abort
+  if s:is_absolute(a:path)
+    return a:path
+  endif
+  " Note:
+  "   the behavior of ':p' for non existing file path is not defined
+  return filereadable(a:path)
+        \ ? fnamemodify(a:path, ':p')
+        \ : s:join(fnamemodify(getcwd(), ':p'), a:path)
+endfunction
+
+function! s:relpath(path) abort
+  if s:is_relative(a:path)
+    return a:path
+  endif
+  return fnamemodify(a:path, ':~:.')
+endfunction
+
+function! s:unixpath(path) abort
+  return fnamemodify(a:path, ':gs?\\?/?')
+endfunction
+
+function! s:winpath(path) abort
+  return fnamemodify(a:path, ':gs?/?\\?')
+endfunction
+
+if s:is_windows
+  function! s:realpath(path) abort
+    if exists('&shellslash') && &shellslash
+      return s:unixpath(a:path)
+    else
+      return s:winpath(a:path)
+    endif
+  endfunction
+else
+  function! s:realpath(path) abort
+    return s:unixpath(a:path)
+  endfunction
+endif
+
+function! s:is_root_directory(path) abort
+  if a:path ==# '/'
+    return 1
+  endif
+  return (has('win32') || has('win64')) && a:path =~# '^[a-zA-Z]:[/\\]$'
+endfunction
 
 let &cpo = s:save_cpo
 unlet s:save_cpo

@@ -1,24 +1,13 @@
-"******************************************************************************
-" Gista list window
-"
-" Author:   Alisue <lambdalisue@hashnote.net>
-" URL:      http://hashnote.net/
-" License:  MIT license
-" (C) 2014, Alisue, hashnote.net
-"******************************************************************************
 if exists('b:current_syntax')
   finish
 endif
-
+let b:current_syntax = 'gista-list'
 let s:save_cpo = &cpo
 set cpo&vim
 
 syntax clear
-call gista#define_highlights()
-call gista#define_syntax()
-
-let b:current_syntax = "gista-list"
-
+call gista#command#list#define_highlights()
+call gista#command#list#define_syntax()
 
 let &cpo = s:save_cpo
 unlet s:save_cpo
