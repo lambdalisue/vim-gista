@@ -5,6 +5,12 @@ let s:V = gista#vital()
 let s:F = s:V.import('System.File')
 let s:A = s:V.import('ArgumentParser')
 
+function! s:create_url(html_url, filename) abort
+  let suffix = empty(a:filename) ? '' : '#file-' . a:filename
+  let suffix = substitute(suffix, '\.', '-', 'g')
+  return a:html_url . suffix
+endfunction
+
 function! s:handle_exception(exception) abort
   redraw
   let canceled_by_user_patterns = [
@@ -23,25 +29,21 @@ function! s:handle_exception(exception) abort
 endfunction
 function! gista#command#browse#call(...) abort
   let options = extend({
+        \ 'gist': {},
         \ 'gistid': '',
         \ 'filename': '',
         \}, get(a:000, 0, {}),
         \)
   try
-    let gistid = gista#option#get_valid_gistid(options)
-    let filename = empty(options.filename)
-          \ ? ''
-          \ : gista#option#get_valid_filename(options)
-    let gist = gista#resource#remote#get(gistid, options)
-    if has_key(gist, 'html_url')
-      return gist.html_url . (
-            \ empty(filename)
-            \   ? ''
-            \   : '#file-' . tolower(substitute(filename, '\.', '-', 'g'))
-            \)
+    if !empty(options.gist)
+      let gist = options.gist
     else
-      return ''
+      let gistid = gista#option#get_valid_gistid(options)
+      let gist = gista#resource#remote#get(gistid, options)
     endif
+    let filename = empty(options.filename)
+          \ ? '' : gista#option#get_valid_filename(options)
+    return s:create_url(gist.html_url, filename)
   catch /^vim-gista:/
     call s:handle_exception(v:exception)
     return ''

@@ -460,7 +460,7 @@ function! s:action_json(...) range abort
         call gista#util#anchor#focus()
       endif
       call gista#command#json#open({
-            \ 'gistid': entry.id,
+            \ 'gist': entry,
             \ 'opener': opener,
             \})
     endfor
@@ -482,7 +482,7 @@ function! s:action_browse(...) range abort
         continue
       endif
       call gista#command#browse#{action}({
-            \ 'gistid': entry.id,
+            \ 'gist': entry,
             \})
     endfor
   finally
@@ -547,7 +547,7 @@ function! s:action_delete(...) range abort
         continue
       endif
       call gista#command#delete#call({
-            \ 'gistid': entry.id,
+            \ 'gist': entry,
             \ 'force': force,
             \})
     endfor
@@ -568,7 +568,7 @@ function! s:action_star(...) range abort
         continue
       endif
       call gista#command#star#call({
-            \ 'gistid': entry.id,
+            \ 'gist': entry,
             \})
     endfor
   finally
@@ -588,7 +588,7 @@ function! s:action_fork(...) range abort
         continue
       endif
       call gista#command#fork#call({
-            \ 'gistid': entry.id,
+            \ 'gist': entry,
             \})
     endfor
   finally
@@ -608,7 +608,7 @@ function! s:action_unstar(...) range abort
         continue
       endif
       call gista#command#unstar#call({
-            \ 'gistid': entry.id,
+            \ 'gist': entry,
             \})
     endfor
   finally

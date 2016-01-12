@@ -22,15 +22,21 @@ function! s:handle_exception(exception) abort
 endfunction
 function! gista#command#rename#call(...) abort
   let options = extend({
-        \ 'gistid': '',
         \ 'gist': {},
+        \ 'gistid': '',
         \ 'filename': '',
         \ 'new_filename': '',
         \ 'force': 0,
         \}, get(a:000, 0, {}),
         \)
   try
-    let gistid   = gista#option#get_valid_gistid(options)
+    if !empty(options.gist)
+      let gist = options.gist
+      let gistid = gist.id
+    else
+      let gistid = gista#option#get_valid_gistid(options)
+      let gist = gista#resource#remote#get(gistid, options)
+    endif
     let filename = gista#option#get_valid_filename(options)
     if empty(options.new_filename)
       let options.new_filename = gista#util#prompt#ask(
@@ -40,7 +46,6 @@ function! gista#command#rename#call(...) abort
     endif
     let new_filename = options.new_filename
 
-    let gist = gista#resource#remote#get(gistid, options)
     let gist = gista#resource#remote#patch(gistid, {
           \ 'force': options.force,
           \ 'filenames': [filename],
