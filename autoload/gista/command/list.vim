@@ -54,12 +54,12 @@ function! s:truncate(str, width) abort
   let suffix = strdisplaywidth(a:str) > a:width ? '...' : '   '
   return s:S.truncate(a:str, a:width - 4) . suffix
 endfunction
-function! s:format_entry(entry, starred_cache) abort
+function! s:format_entry(entry) abort
   let gistid = a:entry.public
         \ ? 'gistid:' . a:entry.id
         \ : 'gistid:' . s:PRIVATE_GISTID
   let fetched = a:entry._gista_fetched  ? '=' : '-'
-  let starred = get(a:starred_cache, a:entry.id) ? '*' : ' '
+  let starred = get(a:entry, 'is_starred') ? '*' : ' '
   let mode    = s:get_current_mode(a:entry)
   let prefix = fetched . ' ' . mode . ' ' . starred . ' '
   let suffix = ' ' . gistid
@@ -261,6 +261,16 @@ function! gista#command#list#call(...) abort
     call s:handle_exception(v:exception)
     return
   endtry
+  " apply 'is_starred' field
+  let client = gista#client#get()
+  let username = client.get_authorized_username()
+  if !empty(username)
+    let starred = client.starred_cache.get(username, {})
+    let index.entries = map(
+          \ deepcopy(index.entries),
+          \ 'extend(v:val, { "is_starred": get(starred, v:val.id) })',
+          \)
+  endif
   return index
 endfunction
 function! gista#command#list#open(...) abort
@@ -270,13 +280,11 @@ function! gista#command#list#open(...) abort
         \ 'cache': 1,
         \}, get(a:000, 0, {})
         \)
-  try
-    let lookup = gista#option#get_valid_lookup(options)
-    let index  = gista#resource#remote#list(lookup, options)
-  catch /^vim-gista:/
-    call s:handle_exception(v:exception)
+  let index = gista#command#list#call(options)
+  if empty(index)
     return
-  endtry
+  endif
+  let lookup = gista#option#get_valid_lookup(options)
   let client = gista#client#get()
   let apiname = client.apiname
   let username = client.get_authorized_username()
@@ -331,14 +339,11 @@ function! gista#command#list#redraw() abort
         \   : []
         \])
   let client = gista#client#get()
-  let starred_cache = client.starred_cache.get(
-        \ client.get_authorized_username(), {}
-        \)
   redraw
   call gista#util#prompt#echo('Formatting gist entries to display ...')
   let contents = map(
         \ copy(b:gista.entries),
-        \ 's:format_entry(v:val, starred_cache)'
+        \ 's:format_entry(v:val)'
         \)
   let s:entry_offset = len(prologue)
   call gista#util#buffer#edit_content(extend(prologue, contents))
@@ -351,13 +356,11 @@ function! gista#command#list#update(...) abort
           \)
   endif
   let options = extend(b:gista.options, get(a:000, 0, {}))
-  try
-    let lookup = gista#option#get_valid_lookup(options)
-    let index  = gista#resource#remote#list(lookup, options)
-  catch /^vim-gista:/
-    call s:handle_exception(v:exception)
+  let index = gista#command#list#call(options)
+  if empty(index)
     return
-  endtry
+  endif
+  let lookup = gista#option#get_valid_lookup(options)
   let client = gista#client#get()
   let apiname = client.apiname
   let username = client.get_authorized_username()
@@ -706,8 +709,8 @@ function! gista#command#list#define_highlights() abort
   " e.g. highlight default link GistaPartialMarker    Constant
   highlight link GistaPartialMarker    Comment
   highlight link GistaDownloadedMarker Special
-  highlight link GistaModifiedMarker   WarningMsg
-  highlight link GistaLastModified     Comment
+  highlight link GistaStarredMarker    WarningMsg
+  highlight link GistaDateTime         Comment
   highlight link GistaGistIDPublic     Tag
   highlight link GistaGistIDPrivate    Constant
   highlight link GistaMapping          Comment
@@ -725,9 +728,9 @@ function! gista#command#list#define_syntax() abort
         \ display contained containedin=GistaMeta
   syntax match GistaDownloadedMarker /^=/
         \ display contained containedin=GistaMeta
-  syntax match GistaLastModified /\d\{2}\/\d\{2}\/\d\{2}(\d\{2}:\d\{2}:\d\{2})/
+  syntax match GistaDateTime /\d\{2}\/\d\{2}\/\d\{2}(\d\{2}:\d\{2}:\d\{2})/
         \ display contained containedin=GistaMeta
-  syntax match GistaModifiedMarker /[ \*]/
+  syntax match GistaStarredMarker /[ \*]/
         \ display contained containedin=GistaMeta
 endfunction
 function! gista#command#list#format_entry(entry, starred_cache) abort
