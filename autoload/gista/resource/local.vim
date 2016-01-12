@@ -17,6 +17,7 @@ function! s:pick_necessary_params_of_index_entry(gist) abort
         \ 'id': a:gist.id,
         \ 'description': a:gist.description,
         \ 'public': a:gist.public,
+        \ 'html_url': a:gist.html_url,
         \ 'files': map(
         \   copy(a:gist.files),
         \   's:pick_necessary_params_of_index_entry_file(v:val)'
@@ -175,6 +176,7 @@ function! gista#resource#local#get_pseudo_index_entry(gistid) abort
         \ 'id': a:gistid,
         \ 'description': '',
         \ 'public': 0,
+        \ 'html_url': '',
         \ 'files': {},
         \ 'created_at': '',
         \ 'updated_at': '',

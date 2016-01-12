@@ -57,6 +57,7 @@ Describe gista#resource#local
             \ 'id': 0,
             \ 'description': 'foo',
             \ 'public': 1,
+            \ 'html_url': 'hello',
             \ 'files': {
             \   'foo.txt': {
             \     'size': 10,
@@ -81,6 +82,7 @@ Describe gista#resource#local
             \ 'id': 0,
             \ 'description': 'foo',
             \ 'public': 1,
+            \ 'html_url': 'hello',
             \ 'files': {
             \   'foo.txt': {
             \     'size': 10,
@@ -103,6 +105,7 @@ Describe gista#resource#local
             \ 'id': 0,
             \ 'description': 'foo',
             \ 'public': 1,
+            \ 'html_url': 'hello',
             \ 'files': {
             \   'foo.txt': {
             \     'size': 10,
@@ -126,6 +129,7 @@ Describe gista#resource#local
             \ 'id': 0,
             \ 'description': 'foo',
             \ 'public': 1,
+            \ 'html_url': 'hello',
             \ 'files': {
             \   'foo.txt': {
             \     'size': 10,
@@ -485,6 +489,7 @@ Describe gista#resource#local
             \ 'id': '100',
             \ 'description': '',
             \ 'public': 0,
+            \ 'html_url': '',
             \ 'files': {},
             \ 'created_at': '',
             \ 'updated_at': '',
@@ -509,6 +514,7 @@ Describe gista#resource#local
             \ 'id': 'A',
             \ 'description': '',
             \ 'public': 0,
+            \ 'html_url': '',
             \ 'files': {},
             \ 'created_at': '',
             \ 'updated_at': '',

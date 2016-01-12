@@ -31,8 +31,8 @@ function! gista#command#browse#call(...) abort
     let gistid = gista#option#get_valid_gistid(options)
     let filename = empty(options.filename)
           \ ? ''
-          \ : gista#option#get_valid_filename(option)
-    let gist = gista#resource#remote#get(gistid)
+          \ : gista#option#get_valid_filename(options)
+    let gist = gista#resource#remote#get(gistid, options)
     if has_key(gist, 'html_url')
       return gist.html_url . (
             \ empty(filename)
