@@ -5,17 +5,17 @@ vim-gista
 *vim-gista* is a plugin for manipulating [Gist](https://gist.github.com/) in Vim.
 It provide the following features:
 
-- [x] List gists of a particular lookup
-- [x] Open a gist as a JSON file
-- [x] Open a file of a gist
-- [x] Post a content of the current buffer
-- [x] Post contents of buffers/files
-- [x] Patch a content of the current buffer to a gist
-- [ ] Rename files in a gist
-- [ ] Remove files in a gist
-- [x] Delete a gist
-- [x] Star/Unstar a gist
-- [x] Folk a gist
+- List gists of a particular lookup
+- Open a gist as a JSON file
+- Open a file of a gist
+- Post a content of the current buffer
+- Post contents of buffers/files
+- Patch a content of the current buffer to a gist
+- Rename files in a gist
+- Remove files in a gist
+- Delete a gist
+- Star/Unstar a gist
+- Folk a gist
 
 Requirements
 -------------------------------------------------------------------------------

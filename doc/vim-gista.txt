@@ -54,7 +54,7 @@ features:
   - Post a content of the current buffer to a new gist
   - Patch a content of the current buffer to an existing gist
 - Delete a gist
-  - Remove a file in a gist (Not implemented yet)
+  - Remove a file in a gist
   - Delete a gist itself
 - Star/Unstar a gist
 - Fork a gist
