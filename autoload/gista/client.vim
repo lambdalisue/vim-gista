@@ -266,6 +266,25 @@ function! gista#client#session(...) abort
   return session
 endfunction
 
+function! gista#client#get_valid_apiname(apiname) abort
+  if empty(a:apiname)
+    let apiname = s:get_default_apiname()
+  else
+    let apiname = a:apiname
+  endif
+  call s:validate_apiname(apiname)
+  return apiname
+endfunction
+function! gista#client#get_valid_username(apiname, username) abort
+  if empty(a:username)
+    let username = s:get_default_username(a:apiname)
+  else
+    let username = a:username
+  endif
+  call s:validate_username(username)
+  return username
+endfunction
+
 function! gista#client#throw(response) abort
   call gista#util#prompt#throw(s:G.build_exception_message(a:response))
 endfunction

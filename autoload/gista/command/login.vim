@@ -26,9 +26,11 @@ function! gista#command#login#call(...) abort
         \}, get(a:000, 0, {}),
         \)
   try
-    call gista#client#set(options.apiname, {
+    let apiname = gista#client#get_valid_apiname(options.apiname)
+    let username = gista#client#get_valid_username(apiname, options.username)
+    call gista#client#set(apiname, {
           \ 'verbose': options.verbose,
-          \ 'username': options.username,
+          \ 'username': username,
           \})
     let client = gista#client#get()
     call gista#util#prompt#echo(printf(

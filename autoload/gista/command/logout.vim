@@ -25,9 +25,9 @@ function! gista#command#logout#call(...) abort
         \}, get(a:000, 0, {}),
         \)
   try
-    call gista#client#set({
+    let apiname = gista#client#get_valid_apiname(options.apiname)
+    call gista#client#set(apiname, {
           \ 'verbose': options.verbose,
-          \ 'apiname': options.apiname,
           \})
     let client = gista#client#get()
     call gista#util#prompt#echo(printf(
