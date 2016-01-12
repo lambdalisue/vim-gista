@@ -163,7 +163,7 @@ Harmonic plugins
 -------------------------------------------------------------------------------
 The following plugins will be harmonic plugins of vim-gista:
 
-- [ ] vim-gista-unite : Allow users to use unite.vim interface for listing
+- [x] [vim-gista-unite](https://github.com/lambdalisue/vim-gista-unite) : Allow users to use unite.vim interface for listing
 - [ ] vim-gista-ctrlp : Allow users to use ctrlp.vim interface for listing
 - [ ] vim-gista-neocomplete : Complete a gist ID with neocomplete.vim
 - [ ] vim-gista-deoplete : Complete a gist ID with deoplete.vim
