@@ -21,6 +21,24 @@ function! s:handle_exception(exception) abort
   call gista#util#prompt#error(a:exception)
 endfunction
 
+function! gista#command#open#call(...) abort
+  let options = extend({
+        \ 'gist': {},
+        \ 'gistid': '',
+        \ 'filename': '',
+        \}, get(a:000, 0, {})
+        \)
+  try
+    let gistid   = gista#option#get_valid_gistid(options)
+    let filename = gista#option#get_valid_filename(options)
+    let gist = gista#resource#remote#get(gistid, options)
+    let file = gista#resource#remote#file(gist, filename, options)
+    return file
+  catch /^vim-gista:/
+    call s:handle_exception(v:exception)
+    return {}
+  endtry
+endfunction
 function! gista#command#open#read(...) abort
   silent doautocmd FileReadPre
   let options = extend({

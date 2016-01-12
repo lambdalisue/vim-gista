@@ -21,6 +21,21 @@ function! s:handle_exception(exception) abort
   " else
   call gista#util#prompt#error(a:exception)
 endfunction
+function! gista#command#json#call(...) abort
+  let options = extend({
+        \ 'gist': {},
+        \ 'gistid': '',
+        \}, get(a:000, 0, {})
+        \)
+  try
+    let gistid   = gista#option#get_valid_gistid(options)
+    let gist = gista#resource#remote#get(gistid, options)
+    return gist
+  catch /^vim-gista:/
+    call s:handle_exception(v:exception)
+    return {}
+  endtry
+endfunction
 function! gista#command#json#read(...) abort
   silent doautocmd FileReadPre
   let options = extend({
