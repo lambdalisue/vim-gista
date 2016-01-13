@@ -24,13 +24,22 @@ function! gista#command#delete#call(...) abort
   let options = extend({
         \ 'gistid': '',
         \ 'force': 0,
+        \ 'confirm': 1,
         \}, get(a:000, 0, {}),
         \)
   try
+    let client = gista#client#get()
     let gistid = gista#option#get_valid_gistid(options)
+    if options.confirm
+      if !gista#util#prompt#asktf(printf(
+            \ 'Remove %s in %s? ',
+            \ gistid, client.apiname,
+            \))
+        call gista#util#prompt#throw('Cancel')
+      endif
+    endif
     call gista#resource#remote#delete(gistid, options)
     call gista#util#doautocmd('CacheUpdatePost')
-    let client = gista#client#get()
     call gista#indicate(options, printf(
           \ 'A gist %s is deleted from %s',
           \ gistid, client.apiname,
@@ -50,6 +59,12 @@ function! s:get_parser() abort
           \ '--force',
           \ 'Delete a gist even a remote content of the gist is modified', {
           \   'default': 0,
+          \   'deniable': 1,
+          \})
+    call s:parser.add_argument(
+          \ '--confirm',
+          \ 'Confirm before delete', {
+          \   'default': 1,
           \   'deniable': 1,
           \})
     call s:parser.add_argument(
