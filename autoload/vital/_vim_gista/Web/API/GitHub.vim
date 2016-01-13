@@ -73,8 +73,8 @@ function! s:_authorize(client, username, password, ...) abort " {{{
         \ 'url': url,
         \ 'data': s:J.encode(params),
         \ 'headers': headers,
-        \ 'username': escape(a:username, '"'),
-        \ 'password': escape(a:password, '"'),
+        \ 'username': a:username,
+        \ 'password': a:password,
         \ 'authMethod': 'basic',
         \})
 endfunction " }}}
