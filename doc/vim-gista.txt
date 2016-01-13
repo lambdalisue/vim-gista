@@ -316,11 +316,11 @@ All commands provide -h/--help to quickly show an usage of the command.
 	GitHub:lambdalisue | Mode: updated_at | Press ? to toggle a ma...
 	- 15/12/31(07:08:22)   [3] test.vi... gistid:bb408da1b3fb100d6c1a
 	= 15/12/27(17:58:56) * [2] benchma... gistid:c84fe3e0b306a2bc8578
-	│       │            │  │     │                     │
-	│       │            │  │     │                     └ GistID
-	│       │            │  │     └ Description
-	│       │            │  └ The number of files
-	│       │            └ Is starred marker (*: starred)
+	│       │          │ │     │                     │
+	│       │          │ │     │                     └ GistID
+	│       │          │ │     └ Description
+	│       │          │ └ The number of files
+	│       │          └ Is starred marker (*: starred)
 	│       └ A created_at/updated_at of the gist (depends on the Mode:)
 	└ Fetched marker (-: Unfetched, =: fetched)
 <
@@ -491,7 +491,7 @@ g:gista#command#list#entry_openers
 g:gista#command#list#enable_default_mappings
 
 	1 to enable default key mappings in a gista-list window.
-	See |vim-gista-mappings| if you would like to assign your custom
+	See |vim-gista-mapping| if you would like to assign your custom
 	mappings.
 	The default value is 1.
 
