@@ -40,6 +40,7 @@ Usage				|vim-gista-usage|
 Interface			|vim-gista-interface|
   Command			|vim-gista-command|
   Variable			|vim-gista-variable|
+  Mapping			|vim-gista-mapping|
 
 ==============================================================================
 INTRODUCTION					*vim-gista-introduction*
@@ -543,6 +544,67 @@ g:gista#command#unstar#default_options
 	      \ 'cache': 0,
 	      \}
 <
+------------------------------------------------------------------------------
+MAPPING					*vim-gista-mapping*
+
+gista-list window showed by |:Gista-list| command provide the following
+|<Plug>| mappings. Note that users can show the actual key mapping by
+|<Plug>(gista-toggle-mapping-visibility)| which is mapped to ? in default.
+
+*<Plug>(gista-toggle-mapping-visibility)*	Toggle mapping visibility
+
+*<Plug>(gista-quit)*		Close the buffer
+*<Plug>(gista-redraw)*		Redraw the buffer
+
+*<Plug>(gista-update)*		Update the buffer content
+*<Plug>(gista-UPDATE)*		Update the buffer content without cache
+
+*<Plug>(gista-next-mode)*	Select next mode
+*<Plug>(gista-prev-mode)*	Select previous mode
+
+*<Plug>(gista-edit)*		Open a selected gist
+*<Plug>(gista-edit-above)*	Open a selected gist in an above window
+*<Plug>(gista-edit-below)*	Open a selected gist in a below window
+*<Plug>(gista-edit-left)*	Open a selected gist in a left window
+*<Plug>(gista-edit-right)*	Open a selected gist in a right window
+*<Plug>(gista-edit-tab)*	Open a selected gist in a next tab
+*<Plug>(gista-edit-preview)*	Open a selected gist in a preview window
+
+*<Plug>(gista-json)*		Open a selected gist as a json file
+*<Plug>(gista-json-above)*	Open a selected gist as a json file in an
+				above window
+*<Plug>(gista-json-below)*	Open a selected gist as a json file in a
+				below window
+*<Plug>(gista-json-left)*	Open a selected gist as a json file in a
+				left window
+*<Plug>(gista-json-right)*	Open a selected gist as a json file in a
+				right window
+*<Plug>(gista-json-tab)*	Open a selected gist as a json file in a
+				next tab
+*<Plug>(gista-json-preview)*	Open a selected gist as a json file in a
+				preview window
+
+*<Plug>(gista-browse-open)*	Browse a URL of a selected gist in a system
+				browser
+*<Plug>(gista-browse-yank)*	Yank a URL of a selected gist
+*<Plug>(gista-browse-echo)*	Echo a URL of a selected gist
+
+*<Plug>(gista-rename)*		Rename a file in a selected gist
+*<Plug>(gista-RENAME)*		Rename a file in a selected gist (forcedly)
+
+*<Plug>(gista-remove)*		Remove a file in a selected gist from the
+				remote
+*<Plug>(gista-REMOVE)*		Remove a file in a selected gist from the
+				remote (forcedly)
+
+*<Plug>(gista-delete)*		Delete a selected gist from the remote
+*<Plug>(gista-DELETE)*		Delete a selected gist from the remote
+				(forcedly)
+
+*<Plug>(gista-fork)*		Fork a selected gist
+*<Plug>(gista-star)*		Star a selected gist
+*<Plug>(gista-unstar)*		Unstar a selected gist
+
 
 ==============================================================================
 vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl:noet
