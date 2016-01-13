@@ -628,5 +628,11 @@ lambdalisue/vim-gista-unite
 	https://github.com/lambdalisue/vim-gista-unite
 	https://github.com/Shougo/unite.vim
 
+lambdalisue/vim-gista-ctrlp
+
+	Allow users to use ctrlpvim/ctrlp.vim interface for listing.
+	https://github.com/lambdalisue/vim-gista-ctrlp
+	https://github.com/ctrlpvim/ctrlp.vim
+
 ==============================================================================
 vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl:noet

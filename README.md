@@ -85,7 +85,7 @@ Harmonic plugins
 You may want to checkout the following harmonic plugins:
 
 - [x] [vim-gista-unite](https://github.com/lambdalisue/vim-gista-unite) : Allow users to use unite.vim interface for listing
-- [ ] vim-gista-ctrlp : Allow users to use ctrlp.vim interface for listing (Not implemented yet)
+- [x] [vim-gista-ctrlp](https://github.com/lambdalisue/vim-gista-ctrlp) : Allow users to use ctrlp.vim interface for listing (Not implemented yet)
 - [ ] vim-gista-neocomplete : Complete a gist ID with neocomplete.vim (Not implemented yet)
 - [ ] vim-gista-deoplete : Complete a gist ID with deoplete.vim (Not implemented yet)
 
