@@ -9,7 +9,6 @@ It provide the following features:
 - Open a gist as a JSON file
 - Open a file of a gist
 - Post a content of the current buffer
-- Post contents of buffers/files
 - Patch a content of the current buffer to a gist
 - Rename files in a gist
 - Remove files in a gist
@@ -55,7 +54,30 @@ Or install the repository into your `runtimepath` manually.
 Usage
 -------------------------------------------------------------------------------
 
-See `:help vim-gista-usage` or `:Gista -h`.
+First of all, specify your GitHub username into `g:gista#client#default_username`.
+vim-gista support an anonymous access but authorization is strongly recommended due to the GitHub API rate-limit.
+
+After that, execute `:Gista list`. It will request all your gists and show `gista-list` window which looks like:
+
+```
+  ┌ API name
+  │       ┌ Lookup
+  │       │                  ┌ The current mode
+  │       │                  │
+GitHub:lambdalisue | Mode: updated_at | Press ? to toggle a ma...
+- 15/12/31(07:08:22)   [3] test.vi... gistid:bb408da1b3fb100d6c1a
+= 15/12/27(17:58:56) * [2] benchma... gistid:c84fe3e0b306a2bc8578
+│       │            │  │     │                     │
+│       │            │  │     │                     └ GistID
+│       │            │  │     └ Description
+│       │            │  └ The number of files
+│       │            └ Is starred marker (*: starred)
+│       └ A created_at/updated_at of the gist (depends on the Mode:)
+└ Fetched marker (-: Unfetched, =: fetched)
+```
+
+In `gista-list` window, you can check the mappings by hitting `?`.
+See `:help vim-gista-usage` for more detail.
 
 
 Harmonic plugins
@@ -63,9 +85,9 @@ Harmonic plugins
 You may want to checkout the following harmonic plugins:
 
 - [x] [vim-gista-unite](https://github.com/lambdalisue/vim-gista-unite) : Allow users to use unite.vim interface for listing
-- [ ] vim-gista-ctrlp : Allow users to use ctrlp.vim interface for listing
-- [ ] vim-gista-neocomplete : Complete a gist ID with neocomplete.vim
-- [ ] vim-gista-deoplete : Complete a gist ID with deoplete.vim
+- [ ] vim-gista-ctrlp : Allow users to use ctrlp.vim interface for listing (Not implemented yet)
+- [ ] vim-gista-neocomplete : Complete a gist ID with neocomplete.vim (Not implemented yet)
+- [ ] vim-gista-deoplete : Complete a gist ID with deoplete.vim (Not implemented yet)
 
 
 For users who use a previous version (v0.1.17)

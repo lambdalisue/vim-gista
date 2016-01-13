@@ -41,6 +41,7 @@ Interface			|vim-gista-interface|
   Command			|vim-gista-command|
   Variable			|vim-gista-variable|
   Mapping			|vim-gista-mapping|
+Harmonic plugins		|vim-gista-harmonic-plugins|
 
 ==============================================================================
 INTRODUCTION					*vim-gista-introduction*
@@ -102,7 +103,13 @@ USAGE						*vim-gista-usage*
 ------------------------------------------------------------------------------
 AUTHORIZATION					*vim-gista-authorization*
 
-Call |:Gista-login| to login your account like:
+Note that a explicit authorization is not required when user specify user's
+GitHub account to |g:gista#client#default_username|. Temporal authorization
+will use that username to login GitHub API whenever users execute command (See
+|vim-gista-temporal-authorization|).
+
+If you would like to expressly login into your GitHub account, call
+|:Gista-login| like:
 >
 	:Gista login YOUR_GITHUB_USER_NAME
 <
@@ -110,6 +117,8 @@ It requires your GitHub password to create a personal access token for the
 first time. Once the personal access token is created, you won't need to
 re-input your GitHub password until you permanently logout from GitHub API
 (See |:Gista-logout|).
+If you would like to specify a default username, use
+|g:gista#client#default_username|.
 
 If you would like to login your GitHub Enterprise API, use
 |gista#client#register()| function to register your API like:
@@ -120,6 +129,10 @@ And specify 'GHE' to '--apiname' option like:
 >
 	:Gista login --apiname=GHE YOUR_USER_NAME
 <
+If you would like to specify a default apiname, use
+|g:gista#client#default_apiname|. The apiname is also used in temporal
+authorization explained below (|vim-gista-temporal-authorization|).
+
 Note that you need to call |gista#client#register()| everytime when you want to
 use your GHE accout so use your |vimrc| file to call the command.
 
@@ -303,11 +316,11 @@ All commands provide -h/--help to quickly show an usage of the command.
 	GitHub:lambdalisue | Mode: updated_at | Press ? to toggle a ma...
 	- 15/12/31(07:08:22)   [3] test.vi... gistid:bb408da1b3fb100d6c1a
 	= 15/12/27(17:58:56) * [2] benchma... gistid:c84fe3e0b306a2bc8578
-	│       │          │ │     │                     │
-	│       │          │ │     │                     └ GistID
-	│       │          │ │     └ Description
-	│       │          │ └ The number of files
-	│       │          └ Is starred marker (*: starred)
+	│       │            │  │     │                     │
+	│       │            │  │     │                     └ GistID
+	│       │            │  │     └ Description
+	│       │            │  └ The number of files
+	│       │            └ Is starred marker (*: starred)
 	│       └ A created_at/updated_at of the gist (depends on the Mode:)
 	└ Fetched marker (-: Unfetched, =: fetched)
 <
@@ -605,6 +618,15 @@ gista-list window showed by |:Gista-list| command provide the following
 *<Plug>(gista-star)*		Star a selected gist
 *<Plug>(gista-unstar)*		Unstar a selected gist
 
+
+==============================================================================
+HARMONIC PLUGINS				*vim-gista-harmonic-plugins*
+
+lambdalisue/vim-gista-unite
+
+	Allow users to use Shougo/unite.vim interface for listing.
+	https://github.com/lambdalisue/vim-gista-unite
+	https://github.com/Shougo/unite.vim
 
 ==============================================================================
 vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl:noet
