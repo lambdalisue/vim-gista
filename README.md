@@ -86,11 +86,10 @@ Harmonic plugins
 -------------------------------------------------------------------------------
 You may want to checkout the following harmonic plugins:
 
-- [x] [vim-gista-unite](https://github.com/lambdalisue/vim-gista-unite) : Allow users to use unite.vim interface for listing
-- [x] [vim-gista-ctrlp](https://github.com/lambdalisue/vim-gista-ctrlp) : Allow users to use ctrlp.vim interface for listing (Not implemented yet)
-- [ ] vim-gista-neocomplete : Complete a gist ID with neocomplete.vim (Not implemented yet)
-- [ ] vim-gista-deoplete : Complete a gist ID with deoplete.vim (Not implemented yet)
+- [vim-gista-unite](https://github.com/lambdalisue/vim-gista-unite) : Allow users to use unite.vim interface for listing
+- [vim-gista-ctrlp](https://github.com/lambdalisue/vim-gista-ctrlp) : Allow users to use ctrlp.vim interface for listing
 
+Let me know if you make a harmonic plugin ;-)
 
 For users who use a previous version (v0.1.17)
 -------------------------------------------------------------------------------
@@ -101,7 +100,7 @@ License
 -------------------------------------------------------------------------------
 The MIT License (MIT)
 
-Copyright (c) 2014 Alisue, hashnote.net
+Copyright (c) 2014-2016 Alisue, hashnote.net
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
