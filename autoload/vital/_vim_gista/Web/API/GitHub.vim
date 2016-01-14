@@ -25,6 +25,7 @@ function! s:_vital_loaded(V) abort " {{{
   let s:T = a:V.import('DateTime')
   let s:P = a:V.import('System.Filepath')
   let s:Y = a:V.import('Vim.Python')
+  let s:B = a:V.import('Data.Base64')
 endfunction " }}}
 function! s:_vital_depends() abort " {{{
   return {
@@ -68,15 +69,19 @@ function! s:_authorize(client, username, password, ...) abort " {{{
       echo 'Requesting an authorization token ...'
     endif
   endif
-  return a:client.request({
+  " Note:
+  " Vital.Wet.HTTP's username/password have some bug in python/wget client
+  " thus use raw way to specity BASIC auth.
+  let insecure_password = a:username . ':' . a:password
+  let insecure_password = s:B.encode(insecure_password)
+  let headers['Authorization'] = 'basic ' . insecure_password
+  let settings ={
         \ 'method': 'POST',
         \ 'url': url,
         \ 'data': s:J.encode(params),
         \ 'headers': headers,
-        \ 'username': a:username,
-        \ 'password': a:password,
-        \ 'authMethod': 'basic',
-        \})
+        \}
+  return a:client.request(settings)
 endfunction " }}}
 function! s:_interactive_authorize(client, username, ...) abort " {{{
   let options = extend({
@@ -491,6 +496,11 @@ function! s:client.request(...) abort " {{{
   let settings.headers = extend(
         \ s:_get_header(self.get_token()),
         \ get(settings, 'headers', {}),
+        \)
+  " Most of API request is json
+  let settings.headers = extend({
+        \ 'Content-Type': 'application/json',
+        \}, settings.headers
         \)
   return s:H.request(settings)
 endfunction " }}}

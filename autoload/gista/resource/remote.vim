@@ -88,7 +88,9 @@ function! gista#resource#remote#file(gist, filename, ...) abort
 
   " From API
   let client = gista#client#get()
-  let res = client.get(file.raw_url)
+  let res = client.get(file.raw_url, {}, {
+        \ 'Content-Type': 'text/plain',
+        \})
   if res.status == 200
     let file.truncated = 0
     let file.content = res.content

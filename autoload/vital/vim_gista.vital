@@ -12,3 +12,4 @@ Vim.BufferManager
 ArgumentParser
 Web.API.GitHub
 Vim.Compat
+Data.Base64
