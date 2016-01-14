@@ -19,6 +19,11 @@ augroup vim_gista_read_file
   autocmd FileReadCmd gista-json:*:* call gista#autocmd#call('FileReadCmd')
   autocmd BufReadCmd  gista-json:*:*/* call gista#autocmd#call('BufReadCmd')
   autocmd FileReadCmd gista-json:*:*/* call gista#autocmd#call('FileReadCmd')
+
+  autocmd BufWriteCmd  gista-file:*:*:* call gista#autocmd#call('BufWriteCmd')
+  autocmd FileWriteCmd gista-file:*:*:* call gista#autocmd#call('FileWriteCmd')
+  autocmd BufWriteCmd  gista-file:*:*/*:* call gista#autocmd#call('BufWriteCmd')
+  autocmd FileWriteCmd gista-file:*:*/*:* call gista#autocmd#call('FileWriteCmd')
 augroup END
 
 let &cpo = s:save_cpo

@@ -94,21 +94,6 @@ function! gista#command#open#edit(...) abort
         \ split(file.content, '\r\?\n'),
         \ printf('%s.%s', tempname(), fnamemodify(filename, ':e')),
         \)
-  if get(get(gist, 'owner', {}), 'login', '') ==# username
-    augroup vim_gista_write_file
-      autocmd! * <buffer>
-      autocmd BufWriteCmd  <buffer> call gista#autocmd#call('BufWriteCmd')
-      autocmd FileWriteCmd <buffer> call gista#autocmd#call('FileWriteCmd')
-    augroup END
-    setlocal buftype=acwrite
-    setlocal modifiable
-  else
-    augroup vim_gista_write_file
-      autocmd! * <buffer>
-    augroup END
-    setlocal buftype=nowrite
-    setlocal nomodifiable
-  endif
   silent doautocmd BufReadPost
   call gista#util#doautocmd('CacheUpdatePost')
 endfunction

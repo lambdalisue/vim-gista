@@ -4,6 +4,15 @@ set cpo&vim
 let s:V = gista#vital()
 let s:C = s:V.import('Vim.Compat')
 
+function! s:is_patchable(gista) abort
+  let client = gista#client#get()
+  let username = client.get_authorized_username()
+  let gist = gista#command#json#call({
+        \ 'gistid': a:gista.gistid,
+        \})
+  return get(get(gist, 'owner', {}), 'login') ==# username
+endfunction
+
 function! s:on_SourceCmd(gista) abort
   " TODO
   " Check if the file is Vim script or not
@@ -62,6 +71,16 @@ endfunction
 function! s:on_BufWriteCmd(gista) abort
   let content_type = get(a:gista, 'content_type', '')
   if content_type ==# 'raw'
+    if !s:is_patchable(a:gista)
+      call gista#util#prompt#error(printf(
+            \ 'An owner of gist %s and a current authorized username is miss-matched',
+            \ a:gista.gistid,
+            \))
+      call gista#util#prompt#warn(
+            \ 'Use ":Gista fork" to fork the gist or ":Gista post" to create a new Gist',
+            \)
+      return
+    endif
     let gist = gista#command#patch#call({
           \ '__range__': [line('1'), line('$')],
           \ 'gistid': a:gista.gistid,
@@ -69,7 +88,7 @@ function! s:on_BufWriteCmd(gista) abort
           \})
     if empty(gist)
       call gista#util#prompt#warn(printf(join([
-            \   'Use ":w!" to post changes to %s forcedly',
+            \   'Use ":w!" to post changes to %s forcedly or :Gista post to create a new Gist',
             \ ]),
             \ a:gista.apiname,
             \))
@@ -86,6 +105,16 @@ endfunction
 function! s:on_FileWriteCmd(gista) abort
   let content_type = get(a:gista, 'content_type', '')
   if content_type ==# 'raw'
+    if !s:is_patchable(a:gista)
+      call gista#util#prompt#error(printf(
+            \ 'An owner of gist %s and a current authorized username is miss-matched',
+            \ a:gista.gistid,
+            \))
+      call gista#util#prompt#warn(
+            \ 'Use ":Gista fork" to fork the gist or ":Gista post" to create a new Gist',
+            \)
+      return
+    endif
     let gist = gista#command#patch#call({
           \ '__range__': [line("'["), line("']")],
           \ 'gistid': a:gista.gistid,
@@ -93,7 +122,7 @@ function! s:on_FileWriteCmd(gista) abort
           \})
     if empty(gist)
       call gista#util#prompt#warn(printf(join([
-            \   'Use ":w!" to post changes to %s forcedly',
+            \   'Use ":w!" to post changes to %s forcedly or ":Gista post" to create a new Gist',
             \ ]),
             \ a:gista.apiname,
             \))
