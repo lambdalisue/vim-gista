@@ -28,12 +28,12 @@ endfunction
 function! gista#option#get_valid_filename(options) abort
   let filename = get(a:options, 'filename', '')
   if empty(filename)
-    if has_key(a:options, 'gist')
+    if !empty(get(a:options, 'gist', {}))
       let gist = a:options.gist
     else
       let client = gista#client#get()
       let gistid = gista#option#get_valid_gistid(a:options)
-      let gist   = client.gist_cache.get(gistid, {})
+      let gist   = gista#resource#remote#get(gistid)
     endif
     let filenames = gista#resource#local#get_available_filenames(gist)
     if len(filenames) == 1

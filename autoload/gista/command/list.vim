@@ -47,6 +47,7 @@ let s:MAPPING_TABLE = {
       \ '<Plug>(gista-fork)': 'Fork a selected gist',
       \ '<Plug>(gista-star)': 'Star a selected gist',
       \ '<Plug>(gista-unstar)': 'Unstar a selected gist',
+      \ '<Plug>(gista-commits)': 'Open commits of a selected gist',
       \}
 let s:entry_offset = 0
 
@@ -201,6 +202,8 @@ function! s:define_plugin_mappings() abort
         \ :call <SID>action('unstar')<CR>
   noremap <buffer><silent> <Plug>(gista-fork)
         \ :call <SID>action('fork')<CR>
+  noremap <buffer><silent> <Plug>(gista-commits)
+        \ :call <SID>action('commits')<CR>
 endfunction
 function! s:define_default_mappings() abort
   map <buffer> q <Plug>(gista-quit)
@@ -230,6 +233,7 @@ function! s:define_default_mappings() abort
   map <buffer> ++ <Plug>(gista-star)
   map <buffer> -- <Plug>(gista-unstar)
   map <buffer> ff <Plug>(gista-fork)
+  map <buffer> cc <Plug>(gista-commits)
 endfunction
 
 function! gista#command#list#call(...) abort
@@ -569,6 +573,27 @@ function! s:action_star(...) range abort
     call session.exit()
   endtry
 endfunction
+function! s:action_unstar(...) range abort
+  let session = gista#client#session({
+        \ 'apiname': b:gista.apiname,
+        \ 'username': b:gista.username,
+        \})
+  try
+    if session.enter()
+      for n in range(a:firstline, a:lastline)
+        let entry = s:get_entry(n - 1)
+        if empty(entry)
+          continue
+        endif
+        call gista#command#unstar#call({
+              \ 'gist': entry,
+              \})
+      endfor
+    endif
+  finally
+    call session.exit()
+  endtry
+endfunction
 function! s:action_fork(...) range abort
   let session = gista#client#session({
         \ 'apiname': b:gista.apiname,
@@ -590,7 +615,7 @@ function! s:action_fork(...) range abort
     call session.exit()
   endtry
 endfunction
-function! s:action_unstar(...) range abort
+function! s:action_commits(...) range abort
   let session = gista#client#session({
         \ 'apiname': b:gista.apiname,
         \ 'username': b:gista.username,
@@ -602,7 +627,7 @@ function! s:action_unstar(...) range abort
         if empty(entry)
           continue
         endif
-        call gista#command#unstar#call({
+        call gista#command#commits#open({
               \ 'gist': entry,
               \})
       endfor

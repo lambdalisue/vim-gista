@@ -79,6 +79,7 @@ function! s:get_gist(client, gistid, options) abort
         \ gista#resource#local#get_pseudo_gist(a:gistid),
         \ a:client.gist_cache.get(a:gistid, {}),
         \)
+  let gist._gista_fetched = a:client.gist_cache.has(a:gistid)
   return gist
 endfunction
 function! s:get_gist_file(client, gist, filename, options) abort

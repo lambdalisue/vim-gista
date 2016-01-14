@@ -13,8 +13,9 @@ function! gista#command#open#call(...) abort
         \)
   try
     let gistid   = gista#option#get_valid_gistid(options)
-    let filename = gista#option#get_valid_filename(options)
     let gist = gista#resource#remote#get(gistid, options)
+    let options.gist = gist
+    let filename = gista#option#get_valid_filename(options)
     let file = gista#resource#remote#file(gist, filename, options)
     return file
   catch /^vim-gista:/
@@ -32,8 +33,9 @@ function! gista#command#open#read(...) abort
         \)
   try
     let gistid   = gista#option#get_valid_gistid(options)
-    let filename = gista#option#get_valid_filename(options)
     let gist = gista#resource#remote#get(gistid, options)
+    let options.gist = gist
+    let filename = gista#option#get_valid_filename(options)
     let file = gista#resource#remote#file(gist, filename, options)
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
@@ -56,8 +58,9 @@ function! gista#command#open#edit(...) abort
         \)
   try
     let gistid   = gista#option#get_valid_gistid(options)
-    let filename = gista#option#get_valid_filename(options)
     let gist = gista#resource#remote#get(gistid, options)
+    let options.gist = gist
+    let filename = gista#option#get_valid_filename(options)
     let file = gista#resource#remote#file(gist, filename, options)
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
@@ -107,6 +110,8 @@ function! gista#command#open#bufname(...) abort
         \)
   try
     let gistid   = gista#option#get_valid_gistid(options)
+    let gist = gista#resource#remote#get(gistid, options)
+    let options.gist = gist
     let filename = gista#option#get_valid_filename(options)
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)

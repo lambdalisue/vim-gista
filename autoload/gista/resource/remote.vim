@@ -428,6 +428,26 @@ function! gista#resource#remote#fork(gistid, ...) abort
   endif
   call gista#client#throw(res)
 endfunction
+function! gista#resource#remote#commits(gistid, ...) abort
+  let options = get(a:000, 0, {})
+  let client = gista#client#get()
+  let username = client.get_authorized_username()
+
+  call gista#indicate(options, printf(
+        \ 'Fetching commits of a gist %s in %s ...',
+        \ a:gistid, client.apiname,
+        \))
+  let url = printf('gists/%s/commits', a:gistid)
+  let res = client.get(url)
+  redraw
+  if res.status == 200
+    let res.content = get(res, 'content', '')
+    let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+    let commits = res.content
+    return commits
+  endif
+  call gista#client#throw(res)
+endfunction
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo
