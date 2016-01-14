@@ -91,10 +91,10 @@ You may want to checkout the following harmonic plugins:
 
 Let me know if you make a harmonic plugin ;-)
 
-For users who use a previous version (v0.1.17)
+For users who use a previous version (v0.1.18)
 -------------------------------------------------------------------------------
-Most of features, commands, or options are drastically changed from a previous version.
-See [Migration from v1 to v2](https://github.com/lambdalisue/vim-gista/wiki/Migration-from-v1-to-v2) or use [`v0.1.17`](https://github.com/lambdalisue/vim-gista/tree/v0.1.17) tag for instance.
+Most of features, commands, or options are drastically changed from a previous version (v0.1.18).
+See [Migration from v1 to v2](https://github.com/lambdalisue/vim-gista/wiki/Migration-from-v1-to-v2) or use [`v0.1.18`](https://github.com/lambdalisue/vim-gista/tree/v0.1.18) tag for instance.
 
 License
 -------------------------------------------------------------------------------
