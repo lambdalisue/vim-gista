@@ -466,6 +466,9 @@ function! gista#gist#raw#post(filenames, contents, ...) abort " {{{
         \ 'files': {},
         \}
   for [filename, content] in gista#utils#vital#zip(a:filenames, a:contents)
+    let content = content =~# '\n$'
+          \ ? content
+          \ : content . "\n"
     let gist.files[filename] = {'content': content}
   endfor
 
@@ -497,6 +500,9 @@ function! gista#gist#raw#patch(gist, filenames, contents, ...) abort " {{{
         \ 'files': {},
         \}
   for [filename, content] in gista#utils#vital#zip(a:filenames, a:contents)
+    let content = content =~# '\n$'
+          \ ? content
+          \ : content . "\n"
     let partial.files[filename] = {'content': content}
   endfor
   if has_key(settings, 'description') && !empty(settings.description)
