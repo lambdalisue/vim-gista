@@ -2,7 +2,6 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 let s:V = gista#vital()
-let s:P = s:V.import('System.Filepath')
 let s:C = s:V.import('Vim.Compat')
 
 function! s:on_SourceCmd(gista) abort
@@ -61,76 +60,51 @@ function! s:on_FileReadCmd(gista) abort
 endfunction
 
 function! s:on_BufWriteCmd(gista) abort
-  let new_filename = s:P.abspath(expand('<amatch>'))
-  let old_filename = s:P.abspath(expand('%'))
-  if new_filename !=# old_filename
-    if !v:cmdbang && filereadable(new_filename)
-      call gista#util#prompt#error('E13: File exists (add ! to override)')
-      return
-    endif
-    execute printf('write %s', fnameescape(new_filename))
-    set nomodified
-  else
-    let content_type = get(a:gista, 'content_type', '')
-    if content_type ==# 'raw'
-      let gist = gista#command#patch#call({
-            \ '__range__': [line('1'), line('$')],
-            \ 'gistid': a:gista.gistid,
-            \ 'force': v:cmdbang,
-            \})
-      if empty(gist)
-        call gista#util#prompt#warn(printf(join([
-              \   'Use ":w!" to post changes to %s forcedly',
-              \ ]),
-              \ a:gista.apiname,
-              \))
-      else
-        set nomodified
-      endif
-    else
-      call gista#util#prompt#throw(printf(
-            \ 'Unknown content_type "%s" is specified',
-            \ content_type,
+  let content_type = get(a:gista, 'content_type', '')
+  if content_type ==# 'raw'
+    let gist = gista#command#patch#call({
+          \ '__range__': [line('1'), line('$')],
+          \ 'gistid': a:gista.gistid,
+          \ 'force': v:cmdbang,
+          \})
+    if empty(gist)
+      call gista#util#prompt#warn(printf(join([
+            \   'Use ":w!" to post changes to %s forcedly',
+            \ ]),
+            \ a:gista.apiname,
             \))
+    else
+      set nomodified
     endif
+  else
+    call gista#util#prompt#throw(printf(
+          \ 'Unknown content_type "%s" is specified',
+          \ content_type,
+          \))
   endif
 endfunction
 function! s:on_FileWriteCmd(gista) abort
-  let new_filename = s:P.abspath(expand('<amatch>'))
-  let old_filename = s:P.abspath(expand('%'))
-  if new_filename !=# old_filename
-    if !v:cmdbang && filereadable(new_filename)
-      call gista#util#prompt#error('E13: File exists (add ! to override)')
-      return
-    endif
-    execute printf('%d,%dwrite %s',
-          \ line("'["), line("']"),
-          \ fnameescape(new_filename)
-          \)
-    set nomodified
-  else
-    let content_type = get(a:gista, 'content_type', '')
-    if content_type ==# 'raw'
-      let gist = gista#command#patch#call({
-            \ '__range__': [line("'["), line("']")],
-            \ 'gistid': a:gista.gistid,
-            \ 'force': v:cmdbang,
-            \})
-      if empty(gist)
-        call gista#util#prompt#warn(printf(join([
-              \   'Use ":w!" to post changes to %s forcedly',
-              \ ]),
-              \ a:gista.apiname,
-              \))
-      else
-        set nomodified
-      endif
-    else
-      call gista#util#prompt#throw(printf(
-            \ 'Unknown content_type "%s" is specified',
-            \ content_type,
+  let content_type = get(a:gista, 'content_type', '')
+  if content_type ==# 'raw'
+    let gist = gista#command#patch#call({
+          \ '__range__': [line("'["), line("']")],
+          \ 'gistid': a:gista.gistid,
+          \ 'force': v:cmdbang,
+          \})
+    if empty(gist)
+      call gista#util#prompt#warn(printf(join([
+            \   'Use ":w!" to post changes to %s forcedly',
+            \ ]),
+            \ a:gista.apiname,
             \))
+    else
+      set nomodified
     endif
+  else
+    call gista#util#prompt#throw(printf(
+          \ 'Unknown content_type "%s" is specified',
+          \ content_type,
+          \))
   endif
 endfunction
 
