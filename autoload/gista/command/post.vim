@@ -24,22 +24,6 @@ function! s:interactive_description(options) abort
   endif
 endfunction
 
-function! s:handle_exception(exception) abort
-  redraw
-  let canceled_by_user_patterns = [
-        \ '^vim-gista: Cancel',
-        \ '^vim-gista: Login canceled',
-        \ '^vim-gista: ValidationError:',
-        \]
-  for pattern in canceled_by_user_patterns
-    if a:exception =~# pattern
-      call gista#util#prompt#warn('Canceled')
-      return
-    endif
-  endfor
-  " else
-  call gista#util#prompt#error(a:exception)
-endfunction
 function! gista#command#post#call(...) abort
   let options = extend({
         \ 'description': g:gista#command#post#interactive_description,
@@ -79,7 +63,7 @@ function! gista#command#post#call(...) abort
           \))
     return gist
   catch /^vim-gista:/
-    call s:handle_exception(v:exception)
+    call gista#util#handle_exception(v:exception)
     return ''
   endtry
 endfunction

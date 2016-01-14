@@ -4,23 +4,6 @@ set cpo&vim
 let s:V = gista#vital()
 let s:A = s:V.import('ArgumentParser')
 
-function! s:handle_exception(exception) abort
-  redraw
-  let canceled_by_user_patterns = [
-        \ '^vim-gista: Cancel',
-        \ '^vim-gista: Login canceled',
-        \ '^vim-gista: ValidationError:',
-        \]
-  for pattern in canceled_by_user_patterns
-    if a:exception =~# pattern
-      call gista#util#prompt#warn('Canceled')
-      return
-    endif
-  endfor
-  " else
-  call gista#util#prompt#error(a:exception)
-endfunction
-
 function! gista#command#open#call(...) abort
   let options = extend({
         \ 'gist': {},
@@ -35,7 +18,7 @@ function! gista#command#open#call(...) abort
     let file = gista#resource#remote#file(gist, filename, options)
     return file
   catch /^vim-gista:/
-    call s:handle_exception(v:exception)
+    call gista#util#handle_exception(v:exception)
     return {}
   endtry
 endfunction
@@ -53,7 +36,7 @@ function! gista#command#open#read(...) abort
     let gist = gista#resource#remote#get(gistid, options)
     let file = gista#resource#remote#file(gist, filename, options)
   catch /^vim-gista:/
-    call s:handle_exception(v:exception)
+    call gista#util#handle_exception(v:exception)
   endtry
   call gista#util#buffer#read_content(
         \ split(file.content, '\r\?\n'),
@@ -77,7 +60,7 @@ function! gista#command#open#edit(...) abort
     let gist = gista#resource#remote#get(gistid, options)
     let file = gista#resource#remote#file(gist, filename, options)
   catch /^vim-gista:/
-    call s:handle_exception(v:exception)
+    call gista#util#handle_exception(v:exception)
     return
   endtry
   let client = gista#client#get()
@@ -126,7 +109,7 @@ function! gista#command#open#bufname(...) abort
     let gistid   = gista#option#get_valid_gistid(options)
     let filename = gista#option#get_valid_filename(options)
   catch /^vim-gista:/
-    call s:handle_exception(v:exception)
+    call gista#util#handle_exception(v:exception)
     return
   endtry
   let client = gista#client#get()

@@ -125,9 +125,9 @@ function! gista#command#command(...) abort
     elseif gista#command#is_registered(name)
       let session = gista#client#session(options)
       try
-        call session.enter()
-        " perform a specified command
-        call s:registry[name].command(bang, range, args)
+        if session.enter()
+          call s:registry[name].command(bang, range, args)
+        endif
       finally
         call session.exit()
       endtry
@@ -157,9 +157,9 @@ function! gista#command#complete(arglead, cmdline, cursorpos, ...) abort
     elseif gista#command#is_registered(name)
       let session = gista#client#session(options)
       try
-        call session.enter()
-        " perform a specified command
-        return s:registry[name].complete(a:arglead, cmdline, a:cursorpos)
+        if session.enter()
+          return s:registry[name].complete(a:arglead, cmdline, a:cursorpos)
+        endif
       finally
         call session.exit()
       endtry

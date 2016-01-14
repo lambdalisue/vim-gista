@@ -4,21 +4,6 @@ set cpo&vim
 let s:V = gista#vital()
 let s:A = s:V.import('ArgumentParser')
 
-function! s:handle_exception(exception) abort
-  redraw
-  let canceled_by_user_patterns = [
-        \ '^vim-gista: Cancel',
-        \ '^vim-gista: Login canceled',
-        \ '^vim-gista: ValidationError:',
-        \]
-  for pattern in canceled_by_user_patterns
-    if a:exception =~# pattern
-      call gista#util#prompt#warn('Canceled')
-      return
-    endif
-  endfor
-  call gista#util#prompt#error(a:exception)
-endfunction
 function! gista#command#star#call(...) abort
   let options = extend({
         \ 'gistid': '',
@@ -34,7 +19,7 @@ function! gista#command#star#call(...) abort
           \ gistid, client.apiname,
           \))
   catch /^vim-gista:/
-    call s:handle_exception(v:exception)
+    call gista#util#handle_exception(v:exception)
   endtry
 endfunction
 

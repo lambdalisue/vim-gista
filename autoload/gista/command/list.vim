@@ -232,22 +232,6 @@ function! s:define_default_mappings() abort
   map <buffer> ff <Plug>(gista-fork)
 endfunction
 
-function! s:handle_exception(exception) abort
-  redraw
-  let canceled_by_user_patterns = [
-        \ '^vim-gista: Cancel',
-        \ '^vim-gista: Login canceled',
-        \ '^vim-gista: ValidationError:',
-        \]
-  for pattern in canceled_by_user_patterns
-    if a:exception =~# pattern
-      call gista#util#prompt#warn('Canceled')
-      return
-    endif
-  endfor
-  " else
-  call gista#util#prompt#error(a:exception)
-endfunction
 function! gista#command#list#call(...) abort
   let options = extend({
         \ 'lookup': '',
@@ -258,7 +242,7 @@ function! gista#command#list#call(...) abort
     let lookup = gista#option#get_valid_lookup(options)
     let index  = gista#resource#remote#list(lookup, options)
   catch /^vim-gista:/
-    call s:handle_exception(v:exception)
+    call gista#util#handle_exception(v:exception)
     return
   endtry
   " apply 'is_starred' field
@@ -421,20 +405,21 @@ function! s:action_edit(...) range abort
         \ 'username': b:gista.username,
         \})
   try
-    call session.enter()
-    for n in range(a:firstline, a:lastline)
-      let entry = s:get_entry(n - 1)
-      if empty(entry)
-        continue
-      endif
-      if anchor
-        call gista#util#anchor#focus()
-      endif
-      call gista#command#open#open({
-            \ 'gist': entry,
-            \ 'opener': opener,
-            \})
-    endfor
+    if session.enter()
+      for n in range(a:firstline, a:lastline)
+        let entry = s:get_entry(n - 1)
+        if empty(entry)
+          continue
+        endif
+        if anchor
+          call gista#util#anchor#focus()
+        endif
+        call gista#command#open#open({
+              \ 'gist': entry,
+              \ 'opener': opener,
+              \})
+      endfor
+    endif
   finally
     call session.exit()
   endtry
@@ -453,20 +438,21 @@ function! s:action_json(...) range abort
         \ 'username': b:gista.username,
         \})
   try
-    call session.enter()
-    for n in range(a:firstline, a:lastline)
-      let entry = s:get_entry(n - 1)
-      if empty(entry)
-        continue
-      endif
-      if anchor
-        call gista#util#anchor#focus()
-      endif
-      call gista#command#json#open({
-            \ 'gist': entry,
-            \ 'opener': opener,
-            \})
-    endfor
+    if session.enter()
+      for n in range(a:firstline, a:lastline)
+        let entry = s:get_entry(n - 1)
+        if empty(entry)
+          continue
+        endif
+        if anchor
+          call gista#util#anchor#focus()
+        endif
+        call gista#command#json#open({
+              \ 'gist': entry,
+              \ 'opener': opener,
+              \})
+      endfor
+    endif
   finally
     call session.exit()
   endtry
@@ -478,16 +464,17 @@ function! s:action_browse(...) range abort
         \ 'username': b:gista.username,
         \})
   try
-    call session.enter()
-    for n in range(a:firstline, a:lastline)
-      let entry = s:get_entry(n - 1)
-      if empty(entry)
-        continue
-      endif
-      call gista#command#browse#{action}({
-            \ 'gist': entry,
-            \})
-    endfor
+    if session.enter()
+      for n in range(a:firstline, a:lastline)
+        let entry = s:get_entry(n - 1)
+        if empty(entry)
+          continue
+        endif
+        call gista#command#browse#{action}({
+              \ 'gist': entry,
+              \})
+      endfor
+    endif
   finally
     call session.exit()
   endtry
@@ -499,17 +486,18 @@ function! s:action_rename(...) range abort
         \ 'username': b:gista.username,
         \})
   try
-    call session.enter()
-    for n in range(a:firstline, a:lastline)
-      let entry = s:get_entry(n - 1)
-      if empty(entry)
-        continue
-      endif
-      call gista#command#rename#call({
-            \ 'gist': entry,
-            \ 'force': force,
-            \})
-    endfor
+    if session.enter()
+      for n in range(a:firstline, a:lastline)
+        let entry = s:get_entry(n - 1)
+        if empty(entry)
+          continue
+        endif
+        call gista#command#rename#call({
+              \ 'gist': entry,
+              \ 'force': force,
+              \})
+      endfor
+    endif
   finally
     call session.exit()
   endtry
@@ -521,17 +509,18 @@ function! s:action_remove(...) range abort
         \ 'username': b:gista.username,
         \})
   try
-    call session.enter()
-    for n in range(a:firstline, a:lastline)
-      let entry = s:get_entry(n - 1)
-      if empty(entry)
-        continue
-      endif
-      call gista#command#remove#call({
-            \ 'gist': entry,
-            \ 'force': force,
-            \})
-    endfor
+    if session.enter()
+      for n in range(a:firstline, a:lastline)
+        let entry = s:get_entry(n - 1)
+        if empty(entry)
+          continue
+        endif
+        call gista#command#remove#call({
+              \ 'gist': entry,
+              \ 'force': force,
+              \})
+      endfor
+    endif
   finally
     call session.exit()
   endtry
@@ -543,17 +532,18 @@ function! s:action_delete(...) range abort
         \ 'username': b:gista.username,
         \})
   try
-    call session.enter()
-    for n in range(a:firstline, a:lastline)
-      let entry = s:get_entry(n - 1)
-      if empty(entry)
-        continue
-      endif
-      call gista#command#delete#call({
-            \ 'gist': entry,
-            \ 'force': force,
-            \})
-    endfor
+    if session.enter()
+      for n in range(a:firstline, a:lastline)
+        let entry = s:get_entry(n - 1)
+        if empty(entry)
+          continue
+        endif
+        call gista#command#delete#call({
+              \ 'gist': entry,
+              \ 'force': force,
+              \})
+      endfor
+    endif
   finally
     call session.exit()
   endtry
@@ -564,16 +554,17 @@ function! s:action_star(...) range abort
         \ 'username': b:gista.username,
         \})
   try
-    call session.enter()
-    for n in range(a:firstline, a:lastline)
-      let entry = s:get_entry(n - 1)
-      if empty(entry)
-        continue
-      endif
-      call gista#command#star#call({
-            \ 'gist': entry,
-            \})
-    endfor
+    if session.enter()
+      for n in range(a:firstline, a:lastline)
+        let entry = s:get_entry(n - 1)
+        if empty(entry)
+          continue
+        endif
+        call gista#command#star#call({
+              \ 'gist': entry,
+              \})
+      endfor
+    endif
   finally
     call session.exit()
   endtry
@@ -584,16 +575,17 @@ function! s:action_fork(...) range abort
         \ 'username': b:gista.username,
         \})
   try
-    call session.enter()
-    for n in range(a:firstline, a:lastline)
-      let entry = s:get_entry(n - 1)
-      if empty(entry)
-        continue
-      endif
-      call gista#command#fork#call({
-            \ 'gist': entry,
-            \})
-    endfor
+    if session.enter()
+      for n in range(a:firstline, a:lastline)
+        let entry = s:get_entry(n - 1)
+        if empty(entry)
+          continue
+        endif
+        call gista#command#fork#call({
+              \ 'gist': entry,
+              \})
+      endfor
+    endif
   finally
     call session.exit()
   endtry
@@ -604,16 +596,17 @@ function! s:action_unstar(...) range abort
         \ 'username': b:gista.username,
         \})
   try
-    call session.enter()
-    for n in range(a:firstline, a:lastline)
-      let entry = s:get_entry(n - 1)
-      if empty(entry)
-        continue
-      endif
-      call gista#command#unstar#call({
-            \ 'gist': entry,
-            \})
-    endfor
+    if session.enter()
+      for n in range(a:firstline, a:lastline)
+        let entry = s:get_entry(n - 1)
+        if empty(entry)
+          continue
+        endif
+        call gista#command#unstar#call({
+              \ 'gist': entry,
+              \})
+      endfor
+    endif
   finally
     call session.exit()
   endtry

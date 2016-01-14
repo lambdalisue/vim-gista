@@ -154,8 +154,9 @@ function! gista#autocmd#call(name) abort
         \ 'username': get(gista, 'username', 0),
         \})
   try
-    call session.enter()
-    call call(fname, [gista])
+    if session.enter()
+      call call(fname, [gista])
+    endif
   finally
     call session.exit()
   endtry

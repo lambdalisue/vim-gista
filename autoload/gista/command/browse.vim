@@ -11,22 +11,6 @@ function! s:create_url(html_url, filename) abort
   return a:html_url . suffix
 endfunction
 
-function! s:handle_exception(exception) abort
-  redraw
-  let canceled_by_user_patterns = [
-        \ '^vim-gista: Cancel',
-        \ '^vim-gista: Login canceled',
-        \ '^vim-gista: ValidationError:',
-        \]
-  for pattern in canceled_by_user_patterns
-    if a:exception =~# pattern
-      call gista#util#prompt#warn('Canceled')
-      return
-    endif
-  endfor
-  " else
-  call gista#util#prompt#error(a:exception)
-endfunction
 function! gista#command#browse#call(...) abort
   let options = extend({
         \ 'gist': {},
@@ -45,7 +29,7 @@ function! gista#command#browse#call(...) abort
           \ ? '' : gista#option#get_valid_filename(options)
     return s:create_url(gist.html_url, filename)
   catch /^vim-gista:/
-    call s:handle_exception(v:exception)
+    call gista#util#handle_exception(v:exception)
     return ''
   endtry
 endfunction

@@ -5,22 +5,6 @@ let s:V = gista#vital()
 let s:J = s:V.import('Web.JSON')
 let s:A = s:V.import('ArgumentParser')
 
-function! s:handle_exception(exception) abort
-  redraw
-  let canceled_by_user_patterns = [
-        \ '^vim-gista: Cancel',
-        \ '^vim-gista: Login canceled',
-        \ '^vim-gista: ValidationError:',
-        \]
-  for pattern in canceled_by_user_patterns
-    if a:exception =~# pattern
-      call gista#util#prompt#warn('Canceled')
-      return
-    endif
-  endfor
-  " else
-  call gista#util#prompt#error(a:exception)
-endfunction
 function! gista#command#json#call(...) abort
   let options = extend({
         \ 'gist': {},
@@ -32,7 +16,7 @@ function! gista#command#json#call(...) abort
     let gist = gista#resource#remote#get(gistid, options)
     return gist
   catch /^vim-gista:/
-    call s:handle_exception(v:exception)
+    call gista#util#handle_exception(v:exception)
     return {}
   endtry
 endfunction
@@ -50,7 +34,7 @@ function! gista#command#json#read(...) abort
           \ "\r\\?\n"
           \)
   catch /^vim-gista:/
-    call s:handle_exception(v:exception)
+    call gista#util#handle_exception(v:exception)
   endtry
   call gista#util#buffer#read_content(
         \ content,
@@ -73,7 +57,7 @@ function! gista#command#json#edit(...) abort
           \ "\r\\?\n"
           \)
   catch /^vim-gista:/
-    call s:handle_exception(v:exception)
+    call gista#util#handle_exception(v:exception)
     return
   endtry
   let client = gista#client#get()
@@ -121,7 +105,7 @@ function! gista#command#json#bufname(...) abort
   try
     let gistid = gista#option#get_valid_gistid(options)
   catch /^vim-gista:/
-    call s:handle_exception(v:exception)
+    call gista#util#handle_exception(v:exception)
     return
   endtry
   let client = gista#client#get()

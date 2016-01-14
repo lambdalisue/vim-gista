@@ -297,11 +297,19 @@ function! s:session.enter() abort
           \)
     return
   endif
-  let self._previous_client = gista#client#get()
-  call gista#client#set(self.apiname, {
-        \ 'username': self.username,
-        \ 'permanent': 0,
-        \})
+  try
+    let self._previous_client = gista#client#get()
+    call gista#client#set(self.apiname, {
+          \ 'username': self.username,
+          \ 'permanent': 0,
+          \})
+    return 1
+  catch /^vim-gista:/
+    call gista#util#handle_exception(v:exception)
+    " to prevent "SessionError: session.enter() has not been called yet'
+    let self._previous_client = {}
+    return 0
+  endtry
 endfunction
 function! s:session.exit() abort
   if !has_key(self, '_previous_client')

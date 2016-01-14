@@ -20,6 +20,23 @@ function! gista#util#ensure_eol(text) abort
   return a:text =~# '\n$' ? a:text : a:text . "\n"
 endfunction
 
+function! gista#util#handle_exception(exception) abort
+  redraw
+  let known_exception_patterns = [
+        \ '^vim-gista: Cancel',
+        \ '^vim-gista: Login canceled',
+        \ '^vim-gista: ValidationError:',
+        \]
+  for pattern in known_exception_patterns
+    if a:exception =~# pattern
+      call gista#util#prompt#warn(matchstr(a:exception, '^vim-gista: \zs.*'))
+      return
+    endif
+  endfor
+  " else
+  call gista#util#prompt#error(a:exception)
+endfunction
+
 let &cpo = s:save_cpo
 unlet! s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
