@@ -24,7 +24,7 @@ function! gista#resource#remote#is_modified(lhs, rhs) abort
         \]
   let lhs = s:D.omit(a:lhs, unnecessary_fields)
   let rhs = s:D.omit(a:rhs, unnecessary_fields)
-  return string(lhs) !=# string(rhs)
+  return lhs != rhs
 endfunction
 
 function! gista#resource#remote#get(gistid, ...) abort
