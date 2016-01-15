@@ -407,6 +407,31 @@ All commands provide -h/--help to quickly show an usage of the command.
 
 	Unstar a gist {gistid}
 
+						*vim-gista-Gista-commits*
+:Gista commits [{gistid}]			*:Gista-commits*
+
+	List commits of a gist {gistid}.
+	In gista-commit window, the following content will be shown:
+>
+	  ┌ API name
+	  │       ┌ Lookup
+	  │       │                  ┌ The current mode
+	  │       │                  │
+	GitHub:8c0e5da60c0b5092c73f | Press ? to toggle a mapping help
+	= 16/01/14(16:01:02) No changes                    147b6ce6bce8bbe0118805f60248592c5dde27c8
+	= 16/01/14(10:49:51) 1 additions, 0 deletions      d4120e0ea1c3c3b60239b93adf35d95d1af1c716
+	= 16/01/14(10:35:03) No changes                    9662f6ca80a3e9899f18b6fc18969bf105872ae8
+	= 16/01/14(09:16:50) 6 additions, 0 deletions      ae34a2ae640c52c9114cd6510701f74700e69787
+	│       │                    │                                   │
+	│       │                    │                                   └ Version
+	│       │                    └ Changes status
+	│       └ A committed_at of the gist (depends on the Mode:)
+	└ Fetched marker (-: Unfetched, =: fetched)
+<
+	Press ? in gista-commit window to see what kind of key mappings are
+	available.
+
+
 ------------------------------------------------------------------------------
 VARIABLE					*vim-gista-variable*
 
