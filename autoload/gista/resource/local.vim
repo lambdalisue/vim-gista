@@ -75,10 +75,17 @@ function! s:get_gist(client, gistid, options) abort
         \ 'Loading a gist %s in %s from a local cache ...',
         \ a:gistid, a:client.apiname,
         \))
-  let gist = extend(
-        \ gista#resource#local#get_pseudo_gist(a:gistid),
-        \ a:client.gist_cache.get(a:gistid, {}),
-        \)
+  if a:client.gist_cache.has(a:gistid)
+    let gist = extend(
+          \ gista#resource#local#get_pseudo_gist(a:gistid),
+          \ a:client.gist_cache.get(a:gistid, {}),
+          \)
+  else
+    let gist = extend(
+          \ gista#resource#local#get_pseudo_gist(a:gistid),
+          \ gista#resource#local#retrieve_index_entry(a:gistid, a:options),
+          \)
+  endif
   return gist
 endfunction
 function! s:get_gist_file(client, gist, filename, options) abort
@@ -400,6 +407,68 @@ function! gista#resource#local#get_available_filenames(gist) abort
         \ keys(get(a:gist, 'files', {})),
         \ 'a:gist.files[v:val].size < s:CONTENT_SIZE_LIMIT'
         \)
+endfunction
+
+function! gista#resource#local#get_valid_gistid(gistid) abort
+  if empty(a:gistid)
+    redraw
+    let gistid = gista#util#prompt#ask(
+          \ 'Please input a gist id: ', '',
+          \ 'customlist,gista#option#complete_gistid',
+          \)
+    if empty(gistid)
+      call gista#util#prompt#throw('Cancel')
+    endif
+  else
+    let gistid = a:gistid
+  endif
+  call s:validate_gistid(gistid)
+  return gistid
+endfunction
+function! gista#resource#local#get_valid_filename(gist, filename) abort
+  if empty(a:filename)
+    let filenames = gista#resource#local#get_available_filenames(a:gist)
+    if len(filenames) == 1
+      let filename = filenames[0]
+    elseif len(filenames) > 0
+      redraw
+      let ret = gista#util#prompt#inputlist(
+            \ 'Please select a filename: ',
+            \ filenames,
+            \)
+      if ret == 0
+        call gista#util#prompt#throw('Cancel')
+      endif
+      let filename = filenames[ret - 1]
+    else
+      redraw
+      let filename = gista#util#prompt#ask(
+            \ 'Please input a filename: ', '',
+            \ 'customlist,gista#option#complete_filename',
+            \)
+      if empty(filename)
+        call gista#util#prompt#throw('Cancel')
+      endif
+    endif
+  else
+    let filename = a:filename
+  endif
+  call s:validate_filename(filename)
+  return filename
+endfunction
+function! gista#resource#local#get_valid_lookup(lookup) abort
+  let client = gista#client#get()
+  let username = client.get_authorized_username()
+  let lookup = empty(a:lookup)
+        \ ? empty(username)
+        \   ? 'public'
+        \   : username
+        \ : a:lookup
+  let lookup = !empty(username) && lookup ==# 'starred'
+        \ ? username . '/starred'
+        \ : lookup
+  call s:validate_lookup(client, lookup)
+  return lookup
 endfunction
 
 let &cpo = s:save_cpo

@@ -57,6 +57,9 @@ function! gista#resource#remote#get(gistid, ...) abort
     let res.content = get(res, 'content', '')
     let res.content = empty(res.content) ? {} : s:J.decode(res.content)
     let gist = res.content
+    " Note:
+    " gistid might contain version info thus overwrite it
+    let gist.id = a:gistid
     let gist._gista_fetched = 1
     let gist._gista_last_modified = s:G.parse_response_last_modified(res)
     call gista#indicate(options, printf(
@@ -425,6 +428,26 @@ function! gista#resource#remote#fork(gistid, ...) abort
     call gista#resource#local#append_index_entry(gist)
     redraw
     return gist
+  endif
+  call gista#client#throw(res)
+endfunction
+function! gista#resource#remote#commits(gistid, ...) abort
+  let options = get(a:000, 0, {})
+  let client = gista#client#get()
+  let username = client.get_authorized_username()
+
+  call gista#indicate(options, printf(
+        \ 'Fetching commits of a gist %s in %s ...',
+        \ a:gistid, client.apiname,
+        \))
+  let url = printf('gists/%s/commits', a:gistid)
+  let res = client.get(url)
+  redraw
+  if res.status == 200
+    let res.content = get(res, 'content', '')
+    let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+    let commits = res.content
+    return commits
   endif
   call gista#client#throw(res)
 endfunction

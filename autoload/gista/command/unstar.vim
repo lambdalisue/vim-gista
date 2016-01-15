@@ -6,20 +6,25 @@ let s:A = s:V.import('ArgumentParser')
 
 function! gista#command#unstar#call(...) abort
   let options = extend({
+        \ 'gist': {},
         \ 'gistid': '',
-        \}, get(a:000, 0, {}),
-        \)
+        \}, get(a:000, 0, {}))
   try
-    let gistid = gista#option#get_valid_gistid(options)
     let client = gista#client#get()
+    let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
+          \ ? options.gistid
+          \ : options.gist.id
+          \)
     call gista#resource#remote#unstar(gistid, options)
     call gista#util#doautocmd('CacheUpdatePost')
     call gista#indicate(options, printf(
           \ 'A gist %s in %s is unstarred',
           \ gistid, client.apiname,
           \))
+    return [gistid]
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
+    return [gistid]
   endtry
 endfunction
 

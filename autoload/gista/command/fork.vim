@@ -8,10 +8,12 @@ let s:A = s:V.import('ArgumentParser')
 function! gista#command#fork#call(...) abort
   let options = extend({
         \ 'gistid': '',
-        \}, get(a:000, 0, {}),
-        \)
+        \}, get(a:000, 0, {}))
   try
-    let gistid = gista#option#get_valid_gistid(options)
+    let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
+          \ ? options.gistid
+          \ : options.gist.id
+          \)
     let gist = gista#resource#remote#fork(gistid, options)
     call gista#util#doautocmd('CacheUpdatePost')
     let client = gista#client#get()
@@ -19,10 +21,10 @@ function! gista#command#fork#call(...) abort
           \ 'A gist %s in %s is forked to %s',
           \ gistid, client.apiname, gist.id,
           \))
-    return gist
+    return [gist, gistid]
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return {}
+    return [{}, gistid]
   endtry
 endfunction
 

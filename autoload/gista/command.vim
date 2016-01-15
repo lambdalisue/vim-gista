@@ -221,6 +221,10 @@ call gista#command#register('unstar',
       \ 'gista#command#unstar#command',
       \ 'gista#command#unstar#complete',
       \)
+call gista#command#register('commits',
+      \ 'gista#command#commits#command',
+      \ 'gista#command#commits#complete',
+      \)
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo
