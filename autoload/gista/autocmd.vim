@@ -7,15 +7,13 @@ let s:C = s:V.import('Vim.Compat')
 function! s:is_patchable(gista) abort
   let client = gista#client#get()
   let username = client.get_authorized_username()
-  let gist = gista#command#json#call({
+  let [gist, gistid] = gista#command#json#call({
         \ 'gistid': a:gista.gistid,
         \})
   return get(get(gist, 'owner', {}), 'login') ==# username
 endfunction
 
 function! s:on_SourceCmd(gista) abort
-  " TODO
-  " Check if the file is Vim script or not
   let content = getbufline(expand('<amatch>'), 1, '$')
   try
     let tempfile = tempname()

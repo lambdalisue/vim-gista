@@ -9,37 +9,28 @@ function! gista#command#open#call(...) abort
         \ 'gist': {},
         \ 'gistid': '',
         \ 'filename': '',
-        \}, get(a:000, 0, {})
-        \)
+        \}, get(a:000, 0, {}))
   try
-    let gistid   = gista#option#get_valid_gistid(options)
+    let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
+          \ ? options.gistid
+          \ : options.gist.id
+          \)
     let gist = gista#resource#remote#get(gistid, options)
-    let options.gist = gist
-    let filename = gista#option#get_valid_filename(options)
-    let file = gista#resource#remote#file(gist, filename, options)
-    return file
+    let filename = gista#resource#local#get_valid_filename(gist, options.filename)
+    let file = gista#resource#remote#file(gist, options.filename, options)
+    return [file, gistid, filename]
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return {}
+    return [{}, gistid, filename]
   endtry
 endfunction
 function! gista#command#open#read(...) abort
   silent doautocmd FileReadPre
-  let options = extend({
-        \ 'gistid': '',
-        \ 'gist': {},
-        \ 'filename': '',
-        \}, get(a:000, 0, {}),
-        \)
-  try
-    let gistid   = gista#option#get_valid_gistid(options)
-    let gist = gista#resource#remote#get(gistid, options)
-    let options.gist = gist
-    let filename = gista#option#get_valid_filename(options)
-    let file = gista#resource#remote#file(gist, filename, options)
-  catch /^vim-gista:/
-    call gista#util#handle_exception(v:exception)
-  endtry
+  let options = extend({}, get(a:000, 0, {}))
+  let [file, gistid, filename] = gista#command#open#call(options)
+  if empty(file)
+    return
+  endif
   call gista#util#buffer#read_content(
         \ split(file.content, '\r\?\n'),
         \ printf('%s.%s', tempname(), fnamemodify(filename, ':e')),
@@ -50,29 +41,18 @@ function! gista#command#open#read(...) abort
 endfunction
 function! gista#command#open#edit(...) abort
   silent doautocmd BufReadPre
-  let options = extend({
-        \ 'gistid': '',
-        \ 'gist': {},
-        \ 'filename': '',
-        \}, get(a:000, 0, {})
-        \)
-  try
-    let gistid   = gista#option#get_valid_gistid(options)
-    let gist = gista#resource#remote#get(gistid, options)
-    let options.gist = gist
-    let filename = gista#option#get_valid_filename(options)
-    let file = gista#resource#remote#file(gist, filename, options)
-  catch /^vim-gista:/
-    call gista#util#handle_exception(v:exception)
+  let options = extend({}, get(a:000, 0, {}))
+  let [file, gistid, filename] = gista#command#open#call(options)
+  if empty(file)
     return
-  endtry
+  endif
   let client = gista#client#get()
   let apiname = client.apiname
   let username = client.get_authorized_username()
   let b:gista = {
         \ 'apiname': apiname,
         \ 'username': username,
-        \ 'gistid': gist.id,
+        \ 'gistid': gistid,
         \ 'filename': filename,
         \ 'content_type': 'raw',
         \}
@@ -87,8 +67,7 @@ function! gista#command#open#open(...) abort
   let options = extend({
         \ 'opener': '',
         \ 'cache': 1,
-        \}, get(a:000, 0, {})
-        \)
+        \}, get(a:000, 0, {}))
   let opener = empty(options.opener)
         \ ? g:gista#command#open#default_opener
         \ : options.opener
@@ -102,17 +81,17 @@ function! gista#command#open#open(...) abort
 endfunction
 function! gista#command#open#bufname(...) abort
   let options = extend({
-        \ 'gistid': '',
         \ 'gist': {},
+        \ 'gistid': '',
         \ 'filename': '',
-        \ 'cache': 1,
-        \}, get(a:000, 0, {})
-        \)
+        \}, get(a:000, 0, {}))
   try
-    let gistid   = gista#option#get_valid_gistid(options)
+    let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
+          \ ? options.gistid
+          \ : options.gist.id
+          \)
     let gist = gista#resource#remote#get(gistid, options)
-    let options.gist = gist
-    let filename = gista#option#get_valid_filename(options)
+    let filename = gista#resource#local#get_valid_filename(gist, options.filename)
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
     return

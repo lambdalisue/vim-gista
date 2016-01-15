@@ -6,16 +6,20 @@ let s:A = s:V.import('ArgumentParser')
 
 function! gista#command#remove#call(...) abort
   let options = extend({
+        \ 'gist': {},
         \ 'gistid': '',
         \ 'filename': '',
         \ 'force': 0,
         \ 'confirm': 1,
-        \}, get(a:000, 0, {}),
-        \)
+        \}, get(a:000, 0, {}))
   try
     let client = gista#client#get()
-    let gistid = gista#option#get_valid_gistid(options)
-    let filename = gista#option#get_valid_filename(options)
+    let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
+          \ ? options.gistid
+          \ : options.gist.id
+          \)
+    let gist = gista#resource#remote#get(gistid, options)
+    let filename = gista#resource#local#get_valid_filename(gist, options.filename)
     if options.confirm
       if !gista#util#prompt#asktf(printf(
             \ 'Remove %s of %s in %s? ',
@@ -34,8 +38,10 @@ function! gista#command#remove#call(...) abort
           \ 'A %s is removed from a gist %s in %s',
           \ filename, gistid, client.apiname,
           \))
+    return [gistid, filename]
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
+    return [gistid, filename]
   endtry
 endfunction
 

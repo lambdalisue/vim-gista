@@ -57,6 +57,9 @@ function! gista#resource#remote#get(gistid, ...) abort
     let res.content = get(res, 'content', '')
     let res.content = empty(res.content) ? {} : s:J.decode(res.content)
     let gist = res.content
+    " Note:
+    " gistid might contain version info thus overwrite it
+    let gist.id = a:gistid
     let gist._gista_fetched = 1
     let gist._gista_last_modified = s:G.parse_response_last_modified(res)
     call gista#indicate(options, printf(

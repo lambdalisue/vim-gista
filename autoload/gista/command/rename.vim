@@ -11,24 +11,22 @@ function! gista#command#rename#call(...) abort
         \ 'filename': '',
         \ 'new_filename': '',
         \ 'force': 0,
-        \}, get(a:000, 0, {}),
-        \)
+        \}, get(a:000, 0, {}))
   try
-    if !empty(options.gist)
-      let gist = options.gist
-      let gistid = gist.id
-    else
-      let gistid = gista#option#get_valid_gistid(options)
-      let gist = gista#resource#remote#get(gistid, options)
-    endif
-    let filename = gista#option#get_valid_filename(options)
+    let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
+          \ ? options.gistid
+          \ : options.gist.id
+          \)
+    let gist = gista#resource#remote#get(gistid, options)
+    let filename = gista#resource#local#get_valid_filename(gist, options.filename)
     if empty(options.new_filename)
-      let options.new_filename = gista#util#prompt#ask(
+      let new_filename = gista#util#prompt#ask(
             \ filename . ' -> ', filename,
             \ 'customlist,gista#option#complete_filename',
             \)
+    else
+      let new_filename = options.new_filename
     endif
-    let new_filename = options.new_filename
 
     let gist = gista#resource#remote#patch(gistid, {
           \ 'force': options.force,
@@ -44,8 +42,10 @@ function! gista#command#rename#call(...) abort
           \ 'A %s in a gist %s in %s is renamed to %s',
           \ filename, gistid, client.apiname, new_filename,
           \))
+    return [gistid, filename, new_filename]
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
+    return [gistid, filename, new_filename]
   endtry
 endfunction
 

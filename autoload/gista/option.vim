@@ -5,79 +5,6 @@ let s:V = gista#vital()
 let s:L = s:V.import('Data.List')
 let s:C = s:V.import('Vim.Compat')
 
-function! gista#option#get_valid_gistid(options) abort
-  let gist = get(a:options, 'gist', {})
-  if !empty(gist)
-    let gistid = gist.id
-  else
-    let gistid = get(a:options, 'gistid', '')
-    if empty(gistid)
-      redraw
-      let gistid = gista#util#prompt#ask(
-            \ 'Please input a gist id: ', '',
-            \ 'customlist,gista#option#complete_gistid',
-            \)
-      if empty(gistid)
-        call gista#util#prompt#throw('Cancel')
-      endif
-    endif
-  endif
-  call gista#resource#local#validate_gistid(gistid)
-  return gistid
-endfunction
-function! gista#option#get_valid_filename(options) abort
-  let filename = get(a:options, 'filename', '')
-  if empty(filename)
-    if !empty(get(a:options, 'gist', {}))
-      let gist = a:options.gist
-    else
-      let client = gista#client#get()
-      let gistid = gista#option#get_valid_gistid(a:options)
-      let gist   = gista#resource#remote#get(gistid)
-    endif
-    let filenames = gista#resource#local#get_available_filenames(gist)
-    if len(filenames) == 1
-      let filename = filenames[0]
-    elseif len(filenames) > 0
-      redraw
-      let ret = gista#util#prompt#inputlist(
-            \ 'Please select a filename: ',
-            \ filenames,
-            \)
-      if ret == 0
-        call gista#util#prompt#throw('Cancel')
-      endif
-      let filename = filenames[ret - 1]
-    else
-      redraw
-      let filename = gista#util#prompt#ask(
-            \ 'Please input a filename: ', '',
-            \ 'customlist,gista#option#complete_filename',
-            \)
-      if empty(filename)
-        call gista#util#prompt#throw('Cancel')
-      endif
-    endif
-  endif
-  call gista#resource#local#validate_filename(filename)
-  return filename
-endfunction
-function! gista#option#get_valid_lookup(options) abort
-  let lookup = get(a:options, 'lookup', '')
-  let client = gista#client#get()
-  let username = client.get_authorized_username()
-  let lookup = empty(lookup)
-        \ ? empty(username)
-        \   ? 'public'
-        \   : username
-        \ : lookup
-  let lookup = !empty(username) && lookup ==# 'starred'
-        \ ? username . '/starred'
-        \ : lookup
-  call gista#resource#local#validate_lookup(lookup)
-  return lookup
-endfunction
-
 function! gista#option#guess_filename(expr) abort
   let gista = s:C.getbufvar(a:expr, 'gista', {})
   let filename = expand(a:expr)
@@ -89,6 +16,7 @@ function! gista#option#guess_filename(expr) abort
     return filename
   endif
 endfunction
+
 function! gista#option#assign_apiname(options, expr) abort
   if has_key(a:options, 'apiname')
     return

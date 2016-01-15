@@ -6,22 +6,20 @@ let s:A = s:V.import('ArgumentParser')
 
 function! gista#command#logout#call(...) abort
   let options = extend({
-        \ 'verbose': 1,
         \ 'apiname': '',
-        \}, get(a:000, 0, {}),
-        \)
+        \}, get(a:000, 0, {}))
   try
     let apiname = gista#client#get_valid_apiname(options.apiname)
-    call gista#client#set(apiname, {
-          \ 'verbose': options.verbose,
-          \})
+    call gista#client#set(apiname, {})
     let client = gista#client#get()
     call gista#util#prompt#echo(printf(
           \ 'Logout from %s',
           \ client.apiname,
           \))
+    return [apiname]
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
+    return [apiname]
   endtry
 endfunction
 

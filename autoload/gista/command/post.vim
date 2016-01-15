@@ -4,6 +4,16 @@ set cpo&vim
 let s:V = gista#vital()
 let s:A = s:V.import('ArgumentParser')
 
+function! s:get_content(expr) abort
+  let content = join(bufexists(a:expr)
+        \ ? getbufline(a:expr, 1, '$')
+        \ : readfile(a:expr),
+        \ "\n")
+  let content = content =~# '\r?\n$'
+        \ ? content
+        \ : content . "\n"
+  return { 'content': content }
+endfunction
 function! s:interactive_description(options) abort
   if type(a:options.description) == type(0)
     if a:options.description
@@ -28,21 +38,10 @@ function! gista#command#post#call(...) abort
   let options = extend({
         \ 'description': g:gista#command#post#interactive_description,
         \ 'public': g:gista#command#post#default_public,
-        \}, get(a:000, 0, {}),
-        \)
+        \ 'filenames': [],
+        \ 'contents': [],
+        \}, get(a:000, 0, {}))
   call s:interactive_description(options)
-  let filename = fnamemodify(gista#option#guess_filename('%'), ':t')
-  let filename = empty(filename)
-        \ ? 'gista-file'
-        \ : filename
-  let content  = join(call('getline', options.__range__), "\n")
-  let content  = content =~# '\r?\n$'
-        \ ? content
-        \ : content . "\n"
-  let options.filenames = [ filename ]
-  let options.contents  = [
-        \ { 'content': content },
-        \]
   try
     let gist = gista#resource#remote#post(
           \ options.filenames,
@@ -50,21 +49,23 @@ function! gista#command#post#call(...) abort
           \ options,
           \)
     let client = gista#client#get()
-    let bufname = gista#command#open#bufname({
-          \ 'gistid': gist.id,
-          \ 'filename': filename,
-          \})
-    silent execute printf('file %s', bufname)
+    if index(options.filenames, expand('%:t'))
+      let bufname = gista#command#open#bufname({
+            \ 'gistid': gist.id,
+            \ 'filename': expand('%:t'),
+            \})
+      silent execute printf('file %s', bufname)
+    endif
     call gista#util#doautocmd('CacheUpdatePost')
     redraw
     call gista#indicate(options, printf(
           \ 'A content of the current buffer is posted to a gist %s in %s',
           \ gist.id, client.apiname,
           \))
-    return gist
+    return [gist, gist.id, options.filenames]
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return ''
+    return [{}, '', options.filenames]
   endtry
 endfunction
 
@@ -73,6 +74,8 @@ function! s:get_parser() abort
     let s:parser = s:A.new({
           \ 'name': 'Gista post',
           \ 'description': 'Post contents into a new gist',
+          \ 'complete_unknown': s:A.complete_files,
+          \ 'unknown_description': '[filename, ...]',
           \})
     call s:parser.add_argument(
           \ '--description', '-d',
@@ -109,6 +112,25 @@ function! gista#command#post#command(...) abort
         \ deepcopy(g:gista#command#post#default_options),
         \ options,
         \)
+  let options.filenames = options.__unknown__
+  if empty(get(options, 'filenames'))
+    let filename = fnamemodify(gista#option#guess_filename('%'), ':t')
+    let filename = empty(filename)
+          \ ? 'gista-file'
+          \ : filename
+    let content = join(call('getline', options.__range__), "\n")
+    let content = content =~# '\r?\n$'
+          \ ? content
+          \ : content . "\n"
+    let options.filenames = [filename]
+    let options.contents = [{ 'content': content }]
+  else
+    call filter(options.filenames, 'bufexists(v:val) || filereadable(v:val)')
+    let options.contents = map(
+          \ copy(options.filename),
+          \ 's:get_content(v:val)'
+          \)
+  endif
   call gista#command#post#call(options)
 endfunction
 function! gista#command#post#complete(...) abort

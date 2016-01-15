@@ -240,14 +240,13 @@ function! gista#command#list#call(...) abort
   let options = extend({
         \ 'lookup': '',
         \ 'cache': 1,
-        \}, get(a:000, 0, {})
-        \)
+        \}, get(a:000, 0, {}))
   try
-    let lookup = gista#option#get_valid_lookup(options)
+    let lookup = gista#resource#local#get_valid_lookup(options.lookup)
     let index  = gista#resource#remote#list(lookup, options)
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return
+    return [{}, lookup]
   endtry
   " apply 'is_starred' field
   let client = gista#client#get()
@@ -259,20 +258,17 @@ function! gista#command#list#call(...) abort
           \ 'extend(v:val, { "is_starred": get(starred, v:val.id) })',
           \)
   endif
-  return index
+  return [index, lookup]
 endfunction
 function! gista#command#list#open(...) abort
   let options = extend({
-        \ 'lookup': '',
         \ 'opener': '',
         \ 'cache': 1,
-        \}, get(a:000, 0, {})
-        \)
-  let index = gista#command#list#call(options)
+        \}, get(a:000, 0, {}))
+  let [index, lookup] = gista#command#list#call(options)
   if empty(index)
     return
   endif
-  let lookup = gista#option#get_valid_lookup(options)
   let client = gista#client#get()
   let apiname = client.apiname
   let username = client.get_authorized_username()
@@ -312,6 +308,34 @@ function! gista#command#list#open(...) abort
   setlocal filetype=gista-list
   call gista#command#list#redraw()
 endfunction
+function! gista#command#list#update(...) abort
+  if &filetype !=# 'gista-list'
+    call gista#util#prompt#throw(
+          \ 'update() requires to be called in a gista-list buffer'
+          \)
+  endif
+  let options = extend(copy(b:gista.options), get(a:000, 0, {}))
+  let options = extend(options, {
+        \ 'lookup': b:gista.lookup,
+        \})
+  let [index, lookup] = gista#command#list#call(options)
+  if empty(index)
+    return
+  endif
+  let client = gista#client#get()
+  let apiname = client.apiname
+  let username = client.get_authorized_username()
+  let b:gista = {
+        \ 'winwidth': winwidth(0),
+        \ 'apiname': apiname,
+        \ 'username': username,
+        \ 'lookup': lookup,
+        \ 'entries': s:sort_entries(index.entries),
+        \ 'options': options,
+        \ 'content_type': 'list',
+        \}
+  call gista#command#list#redraw()
+endfunction
 function! gista#command#list#redraw() abort
   if &filetype !=# 'gista-list'
     call gista#util#prompt#throw(
@@ -336,32 +360,6 @@ function! gista#command#list#redraw() abort
   let s:entry_offset = len(prologue)
   call gista#util#buffer#edit_content(extend(prologue, contents))
   redraw | echo
-endfunction
-function! gista#command#list#update(...) abort
-  if &filetype !=# 'gista-list'
-    call gista#util#prompt#throw(
-          \ 'update() requires to be called in a gista-list buffer'
-          \)
-  endif
-  let options = extend(b:gista.options, get(a:000, 0, {}))
-  let index = gista#command#list#call(options)
-  if empty(index)
-    return
-  endif
-  let lookup = gista#option#get_valid_lookup(options)
-  let client = gista#client#get()
-  let apiname = client.apiname
-  let username = client.get_authorized_username()
-  let b:gista = {
-        \ 'winwidth': winwidth(0),
-        \ 'apiname': apiname,
-        \ 'username': username,
-        \ 'lookup': lookup,
-        \ 'entries': s:sort_entries(index.entries),
-        \ 'options': options,
-        \ 'content_type': 'list',
-        \}
-  call gista#command#list#redraw()
 endfunction
 
 function! s:on_VimResized() abort

@@ -6,16 +6,13 @@ let s:A = s:V.import('ArgumentParser')
 
 function! gista#command#login#call(...) abort
   let options = extend({
-        \ 'verbose': 1,
         \ 'apiname': '',
         \ 'username': '',
-        \}, get(a:000, 0, {}),
-        \)
+        \}, get(a:000, 0, {}))
   try
     let apiname = gista#client#get_valid_apiname(options.apiname)
     let username = gista#client#get_valid_username(apiname, options.username)
     call gista#client#set(apiname, {
-          \ 'verbose': options.verbose,
           \ 'username': username,
           \})
     let client = gista#client#get()
@@ -24,8 +21,10 @@ function! gista#command#login#call(...) abort
           \ client.apiname,
           \ client.get_authorized_username(),
           \))
+    return [apiname, username]
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
+    return [apiname, username]
   endtry
 endfunction
 

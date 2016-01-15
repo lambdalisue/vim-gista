@@ -147,14 +147,16 @@ function! gista#command#commits#call(...) abort
   let options = extend({
         \ 'gist': {},
         \ 'gistid': '',
-        \}, get(a:000, 0, {})
-        \)
+        \}, get(a:000, 0, {}))
   try
-    let gistid = gista#option#get_valid_gistid(options)
+    let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
+          \ ? options.gistid
+          \ : options.gist.id
+          \)
     let commits = gista#resource#remote#commits(gistid, options)
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return
+    return [{}, gistid]
   endtry
   " Convert commits to entries
   let entries = []
@@ -167,21 +169,16 @@ function! gista#command#commits#call(...) abort
           \})
     call add(entries, entry)
   endfor
-  return entries
+  return [entries, gistid]
 endfunction
 function! gista#command#commits#open(...) abort
   let options = extend({
-        \ 'gist': {},
-        \ 'gistid': '',
         \ 'opener': '',
-        \ 'cache': 0,
-        \}, get(a:000, 0, {})
-        \)
-  let entries = gista#command#commits#call(options)
+        \}, get(a:000, 0, {}))
+  let [entries, gistid] = gista#command#commits#call(options)
   if empty(entries)
     return
   endif
-  let gistid = gista#option#get_valid_gistid(options)
   let client = gista#client#get()
   let apiname = client.apiname
   let username = client.get_authorized_username()
@@ -192,7 +189,7 @@ function! gista#command#commits#open(...) abort
         \ client.apiname, gistid,
         \)
   call gista#util#buffer#open(bufname, {
-        \ 'opener': opener . (options.cache ? '' : '!'),
+        \ 'opener': opener . '!',
         \ 'group': 'manipulation_panel',
         \})
   let b:gista = {
@@ -221,6 +218,34 @@ function! gista#command#commits#open(...) abort
   setlocal filetype=gista-commits
   call gista#command#commits#redraw()
 endfunction
+function! gista#command#commits#update(...) abort
+  if &filetype !=# 'gista-commits'
+    call gista#util#prompt#throw(
+          \ 'update() requires to be called in a gista-commits buffer'
+          \)
+  endif
+  let options = extend(copy(b:gista.options), get(a:000, 0, {}))
+  let options = extend(options, {
+        \ 'gistid': b:gista.gistid,
+        \})
+  let [entries, gistid] = gista#command#commits#call(options)
+  if empty(entries)
+    return
+  endif
+  let client = gista#client#get()
+  let apiname = client.apiname
+  let username = client.get_authorized_username()
+  let b:gista = {
+        \ 'winwidth': winwidth(0),
+        \ 'apiname': apiname,
+        \ 'username': username,
+        \ 'gistid': gistid,
+        \ 'entries': entries,
+        \ 'options': options,
+        \ 'content_type': 'commits',
+        \}
+  call gista#command#commits#redraw()
+endfunction
 function! gista#command#commits#redraw() abort
   if &filetype !=# 'gista-commits'
     call gista#util#prompt#throw(
@@ -244,35 +269,6 @@ function! gista#command#commits#redraw() abort
   let s:entry_offset = len(prologue)
   call gista#util#buffer#edit_content(extend(prologue, contents))
   redraw | echo
-endfunction
-function! gista#command#commits#update(...) abort
-  if &filetype !=# 'gista-commits'
-    call gista#util#prompt#throw(
-          \ 'update() requires to be called in a gista-commits buffer'
-          \)
-  endif
-  let options = extend(b:gista.options, get(a:000, 0, {}))
-  let options = extend(options, {
-        \ 'gistid': b:gista.gistid,
-        \})
-  let entries = gista#command#commits#call(options)
-  if empty(entries)
-    return
-  endif
-  let gistid = gista#option#get_valid_gistid(options)
-  let client = gista#client#get()
-  let apiname = client.apiname
-  let username = client.get_authorized_username()
-  let b:gista = {
-        \ 'winwidth': winwidth(0),
-        \ 'apiname': apiname,
-        \ 'username': username,
-        \ 'gistid': gistid,
-        \ 'entries': entries,
-        \ 'options': options,
-        \ 'content_type': 'commits',
-        \}
-  call gista#command#commits#redraw()
 endfunction
 
 function! s:on_VimResized() abort

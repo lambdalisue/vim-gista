@@ -9,33 +9,27 @@ function! gista#command#json#call(...) abort
   let options = extend({
         \ 'gist': {},
         \ 'gistid': '',
-        \}, get(a:000, 0, {})
-        \)
+        \}, get(a:000, 0, {}))
   try
-    let gistid   = gista#option#get_valid_gistid(options)
+    let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
+          \ ? options.gistid
+          \ : options.gist.id
+          \)
     let gist = gista#resource#remote#get(gistid, options)
-    return gist
+    return [gist, gistid]
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return {}
+    return [{}, gistid]
   endtry
 endfunction
 function! gista#command#json#read(...) abort
   silent doautocmd FileReadPre
-  let options = extend({
-        \ 'gistid': '',
-        \}, get(a:000, 0, {}),
-        \)
-  try
-    let gistid = gista#option#get_valid_gistid(options)
-    let gist = gista#resource#remote#get(gistid, options)
-    let content = split(
-          \ s:J.encode(gist, { 'indent': 2 }),
-          \ "\r\\?\n"
-          \)
-  catch /^vim-gista:/
-    call gista#util#handle_exception(v:exception)
-  endtry
+  let options = extend({}, get(a:000, 0, {}))
+  let [gist, gistid] = gista#command#json#call(options)
+  if empty(gist)
+    return
+  endif
+  let content = split(s:J.encode(gist, { 'indent': 2 }), "\r\\?\n")
   call gista#util#buffer#read_content(
         \ content,
         \ printf('%s.json', tempname()),
@@ -45,21 +39,11 @@ function! gista#command#json#read(...) abort
 endfunction
 function! gista#command#json#edit(...) abort
   silent doautocmd BufReadPre
-  let options = extend({
-        \ 'gistid': '',
-        \}, get(a:000, 0, {})
-        \)
-  try
-    let gistid = gista#option#get_valid_gistid(options)
-    let gist = gista#resource#remote#get(gistid, options)
-    let content = split(
-          \ s:J.encode(gist, { 'indent': 2 }),
-          \ "\r\\?\n"
-          \)
-  catch /^vim-gista:/
-    call gista#util#handle_exception(v:exception)
+  let options = extend({}, get(a:000, 0, {}))
+  let [gist, gistid] = gista#command#json#call(options)
+  if empty(gist)
     return
-  endtry
+  endif
   let client = gista#client#get()
   let apiname = client.apiname
   let username = client.get_authorized_username()
@@ -69,6 +53,7 @@ function! gista#command#json#edit(...) abort
         \ 'gistid': gistid,
         \ 'content_type': 'json',
         \}
+  let content = split(s:J.encode(gist, { 'indent': 2 }), "\r\\?\n")
   call gista#util#buffer#edit_content(
         \ content,
         \ printf('%s.json', tempname()),
@@ -83,8 +68,7 @@ function! gista#command#json#open(...) abort
   let options = extend({
         \ 'opener': '',
         \ 'cache': 1,
-        \}, get(a:000, 0, {})
-        \)
+        \}, get(a:000, 0, {}))
   let opener = empty(options.opener)
         \ ? g:gista#command#json#default_opener
         \ : options.opener
@@ -98,12 +82,14 @@ function! gista#command#json#open(...) abort
 endfunction
 function! gista#command#json#bufname(...) abort
   let options = extend({
+        \ 'gist': {},
         \ 'gistid': '',
-        \ 'cache': 1,
-        \}, get(a:000, 0, {})
-        \)
+        \}, get(a:000, 0, {}))
   try
-    let gistid = gista#option#get_valid_gistid(options)
+    let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
+          \ ? options.gistid
+          \ : options.gist.id
+          \)
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
     return
