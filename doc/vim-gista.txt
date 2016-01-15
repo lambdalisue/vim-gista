@@ -42,6 +42,7 @@ Interface			|vim-gista-interface|
   Variable			|vim-gista-variable|
   Mapping			|vim-gista-mapping|
 Harmonic plugins		|vim-gista-harmonic-plugins|
+FAQ				|vim-gista-faq|
 
 ==============================================================================
 INTRODUCTION					*vim-gista-introduction*
@@ -633,6 +634,31 @@ lambdalisue/vim-gista-ctrlp
 	Allow users to use ctrlpvim/ctrlp.vim interface for listing.
 	https://github.com/lambdalisue/vim-gista-ctrlp
 	https://github.com/ctrlpvim/ctrlp.vim
+
+==============================================================================
+FAQ						*vim-gista-faq*
+
+Q.
+HTTP 502 Bad Gateway is shown in Windows
+
+A.
+Check if you are using a correct curl by
+>
+	$ packman -Sl | grep curl
+	mingw32 mingw-w64-i686-curl 7.46.0-2
+	mingw64 mingw-w64-x86_64-curl 7.46.0-2 [installed]
+	msys curl 7.46.0-1 [installed]
+	msys libcurl 7.46.0-1 [installed]
+	msys libcurl-devel 7.46.0-1
+	msys curl is not supported. You need to install mingw64-curl
+<
+If both of mingw-w64-i686-curl and mingw-w64-x86_64-curl are not [installed],
+vim-gista may not work correctly. So to enable vim-gista, install a correct
+curl like:
+>
+	$ packman -S mingw-w64-x86_64-curl
+<
+Note that you may need to add "C:\msys64\mingw64\bin" to PATH after that.
 
 ==============================================================================
 vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl:noet
