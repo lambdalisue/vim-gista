@@ -50,6 +50,9 @@ INTRODUCTION					*vim-gista-introduction*
 *vim-gista* is a plugin for manipulating Gist. It provides the following
 features:
 
+- List entries
+  - List gists of a lookup
+  - List commits of a gist
 - Open a gist
   - Open a file content of a gist
   - Open a JSON content of a gist
@@ -179,6 +182,13 @@ If you would like to list a public gists or gists of a particular user, use
 	:Gista list USERNAME
 <
 See |:Gista-list| for detail.
+
+If you would like to see commits of an existing gist, call |:Gista-commits|
+like:
+>
+	:Gista commits {GISTID}
+<
+See |:Gista-commits| for detail.
 
 ------------------------------------------------------------------------------
 OPEN					*vim-gista-open*
@@ -411,24 +421,24 @@ All commands provide -h/--help to quickly show an usage of the command.
 :Gista commits [{gistid}]			*:Gista-commits*
 
 	List commits of a gist {gistid}.
-	In gista-commit window, the following content will be shown:
+	In gista-commits window, the following content will be shown:
 >
 	  ┌ API name
-	  │       ┌ Lookup
-	  │       │                  ┌ The current mode
-	  │       │                  │
+	  │          ┌ GistID
+	  │          │
+	  │          │
 	GitHub:8c0e5da60c0b5092c73f | Press ? to toggle a mapping help
-	= 16/01/14(16:01:02) No changes                    147b6ce6bce8bbe0118805f60248592c5dde27c8
-	= 16/01/14(10:49:51) 1 additions, 0 deletions      d4120e0ea1c3c3b60239b93adf35d95d1af1c716
-	= 16/01/14(10:35:03) No changes                    9662f6ca80a3e9899f18b6fc18969bf105872ae8
-	= 16/01/14(09:16:50) 6 additions, 0 deletions      ae34a2ae640c52c9114cd6510701f74700e69787
-	│       │                    │                                   │
-	│       │                    │                                   └ Version
+	= 16/01/14(16:01:02) No changes                    147b6ce6bce8bbe011
+	= 16/01/14(10:49:51) 1 additions, 0 deletions      d4120e0ea1c3c3b602
+	= 16/01/14(10:35:03) No changes                    9662f6ca80a3e9899f
+	= 16/01/14(09:16:50) 6 additions, 0 deletions      ae34a2ae640c52c911
+	│       │                    │                      │
+	│       │                    │                      └ Version
 	│       │                    └ Changes status
-	│       └ A committed_at of the gist (depends on the Mode:)
+	│       └ A committed_at of the gist
 	└ Fetched marker (-: Unfetched, =: fetched)
 <
-	Press ? in gista-commit window to see what kind of key mappings are
+	Press ? in gista-commits window to see what kind of key mappings are
 	available.
 
 
@@ -586,8 +596,9 @@ g:gista#command#unstar#default_options
 ------------------------------------------------------------------------------
 MAPPING					*vim-gista-mapping*
 
-gista-list window showed by |:Gista-list| command provide the following
-|<Plug>| mappings. Note that users can show the actual key mapping by
+gista-list or gista-commits window showed by |:Gista-list| or |:Gista-commit|
+command provide the following |<Plug>| mappings.
+Note that users can show the actual key mapping by
 |<Plug>(gista-toggle-mapping-visibility)| which is mapped to ? in default.
 
 *<Plug>(gista-toggle-mapping-visibility)*	Toggle mapping visibility
@@ -597,9 +608,12 @@ gista-list window showed by |:Gista-list| command provide the following
 
 *<Plug>(gista-update)*		Update the buffer content
 *<Plug>(gista-UPDATE)*		Update the buffer content without cache
+				(Only in gista-list)
 
 *<Plug>(gista-next-mode)*	Select next mode
+				(Only in gista-list)
 *<Plug>(gista-prev-mode)*	Select previous mode
+				(Only in gista-list)
 
 *<Plug>(gista-edit)*		Open a selected gist
 *<Plug>(gista-edit-above)*	Open a selected gist in an above window
@@ -629,20 +643,32 @@ gista-list window showed by |:Gista-list| command provide the following
 *<Plug>(gista-browse-echo)*	Echo a URL of a selected gist
 
 *<Plug>(gista-rename)*		Rename a file in a selected gist
+				(Only in gista-list)
 *<Plug>(gista-RENAME)*		Rename a file in a selected gist (forcedly)
+				(Only in gista-list)
 
 *<Plug>(gista-remove)*		Remove a file in a selected gist from the
 				remote
+				(Only in gista-list)
 *<Plug>(gista-REMOVE)*		Remove a file in a selected gist from the
 				remote (forcedly)
+				(Only in gista-list)
 
 *<Plug>(gista-delete)*		Delete a selected gist from the remote
+				(Only in gista-list)
 *<Plug>(gista-DELETE)*		Delete a selected gist from the remote
 				(forcedly)
+				(Only in gista-list)
 
 *<Plug>(gista-fork)*		Fork a selected gist
+				(Only in gista-list)
 *<Plug>(gista-star)*		Star a selected gist
+				(Only in gista-list)
 *<Plug>(gista-unstar)*		Unstar a selected gist
+				(Only in gista-list)
+
+*<Plug>(gista-commits)*		Open commits of a selected gist
+				(Only in gista-list)
 
 
 ==============================================================================

@@ -8,6 +8,7 @@ vim-gista
 It provide the following features:
 
 - List gists of a particular lookup
+- List commits of a gist
 - Open a gist as a JSON file
 - Open a file of a gist
 - Post a content of the current buffer
