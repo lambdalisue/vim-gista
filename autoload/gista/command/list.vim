@@ -772,7 +772,7 @@ augroup END
 call gista#define_variables('command#list', {
       \ 'default_options': {},
       \ 'default_lookup': '',
-      \ 'default_mode': 'updated_at',
+      \ 'default_mode': 'created_at',
       \ 'default_mapping_visibility': 0,
       \ 'default_opener': 'topleft 15 split',
       \ 'default_entry_opener': 'edit',
