@@ -40,7 +40,7 @@ function! s:get_parser() abort
           \   'complete': function('gista#option#complete_apiname'),
           \})
     call s:parser.add_argument(
-          \ '--username',
+          \ 'username',
           \ 'A username of an API account', {
           \   'complete': function('gista#option#complete_username'),
           \})
