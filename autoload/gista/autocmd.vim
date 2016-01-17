@@ -79,9 +79,12 @@ function! s:on_BufWriteCmd(gista) abort
             \)
       return
     endif
+    let filename = a:gista.filename
+    let content = gista#util#ensure_eol(join(getline(1, '$'), "\n"))
     let gist = gista#command#patch#call({
-          \ '__range__': [line('1'), line('$')],
           \ 'gistid': a:gista.gistid,
+          \ 'filenames': [filename],
+          \ 'contents': [{ 'content': content }],
           \ 'force': v:cmdbang,
           \})
     if empty(gist)
@@ -113,9 +116,12 @@ function! s:on_FileWriteCmd(gista) abort
             \)
       return
     endif
+    let filename = a:gista.filename
+    let content = gista#util#ensure_eol(join(getline("'[", "']"), "\n"))
     let gist = gista#command#patch#call({
-          \ '__range__': [line("'["), line("']")],
           \ 'gistid': a:gista.gistid,
+          \ 'filenames': [filename],
+          \ 'contents': [{ 'content': content }],
           \ 'force': v:cmdbang,
           \})
     if empty(gist)
