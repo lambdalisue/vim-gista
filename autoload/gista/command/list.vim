@@ -721,15 +721,13 @@ function! gista#command#list#complete(...) abort
 endfunction
 
 function! gista#command#list#define_highlights() abort
-  " TODO: Add 'default' keyword when development has reached stable phase
-  " e.g. highlight default link GistaPartialMarker    Constant
-  highlight link GistaPartialMarker    Comment
-  highlight link GistaDownloadedMarker Special
-  highlight link GistaStarredMarker    WarningMsg
-  highlight link GistaDateTime         Comment
-  highlight link GistaGistIDPublic     Tag
-  highlight link GistaGistIDPrivate    Constant
-  highlight link GistaMapping          Comment
+  highlight default link GistaPartialMarker    Comment
+  highlight default link GistaDownloadedMarker Special
+  highlight default link GistaStarredMarker    WarningMsg
+  highlight default link GistaDateTime         Comment
+  highlight default link GistaGistIDPublic     Tag
+  highlight default link GistaGistIDPrivate    Constant
+  highlight default link GistaMapping          Comment
 endfunction
 function! gista#command#list#define_syntax() abort
   syntax match GistaMapping /^|.*$/
