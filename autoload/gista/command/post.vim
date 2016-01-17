@@ -9,9 +9,7 @@ function! s:get_content(expr) abort
         \ ? getbufline(a:expr, 1, '$')
         \ : readfile(a:expr),
         \ "\n")
-  let content = content =~# '\r?\n$'
-        \ ? content
-        \ : content . "\n"
+  let content = gista#util#ensure_eol(content)
   return { 'content': content }
 endfunction
 function! s:interactive_description(options) abort
@@ -50,9 +48,10 @@ function! gista#command#post#call(...) abort
           \)
     let client = gista#client#get()
     if index(options.filenames, expand('%:t'))
+      let filename = fnamemodify(gista#option#guess_filename('%'), ':t')
       let bufname = gista#command#open#bufname({
             \ 'gistid': gist.id,
-            \ 'filename': expand('%:t'),
+            \ 'filename': filename,
             \})
       silent execute printf('file %s', bufname)
     endif
@@ -118,10 +117,9 @@ function! gista#command#post#command(...) abort
     let filename = empty(filename)
           \ ? 'gista-file'
           \ : filename
-    let content = join(call('getline', options.__range__), "\n")
-    let content = content =~# '\r?\n$'
-          \ ? content
-          \ : content . "\n"
+    let content = gista#util#ensure_eol(
+          \ join(call('getline', options.__range__), "\n")
+          \)
     let options.filenames = [filename]
     let options.contents = [{ 'content': content }]
   else
