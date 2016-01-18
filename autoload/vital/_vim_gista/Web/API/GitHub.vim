@@ -7,7 +7,7 @@ let s:root = expand('<sfile>:p:h')
 let s:config = {}
 let s:config.baseurl = 'https://api.github.com/'
 let s:config.authorize_scopes = []
-let s:config.authorize_note = printf('vim@%s:%s', hostname(), localtime())
+let s:config.authorize_note = printf('vim@%s', hostname())
 let s:config.authorize_note_url = ''
 let s:config.skip_authentication = 0
 let s:config.retrieve_python =
@@ -31,7 +31,7 @@ function! s:_vital_depends() abort " {{{
   return {
         \ 'modules': [
         \   'System.Cache', 'Web.JSON', 'Web.HTTP',
-        \   'DateTime', 'System.Filepath', 'Vim.Python'
+        \   'DateTime', 'System.Filepath', 'Vim.Python', 'Data.Base64',
         \ ],
         \ 'files': ['./github.py'],
         \}
@@ -44,46 +44,99 @@ endfunction " }}}
 function! s:_get_header(token) abort " {{{
   return empty(a:token) ? {} : { 'Authorization': 'token ' . a:token }
 endfunction " }}}
-function! s:_authorize(client, username, password, ...) abort " {{{
-  let options = extend({
-        \ 'verbose': 1,
-        \ 'otp': '',
-        \}, get(a:000, 0, {}),
-        \)
-  let url = a:client.get_absolute_url('authorizations')
-  " Note:
-  "   It is not impossible to add 'client_id', 'client_secret', and
-  "   'fingerprint' but how do you keep 'client_secret' as secret in
-  "   Vim script? Thus omit these parameters.
-  let params = {
-        \ 'scopes':   a:client.get_authorize_scopes(),
-        \ 'note':     a:client.get_authorize_note(),
-        \ 'note_url': a:client.get_authorize_note_url(),
-        \}
-  let headers = empty(options.otp) ? {} : { 'X-GitHub-OTP': options.otp }
-  if options.verbose
-    redraw
-    if options.otp
-      echo 'Requesting an authorization token with OTP...'
-    else
-      echo 'Requesting an authorization token ...'
-    endif
-  endif
+function! s:_get_basic_header(username, password, ...) abort
+  let otp = get(a:000, 0, '')
+  let headers = empty(otp) ? {} : { 'X-GitHub-OTP': otp }
   " Note:
   " Vital.Wet.HTTP's username/password have some bug in python/wget client
   " thus use raw way to specity BASIC auth.
   let insecure_password = a:username . ':' . a:password
   let insecure_password = s:B.encode(insecure_password)
   let headers['Authorization'] = 'basic ' . insecure_password
+  return headers
+endfunction
+
+function! s:_list_authorizations(client, username, password, ...) abort
+  let options = extend({
+        \ 'verbose': 1,
+        \ 'otp': '',
+        \}, get(a:000, 0, {}),
+        \)
+  let url = a:client.get_absolute_url('authorizations')
+  let headers = s:_get_basic_header(a:username, a:password, options.otp)
+  let settings ={
+        \ 'method': 'GET',
+        \ 'url': url,
+        \ 'headers': headers,
+        \}
+  if options.verbose
+    redraw
+    if options.otp
+      echo 'Requesting authorizations with OTP...'
+    else
+      echo 'Requesting authorizations ...'
+    endif
+  endif
+  let res = a:client.request(settings)
+  let res.content = get(res, 'content', '')
+  let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+  return res
+endfunction
+function! s:_delete_authorization(id, client, username, password, ...) abort
+  let options = extend({
+        \ 'verbose': 1,
+        \ 'otp': '',
+        \}, get(a:000, 0, {}),
+        \)
+  let url = a:client.get_absolute_url('authorizations')
+  let headers = s:_get_basic_header(a:username, a:password, options.otp)
+  let settings ={
+        \ 'method': 'DELETE',
+        \ 'url': url . '/' . a:id,
+        \ 'headers': headers,
+        \}
+  if options.verbose
+    redraw
+    if options.otp
+      echo 'Deleting an authorization with OTP...'
+    else
+      echo 'Deleting an authorization ...'
+    endif
+  endif
+  let res = a:client.request(settings)
+  let res.content = get(res, 'content', '')
+  let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+  return res
+endfunction
+function! s:_create_authorization(params, client, username, password, ...) abort " {{{
+  let options = extend({
+        \ 'verbose': 1,
+        \ 'otp': '',
+        \}, get(a:000, 0, {}),
+        \)
+  let url = a:client.get_absolute_url('authorizations')
+  let headers = s:_get_basic_header(a:username, a:password, options.otp)
   let settings ={
         \ 'method': 'POST',
         \ 'url': url,
-        \ 'data': s:J.encode(params),
+        \ 'data': s:J.encode(a:params),
         \ 'headers': headers,
         \}
-  return a:client.request(settings)
-endfunction " }}}
-function! s:_interactive_authorize(client, username, ...) abort " {{{
+  if options.verbose
+    redraw
+    if options.otp
+      echo 'Creating an authorization with OTP...'
+    else
+      echo 'Creating an authorization ...'
+    endif
+  endif
+  let res = a:client.request(settings)
+  let res.content = get(res, 'content', '')
+  let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+  return res
+endfunction
+
+function! s:_authorize(client, username, ...) abort " {{{
   let options = extend({
         \ 'verbose': 1,
         \}, get(a:000, 0, {}),
@@ -98,7 +151,7 @@ function! s:_interactive_authorize(client, username, ...) abort " {{{
   if empty(password)
     return ''
   endif
-  let res = s:_authorize(a:client, a:username, password, {
+  let res = s:_list_authorizations(a:client, a:username, password, {
         \ 'verbose': options.verbose,
         \})
   " check if OTP is required
@@ -115,14 +168,79 @@ function! s:_interactive_authorize(client, username, ...) abort " {{{
       redraw
       echo 'Requesting an authorization token with OTP ...'
     endif
-    let res = s:_authorize(a:client, a:username, password, {
+    let res = s:_list_authorizations(a:client, a:username, password, {
           \ 'verbose': options.verbose,
           \ 'otp': otp,
           \})
+  else
+    let otp = ''
   endif
-  " translate json content to object
-  let res.content = get(res, 'content', '')
-  let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+  if res.status != 200
+    call s:_throw([
+          \ printf(
+          \   'Authorization as "%s" in "%s" has failed',
+          \   a:username, a:client.baseurl
+          \ ),
+          \ printf('%s: %s', res.status, res.statusText),
+          \ get(res.content, 'message', ''),
+          \])
+  endif
+  let note = a:client.get_authorize_note()
+  let authorizations = res.content
+  let authorization = get(filter(
+        \ copy(authorizations),
+        \ '!empty(v:val.note) && v:val.note ==# note'
+        \), 0, {})
+  while !empty(authorization)
+    redraw
+    echohl WarningMsg
+    echo printf('A personal access token for "%s" exists', note)
+    echohl None
+    let intans = inputlist([
+          \ 'Would you like to:',
+          \ '1. Overwrite existing access token',
+          \ '2. Give a new access token name',
+          \])
+    if intans == 1
+      let res = s:_delete_authorization(
+            \ authorization.id, a:client, a:username, password, {
+            \   'verbose': options.verbose,
+            \   'otp': otp,
+            \})
+      if res.status != 204
+        call s:_throw([
+              \ printf(
+              \   'Authorization as "%s" in "%s" has failed',
+              \   a:username, a:client.baseurl
+              \ ),
+              \ printf('%s: %s', res.status, res.statusText),
+              \ get(res.content, 'message', ''),
+              \])
+      endif
+      break
+    elseif intans == 2
+      let note = input(printf('%s -> ', note), note)
+      if empty(note)
+        return ''
+      endif
+      let authorization = get(filter(
+            \ copy(authorizations),
+            \ '!empty(v:val.note) && v:val.note ==# note'
+            \), 0, {})
+    else
+      return ''
+    endif
+  endwhile
+  let params = {
+        \ 'scopes':   a:client.get_authorize_scopes(),
+        \ 'note':     note,
+        \ 'note_url': a:client.get_authorize_note_url(),
+        \}
+  let res = s:_create_authorization(
+        \ params, a:client, a:username, password, {
+        \   'verbose': options.verbose,
+        \   'otp': otp,
+        \})
   if res.status != 201
     call s:_throw([
           \ printf(
@@ -451,7 +569,7 @@ function! s:client.login(username, ...) abort " {{{
     return
   endif
 
-  let token = s:_interactive_authorize(self, a:username, options)
+  let token = s:_authorize(self, a:username, options)
   if empty(token)
     throw s:_throw('Login canceled by user')
   endif

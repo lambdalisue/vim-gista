@@ -329,7 +329,7 @@ call gista#client#register('GitHub', 'https://api.github.com')
 " Configure Web.API.GitHub
 call s:G.set_config({
       \ 'authorize_scopes': ['gist'],
-      \ 'authorize_note': printf('vim-gista@%s:%s', hostname(), localtime()),
+      \ 'authorize_note': printf('vim-gista@%s', hostname()),
       \ 'authorize_note_url': 'https://github.com/lambdalisue/vim-gista',
       \ 'skip_authentication': 1,
       \})
