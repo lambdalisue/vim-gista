@@ -37,7 +37,7 @@ function! gista#command#open#read(...) abort
         \)
   redraw
   silent doautocmd FileReadPost
-  call gista#util#doautocmd('CacheUpdatePost')
+  silent call gista#util#doautocmd('CacheUpdatePost')
 endfunction
 function! gista#command#open#edit(...) abort
   silent doautocmd BufReadPre
@@ -61,7 +61,7 @@ function! gista#command#open#edit(...) abort
         \ printf('%s.%s', tempname(), fnamemodify(filename, ':e')),
         \)
   silent doautocmd BufReadPost
-  call gista#util#doautocmd('CacheUpdatePost')
+  silent call gista#util#doautocmd('CacheUpdatePost')
 endfunction
 function! gista#command#open#open(...) abort
   let options = extend({

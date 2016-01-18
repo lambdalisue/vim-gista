@@ -35,7 +35,7 @@ function! gista#command#json#read(...) abort
         \ printf('%s.json', tempname()),
         \)
   silent doautocmd FileReadPost
-  call gista#util#doautocmd('CacheUpdatePost')
+  silent call gista#util#doautocmd('CacheUpdatePost')
 endfunction
 function! gista#command#json#edit(...) abort
   silent doautocmd BufReadPre
@@ -62,7 +62,7 @@ function! gista#command#json#edit(...) abort
   setlocal nomodifiable
   setlocal filetype=json
   silent doautocmd BufReadPost
-  call gista#util#doautocmd('CacheUpdatePost')
+  silent call gista#util#doautocmd('CacheUpdatePost')
 endfunction
 function! gista#command#json#open(...) abort
   let options = extend({

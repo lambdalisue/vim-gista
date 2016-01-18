@@ -36,7 +36,7 @@ function! gista#command#rename#call(...) abort
           \   'content': gist.files[filename].content,
           \ }],
           \})
-    call gista#util#doautocmd('CacheUpdatePost')
+    silent call gista#util#doautocmd('CacheUpdatePost')
     let client = gista#client#get()
     call gista#indicate(options, printf(
           \ 'A %s in a gist %s in %s is renamed to %s',

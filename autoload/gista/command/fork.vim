@@ -15,7 +15,7 @@ function! gista#command#fork#call(...) abort
           \ : options.gist.id
           \)
     let gist = gista#resource#remote#fork(gistid, options)
-    call gista#util#doautocmd('CacheUpdatePost')
+    silent call gista#util#doautocmd('CacheUpdatePost')
     let client = gista#client#get()
     call gista#indicate(options, printf(
           \ 'A gist %s in %s is forked to %s',

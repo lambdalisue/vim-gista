@@ -55,7 +55,7 @@ function! gista#command#post#call(...) abort
             \})
       silent execute printf('file %s', bufname)
     endif
-    call gista#util#doautocmd('CacheUpdatePost')
+    silent call gista#util#doautocmd('CacheUpdatePost')
     redraw
     call gista#indicate(options, printf(
           \ 'A content of the current buffer is posted to a gist %s in %s',

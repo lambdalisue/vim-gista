@@ -16,7 +16,7 @@ function! gista#command#unstar#call(...) abort
           \ : options.gist.id
           \)
     call gista#resource#remote#unstar(gistid, options)
-    call gista#util#doautocmd('CacheUpdatePost')
+    silent call gista#util#doautocmd('CacheUpdatePost')
     call gista#indicate(options, printf(
           \ 'A gist %s in %s is unstarred',
           \ gistid, client.apiname,

@@ -34,7 +34,7 @@ function! gista#command#patch#call(...) abort
             \})
       silent execute printf('file %s', bufname)
     endif
-    call gista#util#doautocmd('CacheUpdatePost')
+    silent call gista#util#doautocmd('CacheUpdatePost')
     let client = gista#client#get()
     call gista#indicate(options, printf(
           \ 'Changes of %s in gist %s is posted to %s',
