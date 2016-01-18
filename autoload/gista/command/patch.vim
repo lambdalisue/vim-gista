@@ -2,6 +2,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 let s:V = gista#vital()
+let s:L = s:V.import('Data.List')
 let s:A = s:V.import('ArgumentParser')
 
 function! s:get_content(expr) abort
@@ -12,6 +13,20 @@ function! s:get_content(expr) abort
   let content = gista#util#ensure_eol(content)
   return { 'content': content }
 endfunction
+function! s:assign_gista_filenames(gistid, bufnums) abort
+  let winnums = s:L.uniq(map(copy(a:bufnums), 'bufwinnr(v:val)'))
+  let previous = winnr()
+  for winnum in winnums
+    execute printf('keepjump %dwincmd w', winnum)
+    let filename = fnamemodify(gista#option#guess_filename('%'), ':t')
+    let bufname = gista#command#open#bufname({
+          \ 'gistid': a:gistid,
+          \ 'filename': filename,
+          \})
+    silent execute printf('file %s', bufname)
+  endfor
+  execute printf('keepjump %dwincmd w', previous)
+endfunction
 
 function! gista#command#patch#call(...) abort
   let options = extend({
@@ -19,6 +34,7 @@ function! gista#command#patch#call(...) abort
         \ 'gistid': '',
         \ 'filenames': [],
         \ 'contents': [],
+        \ 'bufnums': [],
         \}, get(a:000, 0, {}))
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
@@ -26,14 +42,8 @@ function! gista#command#patch#call(...) abort
           \ : options.gist.id
           \)
     let gist = gista#resource#remote#patch(gistid, options)
-    if index(options.filenames, expand('%:t'))
-      let filename = fnamemodify(gista#option#guess_filename('%'), ':t')
-      let bufname = gista#command#open#bufname({
-            \ 'gistid': gistid,
-            \ 'filename': filename,
-            \})
-      silent execute printf('file %s', bufname)
-    endif
+    " Assign gista filename to buffer existing in the current tabpage 
+    call s:assign_gista_filenames(gist.id, options.bufnums)
     silent call gista#util#doautocmd('CacheUpdatePost')
     let client = gista#client#get()
     call gista#indicate(options, printf(
@@ -97,12 +107,18 @@ function! gista#command#patch#command(...) abort
           \)
     let options.filenames = [filename]
     let options.contents = [{ 'content': content }]
+    let options.bufnums = [bufnr('%')]
   else
     call filter(options.filenames, 'bufexists(v:val) || filereadable(v:val)')
     let options.contents = map(
-          \ copy(options.filename),
+          \ copy(options.filenames),
           \ 's:get_content(v:val)'
           \)
+    let options.bufnums = filter(map(
+          \ copy(options.filenames),
+          \ 'bufnr(v:val)'
+          \), 'v:val != -1')
+    call map(options.filenames, 'fnamemodify(v:val, ":t")')
   endif
   call gista#command#patch#call(options)
 endfunction
