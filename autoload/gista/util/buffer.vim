@@ -38,7 +38,7 @@ function! gista#util#buffer#read_content(content, ...) abort
   let is_keepjumps = get(a:000, 1)
   try
     call writefile(a:content, tempfile)
-    execute printf('%sread %s',
+    execute printf('keepalt %sread %s',
           \ is_keepjumps ? 'keepjumps ' : '',
           \ tempfile,
           \)
