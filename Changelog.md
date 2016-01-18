@@ -1,4 +1,10 @@
-### HEAD (Mon Jan 18 20:58:47 2016 +0900)
+### HEAD (Tue Jan 19 00:02:57 2016 +0900)
+
+- Fix #58: SSL certification error (Mon Jan 18 21:49:46 2016 +0900) [f18f08d](https://github.com/lambdalisue/vim-gista/commit/f18f08de9df737b7de45ac08c507a8456f7fc0f0)
+- Update Web.API.GitHub (Mon Jan 18 23:56:01 2016 +0900) [0ddac64](https://github.com/lambdalisue/vim-gista/commit/0ddac64f274a2a5bf53fa6a61e09c52bdfeefc4c)
+- Bump version (Tue Jan 19 00:02:57 2016 +0900) [d2e574a](https://github.com/lambdalisue/vim-gista/commit/d2e574a17391239af13d87719391311564f2a1cb)
+
+### v2.0.3 (Mon Jan 18 21:43:44 2016 +0900)
 
 - Fix syntax highlight issue (Add 'default') (Mon Jan 18 00:50:50 2016 +0900) [781dba0](https://github.com/lambdalisue/vim-gista/commit/781dba0e8630dad4a56c42a3424778b3da479618)
 - Semantic fix (Mon Jan 18 00:55:54 2016 +0900) [0529b6e](https://github.com/lambdalisue/vim-gista/commit/0529b6e0ed1678f97625320e6ad891d38ad73169)
@@ -6,6 +12,7 @@
 - Fix Gista post/patch filename assign bug (Mon Jan 18 20:42:55 2016 +0900) [ecb198d](https://github.com/lambdalisue/vim-gista/commit/ecb198da42a18be6ca8587dd79683a167017b31a)
 - Fix keepalt issue (Mon Jan 18 20:54:18 2016 +0900) [bedc229](https://github.com/lambdalisue/vim-gista/commit/bedc229bc9276017a657948e721994cc82ee4107)
 - Bump version (Mon Jan 18 20:58:47 2016 +0900) [f3ea722](https://github.com/lambdalisue/vim-gista/commit/f3ea722664d5796b227df3ef2833308330a80e1d)
+- Add Chnagelog (Mon Jan 18 21:20:43 2016 +0900) [d500daa](https://github.com/lambdalisue/vim-gista/commit/d500daab67f0e1d422bee831ba2d8f6989131f81)
 
 ### v2.0.2 (Mon Jan 18 00:42:45 2016 +0900)
 
