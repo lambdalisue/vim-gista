@@ -11,6 +11,7 @@ def _vim_vital_web_api_github_main():
     """A namespace function for Vital.Web.API.GitHub"""
     import re
     import sys
+    import ssl
     import collections
     from itertools import chain
     from threading import Lock, Thread
@@ -75,7 +76,8 @@ def _vim_vital_web_api_github_main():
                 req.get_method = lambda: method
         else:
             req = Request(url, headers=headers)
-        res = urlopen(req)
+        context = ssl._create_unverified_context()
+        res = urlopen(req, context=context)
         if not hasattr(res, 'getheader'):
             # urllib2 does not have getheader
             res.getheader = lambda name, self=res: self.info().getheader(name)
