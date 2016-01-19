@@ -1,8 +1,17 @@
-### HEAD (Tue Jan 19 00:02:57 2016 +0900)
+### HEAD (Tue Jan 19 21:45:59 2016 +0900)
+
+- Use URI like bufname instead of comma separated one (Tue Jan 19 10:20:00 2016 +0900) [7275b81](https://github.com/lambdalisue/vim-gista/commit/7275b814bdb113418c630d490253115b15c0ed56)
+- Fix Gista logout (Tue Jan 19 20:46:28 2016 +0900) [8bac83f](https://github.com/lambdalisue/vim-gista/commit/8bac83f45c6b6c9a78c6a83b8e9ea157af5d8773)
+- Fix temporal authorization and improve Gista status (Tue Jan 19 20:56:38 2016 +0900) [8c32b7a](https://github.com/lambdalisue/vim-gista/commit/8c32b7ab7dae76d688daeb841d1fe12292705ad1)
+- Merge pull request #60 from lambdalisue/fix/gista_filenames (Tue Jan 19 21:44:40 2016 +0900) [6ee3036](https://github.com/lambdalisue/vim-gista/commit/6ee3036852bfb27fb2b503c0e491876713f44e99)
+- Bump version (Tue Jan 19 21:45:59 2016 +0900) [39cd521](https://github.com/lambdalisue/vim-gista/commit/39cd52179224923f41da17720c57270d2f002e69)
+
+### v2.0.4 (Tue Jan 19 00:10:55 2016 +0900)
 
 - Fix #58: SSL certification error (Mon Jan 18 21:49:46 2016 +0900) [f18f08d](https://github.com/lambdalisue/vim-gista/commit/f18f08de9df737b7de45ac08c507a8456f7fc0f0)
 - Update Web.API.GitHub (Mon Jan 18 23:56:01 2016 +0900) [0ddac64](https://github.com/lambdalisue/vim-gista/commit/0ddac64f274a2a5bf53fa6a61e09c52bdfeefc4c)
 - Bump version (Tue Jan 19 00:02:57 2016 +0900) [d2e574a](https://github.com/lambdalisue/vim-gista/commit/d2e574a17391239af13d87719391311564f2a1cb)
+- Update changelog (Tue Jan 19 00:09:34 2016 +0900) [65819e3](https://github.com/lambdalisue/vim-gista/commit/65819e3e27d0fe7b33335d2e8832095018d231c0)
 
 ### v2.0.3 (Mon Jan 18 21:43:44 2016 +0900)
 
