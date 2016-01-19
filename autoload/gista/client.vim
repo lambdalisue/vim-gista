@@ -256,12 +256,16 @@ function! gista#client#session(...) abort
         \ 'username': 0,
         \}, get(a:000, 0, {}),
         \)
+  let client = gista#client#get()
   let apiname = empty(options.apiname)
-        \ ? s:get_default_apiname()
+        \ ? client.apiname
         \ : options.apiname
+  let username = type(options.username) == type('')
+        \ ? options.username
+        \ : client.get_authorized_username()
   let session = extend(copy(s:session), {
         \ 'apiname': apiname,
-        \ 'username': options.username,
+        \ 'username': username,
         \})
   return session
 endfunction
@@ -298,11 +302,16 @@ function! s:session.enter() abort
     return
   endif
   try
-    let self._previous_client = gista#client#get()
+    let self._previous_client = deepcopy(gista#client#get())
     call gista#client#set(self.apiname, {
           \ 'username': self.username,
           \ 'permanent': 0,
           \})
+    call gista#util#prompt#debugmsg(printf(
+          \ 'Enter sessions: apiname: %s, username: %s',
+          \ gista#client#get().apiname,
+          \ gista#client#get().get_authorized_username(),
+          \))
     return 1
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
@@ -318,8 +327,13 @@ function! s:session.exit() abort
           \)
     return
   endif
-  let s:current_client = self._previous_client
+  let s:current_client = deepcopy(self._previous_client)
   unlet self._previous_client
+  call gista#util#prompt#debugmsg(printf(
+        \ 'Exit session: apiname: %s, username: %s',
+        \ gista#client#get().apiname,
+        \ gista#client#get().get_authorized_username(),
+        \))
 endfunction
 
 

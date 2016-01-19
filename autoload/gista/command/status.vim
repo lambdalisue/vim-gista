@@ -7,9 +7,17 @@ let s:A = s:V.import('ArgumentParser')
 function! gista#command#status#call(...) abort
   let options = extend({}, get(a:000, 0, {}))
   let client = gista#client#get()
+  let gista = gista#get('%')
   let messages = [
+        \ '=== Global ===',
         \ printf('API name : %s', client.apiname),
         \ printf('Username : %s', client.get_authorized_username()),
+        \ ' ',
+        \ '=== Local ===',
+        \ printf('API name : %s', get(gista, 'apiname', '')),
+        \ printf('Username : %s', get(gista, 'username', '')),
+        \ printf('GistID   : %s', get(gista, 'gistid', '')),
+        \ printf('Filename : %s', get(gista, 'filename', '')),
         \]
   call gista#util#prompt#echo(join(messages, "\n"))
 endfunction

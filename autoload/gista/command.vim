@@ -122,6 +122,10 @@ function! gista#command#command(...) abort
             \ bang, range, args,
             \ s:D.pick(options, ['apiname']),
             \)
+    elseif name ==# 'status'
+      call gista#command#status#command(
+            \ bang, range, args,
+            \)
     elseif gista#command#is_registered(name)
       let session = gista#client#session(options)
       try
@@ -154,6 +158,10 @@ function! gista#command#complete(arglead, cmdline, cursorpos, ...) abort
             \ a:arglead, cmdline, a:cursorpos,
             \ s:D.pick(options, ['apiname']),
             \)
+    elseif name ==# 'status'
+      return gista#command#status#complete(
+            \ a:arglead, cmdline, a:cursorpos,
+            \)
     elseif gista#command#is_registered(name)
       let session = gista#client#session(options)
       try
@@ -169,10 +177,6 @@ function! gista#command#complete(arglead, cmdline, cursorpos, ...) abort
 endfunction
 
 " Register sub commands
-call gista#command#register('status',
-      \ 'gista#command#status#command',
-      \ 'gista#command#status#complete',
-      \)
 call gista#command#register('open',
       \ 'gista#command#open#command',
       \ 'gista#command#open#complete',
