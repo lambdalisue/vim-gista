@@ -81,13 +81,13 @@ function! s:set_current_mapping_visibility(value) abort
 endfunction
 
 function! s:define_plugin_mappings() abort
-  noremap <buffer><silent> <Plug>(gista-quit)
+  nnoremap <buffer><silent> <Plug>(gista-quit)
         \ :<C-u>q<CR>
-  noremap <buffer><silent> <Plug>(gista-redraw)
+  nnoremap <buffer><silent> <Plug>(gista-redraw)
         \ :call <SID>action('redraw')<CR>
-  noremap <buffer><silent> <Plug>(gista-update)
+  nnoremap <buffer><silent> <Plug>(gista-update)
         \ :call <SID>action('update')<CR>
-  noremap <buffer><silent> <Plug>(gista-toggle-mapping-visibility)
+  nnoremap <buffer><silent> <Plug>(gista-toggle-mapping-visibility)
         \ :call <SID>action('toggle_mapping_visibility')<CR>
   noremap <buffer><silent> <Plug>(gista-edit)
         \ :call <SID>action('edit')<CR>
@@ -125,11 +125,11 @@ function! s:define_plugin_mappings() abort
         \ :call <SID>action('browse', 'echo')<CR>
 endfunction
 function! s:define_default_mappings() abort
-  map <buffer> q <Plug>(gista-quit)
-  map <buffer> ? <Plug>(gista-toggle-mapping-visibility)
-  map <buffer> <C-l> <Plug>(gista-redraw)
-  map <buffer> <F5>   <Plug>(gista-redraw)
-  map <buffer> <S-F5> <Plug>(gista-update)
+  nmap <buffer> q <Plug>(gista-quit)
+  nmap <buffer> ? <Plug>(gista-toggle-mapping-visibility)
+  nmap <buffer> <C-l> <Plug>(gista-redraw)
+  nmap <buffer> <F5>   <Plug>(gista-redraw)
+  nmap <buffer> <S-F5> <Plug>(gista-update)
   map <buffer> <Return> <Plug>(gista-edit)
   map <buffer> ee <Plug>(gista-edit)
   map <buffer> EE <Plug>(gista-edit-right)
@@ -283,7 +283,7 @@ function! s:on_GistaCacheUpdatePost() abort
   let winnum = winnr()
   keepjump windo
         \ if &filetype ==# 'gista-commits' |
-        \   call s:action_update(1) |
+        \   call s:action_update(0, 0, 1) |
         \ endif
   execute printf('keepjump %dwincmd w', winnum)
 endfunction
@@ -297,12 +297,9 @@ function! s:action(name, ...) range abort
           \))
   endif
   " Call action function with a:firstline and a:lastline propagation
-  execute printf(
-        \ '%d,%dcall call("%s", a:000)',
-        \ a:firstline, a:lastline, fname
-        \)
+  call call(fname, extend([a:firstline, a:lastline], a:000))
 endfunction
-function! s:action_edit(...) range abort
+function! s:action_edit(startline, endline, ...) abort
   let opener = get(a:000, 0, '')
   let opener = empty(opener)
         \ ? g:gista#command#commits#default_entry_opener
@@ -317,14 +314,15 @@ function! s:action_edit(...) range abort
         \})
   try
     if session.enter()
-      for n in range(a:firstline, a:lastline)
-        let entry = s:get_entry(n - 1)
-        if empty(entry)
-          continue
-        endif
-        if anchor
-          call gista#util#anchor#focus()
-        endif
+      let entries = []
+      for n in range(a:startline, a:endline)
+        call add(entries, s:get_entry(n - 1))
+      endfor
+      call filter(entries, '!empty(v:val)')
+      if !empty(entries) && anchor
+        call gista#util#anchor#focus()
+      endif
+      for entry in entries
         call gista#command#open#open({
               \ 'gist': entry,
               \ 'opener': opener,
@@ -335,7 +333,7 @@ function! s:action_edit(...) range abort
     call session.exit()
   endtry
 endfunction
-function! s:action_json(...) range abort
+function! s:action_json(startline, endline, ...) abort
   let opener = get(a:000, 0, '')
   let opener = empty(opener)
         \ ? g:gista#command#commits#default_entry_opener
@@ -350,14 +348,15 @@ function! s:action_json(...) range abort
         \})
   try
     if session.enter()
-      for n in range(a:firstline, a:lastline)
-        let entry = s:get_entry(n - 1)
-        if empty(entry)
-          continue
-        endif
-        if anchor
-          call gista#util#anchor#focus()
-        endif
+      let entries = []
+      for n in range(a:startline, a:endline)
+        call add(entries, s:get_entry(n - 1))
+      endfor
+      call filter(entries, '!empty(v:val)')
+      if !empty(entries) && anchor
+        call gista#util#anchor#focus()
+      endif
+      for entry in entries
         call gista#command#json#open({
               \ 'gist': entry,
               \ 'opener': opener,
@@ -368,7 +367,7 @@ function! s:action_json(...) range abort
     call session.exit()
   endtry
 endfunction
-function! s:action_browse(...) range abort
+function! s:action_browse(startline, endline, ...) abort
   let action = get(a:000, 0, 'open')
   let session = gista#client#session({
         \ 'apiname': b:gista.apiname,
@@ -376,11 +375,12 @@ function! s:action_browse(...) range abort
         \})
   try
     if session.enter()
-      for n in range(a:firstline, a:lastline)
-        let entry = s:get_entry(n - 1)
-        if empty(entry)
-          continue
-        endif
+      let entries = []
+      for n in range(a:startline, a:endline)
+        call add(entries, s:get_entry(n - 1))
+      endfor
+      call filter(entries, '!empty(v:val)')
+      for entry in entries
         call gista#command#browse#{action}({
               \ 'gist': entry,
               \})
@@ -390,15 +390,15 @@ function! s:action_browse(...) range abort
     call session.exit()
   endtry
 endfunction
-function! s:action_redraw(...) range abort
+function! s:action_redraw(startline, endline, ...) abort
   call gista#command#commits#redraw()
 endfunction
-function! s:action_update(...) range abort
+function! s:action_update(startline, endline, ...) abort
   call gista#command#commits#update()
 endfunction
-function! s:action_toggle_mapping_visibility(...) range abort
+function! s:action_toggle_mapping_visibility(startline, endline, ...) abort
   call s:set_current_mapping_visibility(!s:get_current_mapping_visibility())
-  call s:action_update()
+  call s:action_update(0, 0)
 endfunction
 
 function! s:get_parser() abort
