@@ -10,7 +10,13 @@ function! s:is_patchable(gista) abort
   let [gist, gistid] = gista#command#json#call({
         \ 'gistid': a:gista.gistid,
         \})
+  if gistid =~# '^[^/]\+/[^/]\+$'
+    " gistid with version cannot be patchable
+    return 'A file content of a gist with a specific version cannot be patched'
+  endif
   return get(get(gist, 'owner', {}), 'login') ==# username
+        \ ? ''
+        \ : 'An owner of a gist and a current authorized username is miss-matched'
 endfunction
 
 function! s:on_SourceCmd(gista) abort
@@ -69,11 +75,9 @@ endfunction
 function! s:on_BufWriteCmd(gista) abort
   let content_type = get(a:gista, 'content_type', '')
   if content_type ==# 'raw'
-    if !s:is_patchable(a:gista)
-      call gista#util#prompt#error(printf(
-            \ 'An owner of gist %s and a current authorized username is miss-matched',
-            \ a:gista.gistid,
-            \))
+    let errormsg = s:is_patchable(a:gista)
+    if !empty(errormsg)
+      call gista#util#prompt#error(errormsg)
       call gista#util#prompt#warn(
             \ 'Use ":Gista fork" to fork the gist or ":Gista post" to create a new Gist',
             \)
@@ -106,11 +110,9 @@ endfunction
 function! s:on_FileWriteCmd(gista) abort
   let content_type = get(a:gista, 'content_type', '')
   if content_type ==# 'raw'
-    if !s:is_patchable(a:gista)
-      call gista#util#prompt#error(printf(
-            \ 'An owner of gist %s and a current authorized username is miss-matched',
-            \ a:gista.gistid,
-            \))
+    let errormsg = s:is_patchable(a:gista)
+    if !empty(errormsg)
+      call gista#util#prompt#error(errormsg)
       call gista#util#prompt#warn(
             \ 'Use ":Gista fork" to fork the gist or ":Gista post" to create a new Gist',
             \)
@@ -148,11 +150,7 @@ function! gista#autocmd#call(name) abort
           \ 'No autocmd function "%s" is found.', fname
           \))
   endif
-  let filename = expand('<afile>')
-  let gista = s:parse_filename(filename)
-  let gista = empty(gista)
-        \ ? s:C.getbufvar('<afile>', 'gista', {})
-        \ : gista
+  let gista = gista#get('<afile>')
   let session = gista#client#session({
         \ 'apiname':  get(gista, 'apiname', ''),
         \ 'username': get(gista, 'username', 0),
@@ -164,39 +162,6 @@ function! gista#autocmd#call(name) abort
   finally
     call session.exit()
   endtry
-endfunction
-
-let s:schemes = [
-      \ ['^gista-file:\(.*\):\(.*\):\(.*\)$', {
-      \   'apiname': 1,
-      \   'gistid': 2,
-      \   'filename': 3,
-      \   'content_type': 'raw',
-      \ }],
-      \ ['^gista-json:\(.*\):\(.*\)$', {
-      \   'apiname': 1,
-      \   'gistid': 2,
-      \   'content_type': 'json',
-      \ }],
-      \]
-function! s:parse_filename(filename) abort
-  for scheme in s:schemes
-    if a:filename !~# scheme[0]
-      continue
-    endif
-    let m = matchlist(a:filename, scheme[0])
-    let o = {}
-    for [key, value] in items(scheme[1])
-      if type(value) == type(0)
-        let o[key] = m[value]
-      else
-        let o[key] = value
-      endif
-      unlet value
-    endfor
-    return o
-  endfor
-  return {}
 endfunction
 
 " Configure variables

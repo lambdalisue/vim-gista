@@ -5,52 +5,31 @@ let s:V = gista#vital()
 let s:L = s:V.import('Data.List')
 let s:C = s:V.import('Vim.Compat')
 
-function! gista#option#guess_filename(expr) abort
-  let gista = s:C.getbufvar(a:expr, 'gista', {})
-  let filename = expand(a:expr)
-  if has_key(gista, 'filename')
-    return gista.filename
-  elseif filename =~# '^gista-file:.*:.*:.*$'
-    return matchstr(filename, '^gista-file:.*:.*:\zs.*\ze$')
-  else
-    return filename
-  endif
-endfunction
-
 function! gista#option#assign_apiname(options, expr) abort
   if has_key(a:options, 'apiname')
     return
   endif
-  let gista    = s:C.getbufvar(a:expr, 'gista', {})
-  let filename = expand(a:expr)
+  let gista = gista#get(a:expr)
   if has_key(gista, 'apiname')
     let a:options.apiname = gista.apiname
-  elseif filename =~# '^gista-file:.*:.*:.*$'
-    let a:options.apiname = matchstr(filename, '^gista-file:\zs.*\ze:.*:.*$')
   endif
 endfunction
 function! gista#option#assign_gistid(options, expr) abort
   if has_key(a:options, 'gistid')
     return
   endif
-  let gista    = s:C.getbufvar(a:expr, 'gista', {})
-  let filename = expand(a:expr)
+  let gista = gista#get(a:expr)
   if has_key(gista, 'gistid')
     let a:options.gistid = gista.gistid
-  elseif filename =~# '^gista-file:.*:.*:.*$'
-    let a:options.gistid = matchstr(filename, '^gista-file:.*:\zs.*\ze:.*$')
   endif
 endfunction
 function! gista#option#assign_filename(options, expr) abort
   if has_key(a:options, 'filename')
     return
   endif
-  let gista    = s:C.getbufvar(a:expr, 'gista', {})
-  let filename = expand(a:expr)
+  let gista = gista#get(a:expr)
   if has_key(gista, 'filename')
     let a:options.filename = gista.filename
-  elseif filename =~# '^gista-file:.*:.*:.*$'
-    let a:options.filename = matchstr(filename, '^gista-file:.*:.*:\zs.*\ze$')
   endif
 endfunction
 

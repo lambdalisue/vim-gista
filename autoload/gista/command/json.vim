@@ -96,9 +96,7 @@ function! gista#command#json#bufname(...) abort
   endtry
   let client = gista#client#get()
   let apiname = client.apiname
-  return printf('gista-json:%s:%s',
-        \ client.apiname, gistid,
-        \)
+  return 'gista://' . join([client.apiname, gistid . '.json'], '/')
 endfunction
 
 function! s:get_parser() abort
@@ -150,7 +148,6 @@ call gista#define_variables('command#json', {
       \ 'default_options': {},
       \ 'default_opener': 'edit',
       \})
-
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo

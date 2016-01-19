@@ -10,7 +10,7 @@ function! gista#command#logout#call(...) abort
         \}, get(a:000, 0, {}))
   try
     let apiname = gista#client#get_valid_apiname(options.apiname)
-    call gista#client#set(apiname, {})
+    call gista#client#set(apiname, { 'username': '' })
     let client = gista#client#get()
     call gista#util#prompt#echo(printf(
           \ 'Logout from %s',

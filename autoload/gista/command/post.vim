@@ -18,7 +18,7 @@ function! s:assign_gista_filenames(gistid, bufnums) abort
   let previous = winnr()
   for winnum in winnums
     execute printf('keepjump %dwincmd w', winnum)
-    let filename = fnamemodify(gista#option#guess_filename('%'), ':t')
+    let filename = expand('%:t')
     let bufname = gista#command#open#bufname({
           \ 'gistid': a:gistid,
           \ 'filename': filename,
@@ -123,7 +123,7 @@ function! gista#command#post#command(...) abort
         \)
   let options.filenames = options.__unknown__
   if empty(get(options, 'filenames'))
-    let filename = fnamemodify(gista#option#guess_filename('%'), ':t')
+    let filename = expand('%:t')
     let filename = empty(filename)
           \ ? 'gista-file'
           \ : filename
