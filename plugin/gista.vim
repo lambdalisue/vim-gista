@@ -8,24 +8,18 @@ command! -nargs=? -range=% -bang
 
 augroup vim_gista_read_file
   autocmd!
-  autocmd SourceCmd   gista-file:*:*:* call gista#autocmd#call('SourceCmd')
-  autocmd BufReadCmd  gista-file:*:*:* call gista#autocmd#call('BufReadCmd')
-  autocmd FileReadCmd gista-file:*:*:* call gista#autocmd#call('FileReadCmd')
-  autocmd SourceCmd   gista-file:*:*/*:* call gista#autocmd#call('SourceCmd')
-  autocmd BufReadCmd  gista-file:*:*/*:* call gista#autocmd#call('BufReadCmd')
-  autocmd FileReadCmd gista-file:*:*/*:* call gista#autocmd#call('FileReadCmd')
-
-  autocmd BufReadCmd  gista-json:*:* call gista#autocmd#call('BufReadCmd')
-  autocmd FileReadCmd gista-json:*:* call gista#autocmd#call('FileReadCmd')
-  autocmd BufReadCmd  gista-json:*:*/* call gista#autocmd#call('BufReadCmd')
-  autocmd FileReadCmd gista-json:*:*/* call gista#autocmd#call('FileReadCmd')
+  autocmd BufReadCmd  gista://* call gista#autocmd#call('BufReadCmd')
+  autocmd FileReadCmd gista://* call gista#autocmd#call('FileReadCmd')
+  try
+    autocmd SourceCmd gista://* call gista#autocmd#call('SourceCmd')
+  catch /-Vim\%((\a\+)\)\=E216/
+    autocmd SourcePre gista://* call gista#autocmd#call('SourceCmd')
+  endtry
 augroup END
 
 augroup vim_gista_write_file
-  autocmd BufWriteCmd  gista-file:*:*:* call gista#autocmd#call('BufWriteCmd')
-  autocmd FileWriteCmd gista-file:*:*:* call gista#autocmd#call('FileWriteCmd')
-  autocmd BufWriteCmd  gista-file:*:*/*:* call gista#autocmd#call('BufWriteCmd')
-  autocmd FileWriteCmd gista-file:*:*/*:* call gista#autocmd#call('FileWriteCmd')
+  autocmd BufWriteCmd  gista://* call gista#autocmd#call('BufWriteCmd')
+  autocmd FileWriteCmd gista://* call gista#autocmd#call('FileWriteCmd')
 augroup END
 
 let &cpo = s:save_cpo

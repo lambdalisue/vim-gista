@@ -98,9 +98,7 @@ function! gista#command#open#bufname(...) abort
   endtry
   let client = gista#client#get()
   let apiname = client.apiname
-  return printf('gista-file:%s:%s:%s',
-        \ client.apiname, gistid, filename,
-        \)
+  return 'gista://' . join([client.apiname, gistid, filename], '/')
 endfunction
 
 function! s:get_parser() abort
