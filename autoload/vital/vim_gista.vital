@@ -1,5 +1,5 @@
 vim_gista
-65c9afb0799cb950cbaf9258aefc6c3ad700a98f
+bac20329a51ce23e512cbf3b2a7494a2e2bea1cf
 
 Web.HTTP
 Web.JSON
@@ -13,3 +13,6 @@ ArgumentParser
 Web.API.GitHub
 Vim.Compat
 Data.Base64
+Vim.Buffer.Anchor
+Vim.Prompt
+Vim.Validate
