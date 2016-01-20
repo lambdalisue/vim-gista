@@ -156,7 +156,7 @@ function! s:confirm(msg, ...) abort
   if s:is_batch()
     return 0
   endif
-  let result = s:_input(
+  let result = s:input(
         \ 'Question',
         \ printf('%s (y[es]/n[o]): ', a:msg),
         \ get(a:000, 0, ''),
@@ -165,11 +165,11 @@ function! s:confirm(msg, ...) abort
   while result !~? '^\%(y\%[es]\|n\%[o]\)$'
     redraw
     if result ==# ''
-      call s:_echo('WarningMsg', 'Canceled.')
+      call s:echo('WarningMsg', 'Canceled.')
       break
     endif
-    call s:_echo('WarningMsg', 'Invalid input.')
-    let result = s:_input(
+    call s:echo('WarningMsg', 'Invalid input.')
+    let result = s:input(
           \ 'Question',
           \ printf('%s (y[es]/n[o]): ', a:msg),
           \ get(a:000, 0, ''),
