@@ -77,9 +77,9 @@ def _vim_vital_web_api_github_main():
         else:
             req = Request(url, headers=headers)
         if hasattr(ssl, '_create_unverified_context'):
-            context = ssl._create_unverified_context
+            context = ssl._create_unverified_context()
         elif hasattr(ssl, '_create_stdlib_context'):
-            context = ssl._create_stdlib_context
+            context = ssl._create_stdlib_context()
         elif hasattr(ssl, 'SSLContext'):
             context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
         else:
