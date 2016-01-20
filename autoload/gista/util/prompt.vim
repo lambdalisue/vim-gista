@@ -40,8 +40,8 @@ function! gista#util#prompt#indicate(options, message) abort
 endfunction
 
 call s:P.set_config({
-      \ 'debug': function('<SID>is_debug'),
-      \ 'batch': function('<SID>is_batch'),
+      \ 'debug': function('s:is_debug'),
+      \ 'batch': function('s:is_batch'),
       \})
 
 let &cpo = s:save_cpo
