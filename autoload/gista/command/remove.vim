@@ -21,11 +21,11 @@ function! gista#command#remove#call(...) abort
     let gist = gista#resource#remote#get(gistid, options)
     let filename = gista#resource#local#get_valid_filename(gist, options.filename)
     if options.confirm
-      if !gista#util#prompt#asktf(printf(
+      if !gista#util#prompt#confirm(printf(
             \ 'Remove %s of %s in %s? ',
             \ filename, gistid, client.apiname,
             \))
-        call gista#util#prompt#throw('Cancel')
+        call gista#throw('Cancel')
       endif
     endif
     call gista#resource#remote#patch(gistid, {
@@ -34,7 +34,7 @@ function! gista#command#remove#call(...) abort
           \ 'contents': [{}],
           \})
     silent call gista#util#doautocmd('CacheUpdatePost')
-    call gista#indicate(options, printf(
+    call gista#util#prompt#indicate(options, printf(
           \ 'A %s is removed from a gist %s in %s',
           \ filename, gistid, client.apiname,
           \))

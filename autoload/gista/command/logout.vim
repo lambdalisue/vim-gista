@@ -12,10 +12,7 @@ function! gista#command#logout#call(...) abort
     let apiname = gista#client#get_valid_apiname(options.apiname)
     call gista#client#set(apiname, { 'username': '' })
     let client = gista#client#get()
-    call gista#util#prompt#echo(printf(
-          \ 'Logout from %s',
-          \ client.apiname,
-          \))
+    echo printf('Logout from %s', client.apiname)
     return [apiname]
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)

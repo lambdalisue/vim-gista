@@ -60,7 +60,7 @@ function! s:validate_lookup(client, lookup) abort
 endfunction
 
 function! s:get_index(client, lookup, options) abort
-  call gista#indicate(a:options, printf(
+  call gista#util#prompt#indicate(a:options, printf(
         \ 'Loading a gist index of %s in %s from a local cache ...',
         \ a:lookup, a:client.apiname,
         \))
@@ -71,7 +71,7 @@ function! s:get_index(client, lookup, options) abort
   return index
 endfunction
 function! s:get_gist(client, gistid, options) abort
-  call gista#indicate(a:options, printf(
+  call gista#util#prompt#indicate(a:options, printf(
         \ 'Loading a gist %s in %s from a local cache ...',
         \ a:gistid, a:client.apiname,
         \))
@@ -89,7 +89,7 @@ function! s:get_gist(client, gistid, options) abort
   return gist
 endfunction
 function! s:get_gist_file(client, gist, filename, options) abort
-  call gista#indicate(a:options, printf(
+  call gista#util#prompt#indicate(a:options, printf(
         \ 'Loading a file %s of gist %s in %s from a local cache ...',
         \ a:filename, a:gist.id, a:client.apiname,
         \))
@@ -417,7 +417,7 @@ function! gista#resource#local#get_valid_gistid(gistid) abort
           \ 'customlist,gista#option#complete_gistid',
           \)
     if empty(gistid)
-      call gista#util#prompt#throw('Cancel')
+      call gista#throw('Cancel')
     endif
   else
     let gistid = a:gistid
@@ -432,14 +432,13 @@ function! gista#resource#local#get_valid_filename(gist, filename) abort
       let filename = filenames[0]
     elseif len(filenames) > 0
       redraw
-      let ret = gista#util#prompt#inputlist(
+      let filename = gista#util#prompt#select(
             \ 'Please select a filename: ',
             \ filenames,
             \)
-      if ret == 0
-        call gista#util#prompt#throw('Cancel')
+      if empty(filename)
+        call gista#throw('Cancel')
       endif
-      let filename = filenames[ret - 1]
     else
       redraw
       let filename = gista#util#prompt#ask(
@@ -447,7 +446,7 @@ function! gista#resource#local#get_valid_filename(gist, filename) abort
             \ 'customlist,gista#option#complete_filename',
             \)
       if empty(filename)
-        call gista#util#prompt#throw('Cancel')
+        call gista#throw('Cancel')
       endif
     endif
   else

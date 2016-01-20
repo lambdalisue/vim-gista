@@ -25,7 +25,7 @@ function! gista#command#register(name, command, complete, ...) abort
           \   : a:complete,
           \}
   catch /^vim-gista: ValidationError/
-    call gista#util#prompt#error(v:exception)
+    call gista#util#handle_exception(v:exception)
   endtry
 endfunction
 function! gista#command#unregister(name) abort
@@ -36,7 +36,7 @@ function! gista#command#unregister(name) abort
           \)
     unlet s:registry[a:name]
   catch /^vim-gista: ValidationError/
-    call gista#util#prompt#error(v:exception)
+    call gista#util#handle_exception(v:exception)
   endtry
 endfunction
 

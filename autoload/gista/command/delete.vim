@@ -18,16 +18,16 @@ function! gista#command#delete#call(...) abort
           \ : options.gist.id
           \)
     if options.confirm
-      if !gista#util#prompt#asktf(printf(
+      if !gista#util#prompt#confirm(printf(
             \ 'Remove %s in %s? ',
             \ gistid, client.apiname,
             \))
-        call gista#util#prompt#throw('Cancel')
+        call gista#throw('Cancel')
       endif
     endif
     call gista#resource#remote#delete(gistid, options)
     silent call gista#util#doautocmd('CacheUpdatePost')
-    call gista#indicate(options, printf(
+    call gista#util#prompt#indicate(options, printf(
           \ 'A gist %s is deleted from %s',
           \ gistid, client.apiname,
           \))

@@ -45,7 +45,7 @@ function! s:on_BufReadCmd(gista) abort
           \ 'cache': !v:cmdbang,
           \})
   else
-    call gista#util#prompt#throw(printf(
+    call gista#throw(printf(
           \ 'Unknown content_type "%s" is specified',
           \ content_type,
           \))
@@ -65,7 +65,7 @@ function! s:on_FileReadCmd(gista) abort
           \ 'cache': !v:cmdbang,
           \})
   else
-    call gista#util#prompt#throw(printf(
+    call gista#throw(printf(
           \ 'Unknown content_type "%s" is specified',
           \ content_type,
           \))
@@ -101,7 +101,7 @@ function! s:on_BufWriteCmd(gista) abort
       set nomodified
     endif
   else
-    call gista#util#prompt#throw(printf(
+    call gista#throw(printf(
           \ 'Unknown content_type "%s" is specified',
           \ content_type,
           \))
@@ -136,7 +136,7 @@ function! s:on_FileWriteCmd(gista) abort
       set nomodified
     endif
   else
-    call gista#util#prompt#throw(printf(
+    call gista#throw(printf(
           \ 'Unknown content_type "%s" is specified',
           \ content_type,
           \))
@@ -146,7 +146,7 @@ endfunction
 function! gista#autocmd#call(name) abort
   let fname = 's:on_' . a:name
   if !exists('*' . fname)
-    call gista#util#prompt#throw(printf(
+    call gista#throw(printf(
           \ 'No autocmd function "%s" is found.', fname
           \))
   endif

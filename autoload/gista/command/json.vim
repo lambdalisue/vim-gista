@@ -25,15 +25,12 @@ endfunction
 function! gista#command#json#read(...) abort
   silent doautocmd FileReadPre
   let options = extend({}, get(a:000, 0, {}))
-  let [gist, gistid] = gista#command#json#call(options)
+  let gist = gista#command#json#call(options)[0]
   if empty(gist)
     return
   endif
   let content = split(s:J.encode(gist, { 'indent': 2 }), "\r\\?\n")
-  call gista#util#buffer#read_content(
-        \ content,
-        \ printf('%s.json', tempname()),
-        \)
+  call gista#util#buffer#read_content(content)
   silent doautocmd FileReadPost
   silent call gista#util#doautocmd('CacheUpdatePost')
 endfunction
@@ -54,10 +51,7 @@ function! gista#command#json#edit(...) abort
         \ 'content_type': 'json',
         \}
   let content = split(s:J.encode(gist, { 'indent': 2 }), "\r\\?\n")
-  call gista#util#buffer#edit_content(
-        \ content,
-        \ printf('%s.json', tempname()),
-        \)
+  call gista#util#buffer#edit_content(content)
   setlocal buftype=nowrite
   setlocal nomodifiable
   setlocal filetype=json
@@ -96,7 +90,7 @@ function! gista#command#json#bufname(...) abort
   endtry
   let client = gista#client#get()
   let apiname = client.apiname
-  return 'gista://' . join([client.apiname, gistid . '.json'], '/')
+  return 'gista://' . join([apiname, gistid . '.json'], '/')
 endfunction
 
 function! s:get_parser() abort

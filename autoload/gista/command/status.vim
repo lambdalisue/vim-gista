@@ -5,7 +5,6 @@ let s:V = gista#vital()
 let s:A = s:V.import('ArgumentParser')
 
 function! gista#command#status#call(...) abort
-  let options = extend({}, get(a:000, 0, {}))
   let client = gista#client#get()
   let gista = gista#get('%')
   let messages = [
@@ -19,7 +18,7 @@ function! gista#command#status#call(...) abort
         \ printf('GistID   : %s', get(gista, 'gistid', '')),
         \ printf('Filename : %s', get(gista, 'filename', '')),
         \]
-  call gista#util#prompt#echo(join(messages, "\n"))
+  echo join(messages, "\n")
 endfunction
 
 function! s:get_parser() abort

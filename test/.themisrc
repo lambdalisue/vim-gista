@@ -9,6 +9,6 @@ function! Capture(command) abort " {{{
   return split(contents, '\v\r?\n')
 endfunction" }}}
 
-call gista#util#prompt#disable_interactive()
 let g:gista#api#cache_dir = tempname()
+let g:gista#test = 1
 

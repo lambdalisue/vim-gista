@@ -65,8 +65,6 @@ function! gista#option#complete_filename(arglead, cmdline, cursorpos, ...) abort
   try
     let gist = gista#resource#local#get(gistid)
     if gist._gista_fetched == 0
-      let client = gista#client#get()
-      let username = client.get_authorized_username()
       let gist = gista#resource#local#retrieve_index_entry(gistid)
     endif
     let filenames = gista#resource#local#get_available_filenames(gist)

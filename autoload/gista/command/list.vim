@@ -7,6 +7,7 @@ let s:S = s:V.import('Data.String')
 let s:D = s:V.import('Data.Dict')
 let s:L = s:V.import('Data.List')
 let s:A = s:V.import('ArgumentParser')
+let s:N = s:V.import('Vim.Buffer.Anchor')
 
 let s:PRIVATE_GISTID = repeat('*', 20)
 let s:MODES = [
@@ -98,7 +99,7 @@ function! s:get_current_mode_index() abort
   if !exists('s:current_mode_index')
     let index = index(s:MODES, g:gista#command#list#default_mode)
     if index == -1
-      call gista#util#prompt#throw(printf(
+      call gista#throw(printf(
             \ 'An invalid mode "%s" is specified to g:gista#command#list#default_mode',
             \ g:gista#command#list#default_mode,
             \))
@@ -310,7 +311,7 @@ function! gista#command#list#open(...) abort
 endfunction
 function! gista#command#list#update(...) abort
   if &filetype !=# 'gista-list'
-    call gista#util#prompt#throw(
+    call gista#throw(
           \ 'update() requires to be called in a gista-list buffer'
           \)
   endif
@@ -338,7 +339,7 @@ function! gista#command#list#update(...) abort
 endfunction
 function! gista#command#list#redraw() abort
   if &filetype !=# 'gista-list'
-    call gista#util#prompt#throw(
+    call gista#throw(
           \ 'redraw() requires to be called in a gista-list buffer'
           \)
   endif
@@ -350,9 +351,8 @@ function! gista#command#list#redraw() abort
         \   ? map(gista#util#mapping#help(s:MAPPING_TABLE), '"| " . v:val')
         \   : []
         \])
-  let client = gista#client#get()
   redraw
-  call gista#util#prompt#echo('Formatting gist entries to display ...')
+  echo 'Formatting gist entries to display ...'
   let contents = map(
         \ copy(b:gista.entries),
         \ 's:format_entry(v:val)'
@@ -382,7 +382,7 @@ endfunction
 function! s:action(name, ...) range abort
   let fname = printf('s:action_%s', a:name)
   if !exists('*' . fname)
-    call gista#util#prompt#throw(printf(
+    call gista#throw(printf(
           \ 'Unknown action name "%s" is called.',
           \ a:name,
           \))
@@ -411,7 +411,7 @@ function! s:action_edit(startline, endline, ...) abort
       endfor
       call filter(entries, '!empty(v:val)')
       if !empty(entries) && anchor
-        call gista#util#anchor#focus()
+        call s:N.focus()
       endif
       for entry in entries
         call gista#command#open#open({
@@ -445,7 +445,7 @@ function! s:action_json(startline, endline, ...) abort
       endfor
       call filter(entries, '!empty(v:val)')
       if !empty(entries) && anchor
-        call gista#util#anchor#focus()
+        call s:N.focus()
       endif
       for entry in entries
         call gista#command#json#open({
@@ -542,11 +542,11 @@ function! s:action_delete(startline, endline, ...) abort
         call add(entries, s:get_entry(n - 1))
       endfor
       call filter(entries, '!empty(v:val)')
-      call gista#util#prompt#echo(printf(
+      echo printf(
             \ "The following gists will be deleted\n%s",
             \ join(map(copy(entries), '"- " . v:val.id'), "\n"),
-            \))
-      if gista#util#prompt#asktf("Are you sure to continue?")
+            \)
+      if gista#util#prompt#confirm("Are you sure to continue?")
         for entry in entries
           call gista#command#delete#call({
                 \ 'gist': entry,

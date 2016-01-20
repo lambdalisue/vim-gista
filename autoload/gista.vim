@@ -8,6 +8,10 @@ function! gista#vital() abort
   return s:V
 endfunction
 
+function! gista#throw(msg) abort
+  throw printf('vim-gista: %s', a:msg)
+endfunction
+
 function! gista#define_variables(prefix, defaults) abort
   " Note:
   "   Funcref is not supported while the variable must start with a capital
@@ -21,12 +25,6 @@ function! gista#define_variables(prefix, defaults) abort
     endif
     unlet value
   endfor
-endfunction
-
-function! gista#indicate(options, message) abort
-  if get(a:options, 'verbose')
-    redraw | call gista#util#prompt#echo(a:message)
-  endif
 endfunction
 
 let s:_pattern1 = printf(
@@ -80,6 +78,7 @@ function! gista#get(expr) abort
 endfunction
 
 call gista#define_variables('', {
+      \ 'test': 0,
       \ 'debug': 0,
       \ 'develop': 1,
       \})

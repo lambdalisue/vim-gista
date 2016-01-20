@@ -7,6 +7,7 @@ let s:S = s:V.import('Data.String')
 let s:D = s:V.import('Data.Dict')
 let s:L = s:V.import('Data.List')
 let s:A = s:V.import('ArgumentParser')
+let s:N = s:V.import('Vim.Buffer.Anchor')
 
 let s:PRIVATE_GISTID = repeat('*', 20)
 let s:MODES = [
@@ -220,7 +221,7 @@ function! gista#command#commits#open(...) abort
 endfunction
 function! gista#command#commits#update(...) abort
   if &filetype !=# 'gista-commits'
-    call gista#util#prompt#throw(
+    call gista#throw(
           \ 'update() requires to be called in a gista-commits buffer'
           \)
   endif
@@ -248,7 +249,7 @@ function! gista#command#commits#update(...) abort
 endfunction
 function! gista#command#commits#redraw() abort
   if &filetype !=# 'gista-commits'
-    call gista#util#prompt#throw(
+    call gista#throw(
           \ 'redraw() requires to be called in a gista-commits buffer'
           \)
   endif
@@ -261,7 +262,7 @@ function! gista#command#commits#redraw() abort
         \   : []
         \])
   redraw
-  call gista#util#prompt#echo('Formatting commits to display ...')
+  echo 'Formatting commits to display ...'
   let contents = map(
         \ copy(b:gista.entries),
         \ 's:format_entry(v:val)'
@@ -291,7 +292,7 @@ endfunction
 function! s:action(name, ...) range abort
   let fname = printf('s:action_%s', a:name)
   if !exists('*' . fname)
-    call gista#util#prompt#throw(printf(
+    call gista#throw(printf(
           \ 'Unknown action name "%s" is called.',
           \ a:name,
           \))
@@ -320,7 +321,7 @@ function! s:action_edit(startline, endline, ...) abort
       endfor
       call filter(entries, '!empty(v:val)')
       if !empty(entries) && anchor
-        call gista#util#anchor#focus()
+        call s:N.focus()
       endif
       for entry in entries
         call gista#command#open#open({
@@ -354,7 +355,7 @@ function! s:action_json(startline, endline, ...) abort
       endfor
       call filter(entries, '!empty(v:val)')
       if !empty(entries) && anchor
-        call gista#util#anchor#focus()
+        call s:N.focus()
       endif
       for entry in entries
         call gista#command#json#open({
