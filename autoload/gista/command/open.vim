@@ -31,10 +31,7 @@ function! gista#command#open#read(...) abort
   if empty(file)
     return
   endif
-  call gista#util#buffer#read_content(
-        \ split(file.content, '\r\?\n'),
-        \ printf('%s.%s', tempname(), fnamemodify(filename, ':e')),
-        \)
+  call gista#util#buffer#read_content(split(file.content, '\r\?\n'))
   redraw
   silent doautocmd FileReadPost
   silent call gista#util#doautocmd('CacheUpdatePost')
@@ -56,10 +53,7 @@ function! gista#command#open#edit(...) abort
         \ 'filename': filename,
         \ 'content_type': 'raw',
         \}
-  call gista#util#buffer#edit_content(
-        \ split(file.content, '\r\?\n'),
-        \ printf('%s.%s', tempname(), fnamemodify(filename, ':e')),
-        \)
+  call gista#util#buffer#edit_content(split(file.content, '\r\?\n'))
   silent doautocmd BufReadPost
   silent call gista#util#doautocmd('CacheUpdatePost')
 endfunction

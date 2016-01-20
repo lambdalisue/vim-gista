@@ -30,10 +30,7 @@ function! gista#command#json#read(...) abort
     return
   endif
   let content = split(s:J.encode(gist, { 'indent': 2 }), "\r\\?\n")
-  call gista#util#buffer#read_content(
-        \ content,
-        \ printf('%s.json', tempname()),
-        \)
+  call gista#util#buffer#read_content(content)
   silent doautocmd FileReadPost
   silent call gista#util#doautocmd('CacheUpdatePost')
 endfunction
@@ -54,10 +51,7 @@ function! gista#command#json#edit(...) abort
         \ 'content_type': 'json',
         \}
   let content = split(s:J.encode(gist, { 'indent': 2 }), "\r\\?\n")
-  call gista#util#buffer#edit_content(
-        \ content,
-        \ printf('%s.json', tempname()),
-        \)
+  call gista#util#buffer#edit_content(content)
   setlocal buftype=nowrite
   setlocal nomodifiable
   setlocal filetype=json
