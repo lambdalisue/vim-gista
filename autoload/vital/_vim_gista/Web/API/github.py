@@ -76,7 +76,10 @@ def _vim_vital_web_api_github_main():
                 req.get_method = lambda: method
         else:
             req = Request(url, headers=headers)
-        context = ssl._create_unverified_context()
+        if hasattr(ssl, '_create_unverified_context'):
+            context = ssl._create_unverified_context
+        else:
+            context = ssl._create_stdlib_context
         res = urlopen(req, context=context)
         if not hasattr(res, 'getheader'):
             # urllib2 does not have getheader
