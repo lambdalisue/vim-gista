@@ -120,3 +120,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+External vital modules used in this plugin
+-------------------------------------------------------------------------------
+vim-gista is powered by the following external [vital](https://github.com/vim-jp/vital.vim) modules.
+
+- [lambdalisue/vital-ArgumentParser](https://github.com/lambdalisue/vital-ArgumentParser)
+- [lambdalisue/vital-Vim-Prompt](https://github.com/lambdalisue/vital-Vim-Prompt)
+- [lambdalisue/vital-Vim-Validate](https://github.com/lambdalisue/vital-Vim-Validate)
+- [lambdalisue/vital-Vim-Buffer-Anchor](https://github.com/lambdalisue/vital-Vim-Buffer-Anchor)
+- [lambdalisue/vital-Web-API-GitHub](https://github.com/lambdalisue/vital-Web-API-GitHub)
