@@ -33,6 +33,12 @@ function! gista#util#prompt#confirm(...) abort
   return call(s:P.confirm, a:000, s:P)
 endfunction
 
+function! gista#util#prompt#indicate(options, message) abort
+  if get(a:options, 'verbose')
+    redraw | echo a:message
+  endif
+endfunction
+
 call s:P.set_config({
       \ 'debug': function('s:is_debug'),
       \ 'batch': function('s:is_batch'),

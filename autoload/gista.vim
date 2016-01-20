@@ -11,6 +11,7 @@ endfunction
 function! gista#throw(msg) abort
   throw printf('vim-gista: %s', a:msg)
 endfunction
+
 function! gista#define_variables(prefix, defaults) abort
   " Note:
   "   Funcref is not supported while the variable must start with a capital
@@ -24,12 +25,6 @@ function! gista#define_variables(prefix, defaults) abort
     endif
     unlet value
   endfor
-endfunction
-
-function! gista#indicate(options, message) abort
-  if get(a:options, 'verbose')
-    redraw | echo a:message
-  endif
 endfunction
 
 let s:_pattern1 = printf(

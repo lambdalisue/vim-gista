@@ -60,7 +60,7 @@ function! s:validate_lookup(client, lookup) abort
 endfunction
 
 function! s:get_index(client, lookup, options) abort
-  call gista#indicate(a:options, printf(
+  call gista#util#prompt#indicate(a:options, printf(
         \ 'Loading a gist index of %s in %s from a local cache ...',
         \ a:lookup, a:client.apiname,
         \))
@@ -71,7 +71,7 @@ function! s:get_index(client, lookup, options) abort
   return index
 endfunction
 function! s:get_gist(client, gistid, options) abort
-  call gista#indicate(a:options, printf(
+  call gista#util#prompt#indicate(a:options, printf(
         \ 'Loading a gist %s in %s from a local cache ...',
         \ a:gistid, a:client.apiname,
         \))
@@ -89,7 +89,7 @@ function! s:get_gist(client, gistid, options) abort
   return gist
 endfunction
 function! s:get_gist_file(client, gist, filename, options) abort
-  call gista#indicate(a:options, printf(
+  call gista#util#prompt#indicate(a:options, printf(
         \ 'Loading a file %s of gist %s in %s from a local cache ...',
         \ a:filename, a:gist.id, a:client.apiname,
         \))

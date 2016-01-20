@@ -34,7 +34,7 @@ function! gista#command#remove#call(...) abort
           \ 'contents': [{}],
           \})
     silent call gista#util#doautocmd('CacheUpdatePost')
-    call gista#indicate(options, printf(
+    call gista#util#prompt#indicate(options, printf(
           \ 'A %s is removed from a gist %s in %s',
           \ filename, gistid, client.apiname,
           \))

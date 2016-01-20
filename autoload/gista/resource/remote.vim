@@ -41,7 +41,7 @@ function! gista#resource#remote#get(gistid, ...) abort
 
   " From API
   let client = gista#client#get()
-  call gista#indicate(options, printf(
+  call gista#util#prompt#indicate(options, printf(
         \ 'Fetching a gist %s in %s ...',
         \ a:gistid, client.apiname,
         \))
@@ -62,7 +62,7 @@ function! gista#resource#remote#get(gistid, ...) abort
     let gist.id = a:gistid
     let gist._gista_fetched = 1
     let gist._gista_last_modified = s:G.parse_response_last_modified(res)
-    call gista#indicate(options, printf(
+    call gista#util#prompt#indicate(options, printf(
           \ 'Updating local caches of a gist %s in %s ...',
           \ a:gistid, client.apiname,
           \))
@@ -98,7 +98,7 @@ function! gista#resource#remote#file(gist, filename, ...) abort
     let file.truncated = 0
     let file.content = res.content
     let a:gist.files[a:filename] = file
-    call gista#indicate(options, printf(
+    call gista#util#prompt#indicate(options, printf(
           \ 'Updating a local cache of a gist %s in %s ...',
           \ a:gist.id, client.apiname,
           \))
@@ -159,7 +159,7 @@ function! gista#resource#remote#list(lookup, ...) abort
         \ 'indicator': indicator,
         \ 'python': options.python,
         \})
-  call gista#indicate(options, printf(
+  call gista#util#prompt#indicate(options, printf(
         \ 'Updating local caches of gists of %s in %s ...',
         \ a:lookup, client.apiname,
         \))
@@ -201,7 +201,7 @@ function! gista#resource#remote#post(filenames, contents, ...) abort
     let gist.files[filename] = content
   endfor
 
-  call gista#indicate(options, printf(
+  call gista#util#prompt#indicate(options, printf(
         \ 'Posting contents to create a new gist in %s ...',
         \ client.apiname,
         \))
@@ -213,7 +213,7 @@ function! gista#resource#remote#post(filenames, contents, ...) abort
     let gist = res.content
     let gist._gista_fetched = 1
     let gist._gista_last_modified = s:G.parse_response_last_modified(res)
-    call gista#indicate(options, printf(
+    call gista#util#prompt#indicate(options, printf(
           \ 'Updating local caches of a gist %s in %s ...',
           \ gist.id, client.apiname,
           \))
@@ -272,7 +272,7 @@ function! gista#resource#remote#patch(gistid, ...) abort
     endif
   endfor
 
-  call gista#indicate(options, printf(
+  call gista#util#prompt#indicate(options, printf(
         \ 'Patching contents to a gist %s in %s ...',
         \ gist.id, client.apiname,
         \))
@@ -285,7 +285,7 @@ function! gista#resource#remote#patch(gistid, ...) abort
     let gist = res.content
     let gist._gista_fetched = 1
     let gist._gista_last_modified = s:G.parse_response_last_modified(res)
-    call gista#indicate(options, printf(
+    call gista#util#prompt#indicate(options, printf(
           \ 'Updating local caches of a gist %s in %s ...',
           \ gist.id, client.apiname,
           \))
@@ -320,7 +320,7 @@ function! gista#resource#remote#delete(gistid, ...) abort
           \))
   endif
 
-  call gista#indicate(options, printf(
+  call gista#util#prompt#indicate(options, printf(
         \ 'Deleting a gist %s in %s ...',
         \ a:gistid, client.apiname,
         \))
@@ -328,7 +328,7 @@ function! gista#resource#remote#delete(gistid, ...) abort
   let res = client.delete(url)
   redraw
   if res.status == 204
-    call gista#indicate(options, printf(
+    call gista#util#prompt#indicate(options, printf(
           \ 'Updating caches of a gist %s in %s ...',
           \ a:gistid, client.apiname,
           \))
@@ -349,7 +349,7 @@ function! gista#resource#remote#star(gistid, ...) abort
           \)
   endif
 
-  call gista#indicate(options, printf(
+  call gista#util#prompt#indicate(options, printf(
         \ 'Star a gist %s in %s ...',
         \ a:gistid, client.apiname,
         \))
@@ -379,7 +379,7 @@ function! gista#resource#remote#unstar(gistid, ...) abort
           \)
   endif
 
-  call gista#indicate(options, printf(
+  call gista#util#prompt#indicate(options, printf(
         \ 'Unstar a gist %s in %s ...',
         \ a:gistid, client.apiname,
         \))
@@ -407,7 +407,7 @@ function! gista#resource#remote#fork(gistid, ...) abort
           \)
   endif
 
-  call gista#indicate(options, printf(
+  call gista#util#prompt#indicate(options, printf(
         \ 'Forking a gist %s in %s ...',
         \ a:gistid, client.apiname,
         \))
@@ -420,7 +420,7 @@ function! gista#resource#remote#fork(gistid, ...) abort
     let gist = res.content
     let gist._gista_fetched = 1
     let gist._gista_last_modified = s:G.parse_response_last_modified(res)
-    call gista#indicate(options, printf(
+    call gista#util#prompt#indicate(options, printf(
           \ 'Updating local caches of a gist %s in %s ...',
           \ gist.id, client.apiname,
           \))
@@ -436,7 +436,7 @@ function! gista#resource#remote#commits(gistid, ...) abort
   let client = gista#client#get()
   let username = client.get_authorized_username()
 
-  call gista#indicate(options, printf(
+  call gista#util#prompt#indicate(options, printf(
         \ 'Fetching commits of a gist %s in %s ...',
         \ a:gistid, client.apiname,
         \))

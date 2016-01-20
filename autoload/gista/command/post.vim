@@ -67,7 +67,7 @@ function! gista#command#post#call(...) abort
     call s:assign_gista_filenames(gist.id, options.bufnums)
     silent call gista#util#doautocmd('CacheUpdatePost')
     redraw
-    call gista#indicate(options, printf(
+    call gista#util#prompt#indicate(options, printf(
           \ 'A content of the current buffer is posted to a gist %s in %s',
           \ gist.id, client.apiname,
           \))

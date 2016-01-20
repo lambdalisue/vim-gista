@@ -27,7 +27,7 @@ function! gista#command#delete#call(...) abort
     endif
     call gista#resource#remote#delete(gistid, options)
     silent call gista#util#doautocmd('CacheUpdatePost')
-    call gista#indicate(options, printf(
+    call gista#util#prompt#indicate(options, printf(
           \ 'A gist %s is deleted from %s',
           \ gistid, client.apiname,
           \))

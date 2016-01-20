@@ -46,7 +46,7 @@ function! gista#command#patch#call(...) abort
     call s:assign_gista_filenames(gist.id, options.bufnums)
     silent call gista#util#doautocmd('CacheUpdatePost')
     let client = gista#client#get()
-    call gista#indicate(options, printf(
+    call gista#util#prompt#indicate(options, printf(
           \ 'Changes of %s in gist %s is posted to %s',
           \ join(options.filenames, ', '), gistid, client.apiname,
           \))
