@@ -7,6 +7,7 @@ let s:S = s:V.import('Data.String')
 let s:D = s:V.import('Data.Dict')
 let s:L = s:V.import('Data.List')
 let s:A = s:V.import('ArgumentParser')
+let s:N = s:V.import('Vim.Buffer.Anchor')
 
 let s:PRIVATE_GISTID = repeat('*', 20)
 let s:MODES = [
@@ -411,7 +412,7 @@ function! s:action_edit(startline, endline, ...) abort
       endfor
       call filter(entries, '!empty(v:val)')
       if !empty(entries) && anchor
-        call gista#util#anchor#focus()
+        call s:N.focus()
       endif
       for entry in entries
         call gista#command#open#open({
@@ -445,7 +446,7 @@ function! s:action_json(startline, endline, ...) abort
       endfor
       call filter(entries, '!empty(v:val)')
       if !empty(entries) && anchor
-        call gista#util#anchor#focus()
+        call s:N.focus()
       endif
       for entry in entries
         call gista#command#json#open({
