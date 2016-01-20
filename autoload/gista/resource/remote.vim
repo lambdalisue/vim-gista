@@ -140,7 +140,7 @@ function! gista#resource#remote#list(lookup, ...) abort
   elseif !empty(a:lookup)
     let url = printf('users/%s/gists', a:lookup)
   else
-    call gista#util#prompt#throw(printf(
+    call gista#throw(printf(
           \ 'Unknown lookup "%s" is specified',
           \ a:lookup,
           \))
@@ -235,7 +235,7 @@ function! gista#resource#remote#patch(gistid, ...) abort
   let client   = gista#client#get()
   let username = client.get_authorized_username()
   if empty(username)
-    call gista#util#prompt#throw(
+    call gista#throw(
           \ 'Patching a gist cannot be performed as an anonymous user',
           \)
   endif
@@ -245,7 +245,7 @@ function! gista#resource#remote#patch(gistid, ...) abort
         \ 'cache': options.force ? s:CACHE_FORCED : s:CACHE_DISABLED,
         \})
   if !options.force && gist._gista_modified
-    call gista#util#prompt#throw(printf(
+    call gista#throw(printf(
           \ 'A remote content of a gist %s in %s is modified from last access.',
           \ a:gistid, client.apiname,
           \))
@@ -304,7 +304,7 @@ function! gista#resource#remote#delete(gistid, ...) abort
   let client   = gista#client#get()
   let username = client.get_authorized_username()
   if empty(username)
-    call gista#util#prompt#throw(
+    call gista#throw(
           \ 'Deleting a gist cannot be performed as an anonymous user',
           \)
   endif
@@ -314,7 +314,7 @@ function! gista#resource#remote#delete(gistid, ...) abort
         \ 'cache': options.force ? s:CACHE_FORCED : s:CACHE_DISABLED,
         \})
   if !options.force && get(gist, '_gista_modified', 1)
-    call gista#util#prompt#throw(printf(
+    call gista#throw(printf(
           \ 'A remote content of a gist %s in %s is modified from last access.',
           \ a:gistid, client.apiname,
           \))
@@ -328,9 +328,9 @@ function! gista#resource#remote#delete(gistid, ...) abort
   let res = client.delete(url)
   redraw
   if res.status == 204
-    call gista#util#prompt#echo(printf(
+    call gista#indicate(options, printf(
           \ 'Updating caches of a gist %s in %s ...',
-          \ gist.id, client.apiname,
+          \ a:gistid, client.apiname,
           \))
     call gista#resource#local#remove_gist(a:gistid)
     call gista#resource#local#remove_index_entry(a:gistid)
@@ -344,7 +344,7 @@ function! gista#resource#remote#star(gistid, ...) abort
   let client = gista#client#get()
   let username = client.get_authorized_username()
   if empty(username)
-    call gista#util#prompt#throw(
+    call gista#throw(
           \ 'Star a gist cannot be performed as an anonymous user',
           \)
   endif
@@ -374,7 +374,7 @@ function! gista#resource#remote#unstar(gistid, ...) abort
   let client = gista#client#get()
   let username = client.get_authorized_username()
   if empty(username)
-    call gista#util#prompt#throw(
+    call gista#throw(
           \ 'Unstar a gist cannot be performed as an anonymous user',
           \)
   endif
@@ -402,7 +402,7 @@ function! gista#resource#remote#fork(gistid, ...) abort
   let client = gista#client#get()
   let username = client.get_authorized_username()
   if empty(username)
-    call gista#util#prompt#throw(
+    call gista#throw(
           \ 'Forking a gist cannot be performed as an anonymous user',
           \)
   endif

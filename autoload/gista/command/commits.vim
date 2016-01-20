@@ -221,7 +221,7 @@ function! gista#command#commits#open(...) abort
 endfunction
 function! gista#command#commits#update(...) abort
   if &filetype !=# 'gista-commits'
-    call gista#util#prompt#throw(
+    call gista#throw(
           \ 'update() requires to be called in a gista-commits buffer'
           \)
   endif
@@ -249,7 +249,7 @@ function! gista#command#commits#update(...) abort
 endfunction
 function! gista#command#commits#redraw() abort
   if &filetype !=# 'gista-commits'
-    call gista#util#prompt#throw(
+    call gista#throw(
           \ 'redraw() requires to be called in a gista-commits buffer'
           \)
   endif
@@ -262,7 +262,7 @@ function! gista#command#commits#redraw() abort
         \   : []
         \])
   redraw
-  call gista#util#prompt#echo('Formatting commits to display ...')
+  echo 'Formatting commits to display ...'
   let contents = map(
         \ copy(b:gista.entries),
         \ 's:format_entry(v:val)'
@@ -292,7 +292,7 @@ endfunction
 function! s:action(name, ...) range abort
   let fname = printf('s:action_%s', a:name)
   if !exists('*' . fname)
-    call gista#util#prompt#throw(printf(
+    call gista#throw(printf(
           \ 'Unknown action name "%s" is called.',
           \ a:name,
           \))

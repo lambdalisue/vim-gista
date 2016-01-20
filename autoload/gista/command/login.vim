@@ -16,7 +16,7 @@ function! gista#command#login#call(...) abort
           \ 'username': username,
           \})
     let client = gista#client#get()
-    call gista#util#prompt#echo(printf(
+    echo printf(
           \ 'Login into %s as %s',
           \ client.apiname,
           \ client.get_authorized_username(),

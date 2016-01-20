@@ -19,7 +19,7 @@ function! gista#command#status#call(...) abort
         \ printf('GistID   : %s', get(gista, 'gistid', '')),
         \ printf('Filename : %s', get(gista, 'filename', '')),
         \]
-  call gista#util#prompt#echo(join(messages, "\n"))
+  echo join(messages, "\n")
 endfunction
 
 function! s:get_parser() abort

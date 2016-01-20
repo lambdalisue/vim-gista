@@ -294,13 +294,13 @@ function! gista#client#get_valid_username(apiname, username) abort
 endfunction
 
 function! gista#client#throw(response) abort
-  call gista#util#prompt#throw(s:G.build_exception_message(a:response))
+  call gista#throw(s:G.build_exception_message(a:response))
 endfunction
 
 let s:session = {}
 function! s:session.enter() abort
   if has_key(self, '_previous_client')
-    call gista#util#prompt#throw(
+    call gista#throw(
           \ 'SessionError: session.exit() has not been called yet',
           \)
     return
@@ -311,7 +311,7 @@ function! s:session.enter() abort
           \ 'username': self.username,
           \ 'permanent': 0,
           \})
-    call gista#util#prompt#debugmsg(printf(
+    call gista#util#prompt#debug(printf(
           \ 'Enter sessions: apiname: %s, username: %s',
           \ gista#client#get().apiname,
           \ gista#client#get().get_authorized_username(),
@@ -326,14 +326,14 @@ function! s:session.enter() abort
 endfunction
 function! s:session.exit() abort
   if !has_key(self, '_previous_client')
-    call gista#util#prompt#throw(
+    call gista#throw(
           \ 'SessionError: session.enter() has not been called yet',
           \)
     return
   endif
   let s:current_client = deepcopy(self._previous_client)
   unlet self._previous_client
-  call gista#util#prompt#debugmsg(printf(
+  call gista#util#prompt#debug(printf(
         \ 'Exit session: apiname: %s, username: %s',
         \ gista#client#get().apiname,
         \ gista#client#get().get_authorized_username(),

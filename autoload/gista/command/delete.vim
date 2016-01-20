@@ -18,11 +18,11 @@ function! gista#command#delete#call(...) abort
           \ : options.gist.id
           \)
     if options.confirm
-      if !gista#util#prompt#asktf(printf(
+      if !gista#util#prompt#confirm(printf(
             \ 'Remove %s in %s? ',
             \ gistid, client.apiname,
             \))
-        call gista#util#prompt#throw('Cancel')
+        call gista#throw('Cancel')
       endif
     endif
     call gista#resource#remote#delete(gistid, options)
