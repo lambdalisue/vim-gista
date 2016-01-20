@@ -27,7 +27,7 @@ endfunction
 function! gista#command#open#read(...) abort
   silent doautocmd FileReadPre
   let options = extend({}, get(a:000, 0, {}))
-  let [file, gistid, filename] = gista#command#open#call(options)
+  let file = gista#command#open#call(options)[0]
   if empty(file)
     return
   endif
@@ -92,7 +92,7 @@ function! gista#command#open#bufname(...) abort
   endtry
   let client = gista#client#get()
   let apiname = client.apiname
-  return 'gista://' . join([client.apiname, gistid, filename], '/')
+  return 'gista://' . join([apiname, gistid, filename], '/')
 endfunction
 
 function! s:get_parser() abort

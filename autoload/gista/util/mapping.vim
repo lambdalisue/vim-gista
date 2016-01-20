@@ -34,6 +34,8 @@ function! s:compare(i1, i2) abort
   return a:i1[1] == a:i2[1] ? 0 : a:i1[1] > a:i2[1] ? 1 : -1
 endfunction
 
+" @vimlint(EVL102, 1, l:mode)
+" @vimlint(EVL102, 1, l:flag)
 function! gista#util#mapping#help(table) abort
   let mappings = s:filter_mappings('<Plug>(gista-', {
         \ 'noremap': 0,
@@ -56,6 +58,8 @@ function! gista#util#mapping#help(table) abort
   endfor
   return contents
 endfunction
+" @vimlint(EVL102, 0, l:mode)
+" @vimlint(EVL102, 0, l:flag)
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo

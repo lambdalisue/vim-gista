@@ -5,7 +5,6 @@ let s:V = gista#vital()
 let s:A = s:V.import('ArgumentParser')
 
 function! gista#command#status#call(...) abort
-  let options = extend({}, get(a:000, 0, {}))
   let client = gista#client#get()
   let gista = gista#get('%')
   let messages = [

@@ -131,6 +131,7 @@ function! gista#resource#remote#list(lookup, ...) abort
         \     : local_index.entries[0].updated_at
         \   : ''
         \ : options.since
+  let url = ''
   if a:lookup ==# 'public'
     let url = 'gists/public'
   elseif !empty(username) && a:lookup ==# username
@@ -184,7 +185,6 @@ function! gista#resource#remote#post(filenames, contents, ...) abort
         \}, get(a:000, 0, {})
         \)
   let client   = gista#client#get()
-  let username = client.get_authorized_username()
 
   " Create a gist instance
   let gist = {
@@ -434,7 +434,6 @@ endfunction
 function! gista#resource#remote#commits(gistid, ...) abort
   let options = get(a:000, 0, {})
   let client = gista#client#get()
-  let username = client.get_authorized_username()
 
   call gista#util#prompt#indicate(options, printf(
         \ 'Fetching commits of a gist %s in %s ...',

@@ -34,21 +34,21 @@ function! gista#command#browse#call(...) abort
 endfunction
 function! gista#command#browse#open(...) abort
   let options = extend({}, get(a:000, 0, {}))
-  let [url, gistid, filename] = gista#command#browse#call(options)
+  let url = gista#command#browse#call(options)[0]
   if !empty(url)
     call s:F.open(url)
   endif
 endfunction
 function! gista#command#browse#yank(...) abort
   let options = extend({}, get(a:000, 0, {}))
-  let [url, gistid, filename] = gista#command#browse#call(options)
+  let url = gista#command#browse#call(options)[0]
   if !empty(url)
     call gista#util#clip(url)
   endif
 endfunction
 function! gista#command#browse#echo(...) abort
   let options = extend({}, get(a:000, 0, {}))
-  let [url, gistid, filename] = gista#command#browse#call(options)
+  let url = gista#command#browse#call(options)[0]
   if !empty(url)
     echo url
   endif

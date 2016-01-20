@@ -351,7 +351,6 @@ function! gista#command#list#redraw() abort
         \   ? map(gista#util#mapping#help(s:MAPPING_TABLE), '"| " . v:val')
         \   : []
         \])
-  let client = gista#client#get()
   redraw
   echo 'Formatting gist entries to display ...'
   let contents = map(
