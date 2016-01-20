@@ -162,10 +162,14 @@ function! s:new_client(apiname) abort
   let client.gist_cache = s:get_gist_cache(a:apiname)
   let client.starred_cache = s:get_starred_cache(a:apiname)
   " login if default_username of apiname exists
-  let default_username = s:get_default_username(a:apiname)
-  if !empty(default_username)
-    call s:login(client, default_username, { 'verbose': 1 })
-  endif
+  try
+    let default_username = s:get_default_username(a:apiname)
+    if !empty(default_username)
+      call s:login(client, default_username, { 'verbose': 1 })
+    endif
+  catch /^vim-gista:/
+    call gista#util#handle_exception(v:exception)
+  endtry
   return client
 endfunction
 function! s:get_client(apiname) abort
