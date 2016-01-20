@@ -209,6 +209,14 @@ like:
 <
 See |:Gista-open|, |:Gista-json|, or |:Gista-browse| for detail.
 
+vim-gista define |BufReadCmd| for a filename which start from 'gista://', mean
+that you can use a |gf| mapping to open a filename like the following (hit gf
+on the filenames below).
+>
+	gista://GitHub/16414ff40d5338d93dd3/test.vim 
+	gista://GitHub/16414ff40d5338d93dd3.json
+<
+
 ------------------------------------------------------------------------------
 POST					*vim-gista-post*
 
