@@ -20,7 +20,7 @@ function! gista#command#login#call(...) abort
           \ 'Login into %s as %s',
           \ client.apiname,
           \ client.get_authorized_username(),
-          \))
+          \)
     return [apiname, username]
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
