@@ -23,4 +23,3 @@ build: off
 test_script:
   - '%THEMIS_VIM% --version'
   - '%TEMP%\vim-themis\bin\themis.bat --runtimepath %TEMP%\vimproc --runtimepath %TEMP%\vital --reporter dot'
-deploy: off
