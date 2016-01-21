@@ -110,6 +110,10 @@ function! s:get_default_username(apiname) abort
     let username = get(g:gista#client#default_username, a:apiname, default)
   endif
   if empty(username)
+    let username = system('git config github.user')
+    let username = substitute(username, '\([^\r\n]\+\).*', '\1', '')
+  endif
+  if empty(username)
     return ''
   endif
   try
