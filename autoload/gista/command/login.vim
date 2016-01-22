@@ -9,6 +9,8 @@ function! gista#command#login#call(...) abort
         \ 'apiname': '',
         \ 'username': '',
         \}, get(a:000, 0, {}))
+  let apiname = ''
+  let username = ''
   try
     let apiname = gista#client#get_valid_apiname(options.apiname)
     let username = gista#client#get_valid_username(apiname, options.username)

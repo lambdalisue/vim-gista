@@ -12,6 +12,8 @@ function! gista#command#remove#call(...) abort
         \ 'force': 0,
         \ 'confirm': 1,
         \}, get(a:000, 0, {}))
+  let gistid = ''
+  let filename = ''
   try
     let client = gista#client#get()
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)

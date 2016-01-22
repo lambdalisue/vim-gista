@@ -36,6 +36,7 @@ function! gista#command#patch#call(...) abort
         \ 'contents': [],
         \ 'bufnums': [],
         \}, get(a:000, 0, {}))
+  let gistid = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid

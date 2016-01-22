@@ -17,6 +17,8 @@ function! gista#command#browse#call(...) abort
         \ 'gistid': '',
         \ 'filename': '',
         \}, get(a:000, 0, {}))
+  let gistid = ''
+  let filename = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid
@@ -29,7 +31,7 @@ function! gista#command#browse#call(...) abort
     return [s:create_url(gist.html_url, filename), gistid, filename]
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return ''
+    return ['', gistid, filename]
   endtry
 endfunction
 function! gista#command#browse#open(...) abort

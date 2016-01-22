@@ -10,6 +10,8 @@ function! gista#command#open#call(...) abort
         \ 'gistid': '',
         \ 'filename': '',
         \}, get(a:000, 0, {}))
+  let gistid = ''
+  let filename = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid

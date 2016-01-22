@@ -9,6 +9,7 @@ function! gista#command#star#call(...) abort
         \ 'gist': {},
         \ 'gistid': '',
         \}, get(a:000, 0, {}))
+  let gistid = ''
   try
     let client = gista#client#get()
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)

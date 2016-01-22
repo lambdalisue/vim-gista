@@ -8,6 +8,7 @@ function! gista#command#logout#call(...) abort
   let options = extend({
         \ 'apiname': '',
         \}, get(a:000, 0, {}))
+  let apiname = ''
   try
     let apiname = gista#client#get_valid_apiname(options.apiname)
     call gista#client#set(apiname, { 'username': '' })

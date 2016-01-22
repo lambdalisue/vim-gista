@@ -12,6 +12,9 @@ function! gista#command#rename#call(...) abort
         \ 'new_filename': '',
         \ 'force': 0,
         \}, get(a:000, 0, {}))
+  let gistid = ''
+  let filename = ''
+  let new_filename = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid

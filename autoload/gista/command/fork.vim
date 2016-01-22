@@ -9,6 +9,7 @@ function! gista#command#fork#call(...) abort
   let options = extend({
         \ 'gistid': '',
         \}, get(a:000, 0, {}))
+  let gistid = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid

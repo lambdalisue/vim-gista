@@ -242,6 +242,7 @@ function! gista#command#list#call(...) abort
         \ 'lookup': '',
         \ 'cache': 1,
         \}, get(a:000, 0, {}))
+  let lookup = ''
   try
     let lookup = gista#resource#local#get_valid_lookup(options.lookup)
     let index  = gista#resource#remote#list(lookup, options)

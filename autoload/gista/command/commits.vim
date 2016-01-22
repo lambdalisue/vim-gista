@@ -149,6 +149,7 @@ function! gista#command#commits#call(...) abort
         \ 'gist': {},
         \ 'gistid': '',
         \}, get(a:000, 0, {}))
+  let gistid = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid
