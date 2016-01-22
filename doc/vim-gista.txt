@@ -473,6 +473,14 @@ g:gista#client#default_username	*g:gista#client#default_username*
 	A default username used in |:Gista-login| command.
 	Default is ''.
 
+			*g:gista#client#use_git_config_github_user*
+g:gista#client#use_git_config_github_user
+
+	1 to read user's gitconfig.
+	This executes "git config github.user" command
+	and read username from the output.
+	Default is 1.
+
 			*g:gista#command#json#default_opener*
 			*g:gista#command#open#default_opener*
 			*g:gista#command#list#default_opener*
