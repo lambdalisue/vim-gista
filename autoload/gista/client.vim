@@ -5,6 +5,7 @@ let s:V = gista#vital()
 let s:C = s:V.import('System.Cache')
 let s:P = s:V.import('System.Filepath')
 let s:G = s:V.import('Web.API.GitHub')
+let s:R = s:V.import('Process')
 
 let s:registry = {}
 let s:current_client = {}
@@ -109,8 +110,8 @@ function! s:get_default_username(apiname) abort
     let default = get(g:gista#client#default_username, '_', '')
     let username = get(g:gista#client#default_username, a:apiname, default)
   endif
-  if empty(username)
-    let username = system('git config github.user')
+  if g:gista#client#use_git_config_github_user && empty(username)
+    let username = s:R.system('git config github.user')
     let username = substitute(username, '\([^\r\n]\+\).*', '\1', '')
   endif
   if empty(username)
@@ -361,6 +362,7 @@ call gista#define_variables('client', {
       \ 'cache_dir': '~/.cache/vim-gista',
       \ 'default_apiname': 'GitHub',
       \ 'default_username': '',
+      \ 'use_git_config_github_user': 1,
       \})
 
 let &cpo = s:save_cpo
