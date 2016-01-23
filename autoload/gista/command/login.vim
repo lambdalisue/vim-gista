@@ -37,7 +37,7 @@ function! s:get_parser() abort
           \ 'description': 'Login as a specified username to a specified API',
           \})
     call s:parser.add_argument(
-          \ '--apiname',
+          \ '--apiname', '-n',
           \ 'An API name', {
           \   'complete': function('gista#option#complete_apiname'),
           \})

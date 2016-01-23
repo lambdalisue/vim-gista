@@ -72,7 +72,7 @@ function! s:get_parser() abort
           \   'type': s:A.types.value,
           \})
     call s:parser.add_argument(
-          \ '--force',
+          \ '--force', '-f',
           \ 'Patch a gist even a remote content of the gist is modified', {
           \   'default': 0,
           \   'deniable': 1,
