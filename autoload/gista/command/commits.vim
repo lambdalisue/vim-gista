@@ -412,6 +412,11 @@ function! s:get_parser() abort
           \ ],
           \})
     call s:parser.add_argument(
+          \ '--opener', '-o',
+          \ 'A way to open a new buffer such as "edit", "split", etc.', {
+          \   'type': s:A.types.value,
+          \})
+    call s:parser.add_argument(
           \ 'gistid',
           \ 'A gist ID', {
           \   'complete': function('g:gista#option#complete_gistid'),

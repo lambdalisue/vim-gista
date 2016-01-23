@@ -690,6 +690,11 @@ function! s:get_parser() abort
           \   'complete': function('gista#option#complete_lookup'), 
           \})
     call s:parser.add_argument(
+          \ '--opener', '-o',
+          \ 'A way to open a new buffer such as "edit", "split", etc.', {
+          \   'type': s:A.types.value,
+          \})
+    call s:parser.add_argument(
           \ '--cache',
           \ 'Use cached entries whenever possible', {
           \   'default': 1,

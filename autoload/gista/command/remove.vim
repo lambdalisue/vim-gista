@@ -54,7 +54,7 @@ function! s:get_parser() abort
           \ 'description': 'Remove a file of a gist',
           \})
     call s:parser.add_argument(
-          \ '--force',
+          \ '--force', '-f',
           \ 'Delete a file even a remote content of the gist is modified', {
           \   'default': 0,
           \   'deniable': 1,

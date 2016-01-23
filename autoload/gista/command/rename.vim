@@ -59,7 +59,7 @@ function! s:get_parser() abort
           \ 'description': 'Rename a filename in a gist',
           \})
     call s:parser.add_argument(
-          \ '--force',
+          \ '--force', '-f',
           \ 'Rename a filename in a gist even a remote content of the gist is modified', {
           \   'default': 0,
           \   'deniable': 1,

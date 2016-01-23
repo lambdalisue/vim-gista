@@ -101,7 +101,7 @@ function! s:get_parser() abort
           \ 'description': 'Open a JSON content of a gist',
           \})
     call s:parser.add_argument(
-          \ '--opener',
+          \ '--opener', '-o',
           \ 'A way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:A.types.value,
           \})

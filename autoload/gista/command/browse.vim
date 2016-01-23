@@ -63,17 +63,12 @@ function! s:get_parser() abort
           \ 'description': 'Open a URL of a gist with a system browser',
           \})
     call s:parser.add_argument(
-          \ '--filename',
-          \ 'A filename', {
-          \   'complete': function('g:gista#option#complete_filename'),
-          \})
-    call s:parser.add_argument(
-          \ '--echo',
+          \ '--echo', '-e',
           \ 'Echo a URL instead of open', {
           \   'conflicts': ['yank'],
           \})
     call s:parser.add_argument(
-          \ '--yank',
+          \ '--yank', '-y',
           \ 'Yank a URL instead of open', {
           \   'conflicts': ['echo'],
           \})
@@ -81,6 +76,11 @@ function! s:get_parser() abort
           \ 'gistid',
           \ 'A gist ID', {
           \   'complete': function('g:gista#option#complete_gistid'),
+          \})
+    call s:parser.add_argument(
+          \ 'filename',
+          \ 'A filename', {
+          \   'complete': function('g:gista#option#complete_filename'),
           \})
   endif
   return s:parser
