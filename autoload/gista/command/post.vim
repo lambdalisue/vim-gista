@@ -46,6 +46,15 @@ function! s:interactive_description(options) abort
           \)
   endif
 endfunction
+function! s:open_browser(gistid) abort
+  if !g:gista#command#post#open_browser
+    return
+  endif
+  if exists(':OpenBrowser')
+    let url = printf('https://gist.github.com/%s', a:gistid)
+    call openbrowser#open(url)
+  endif
+endfunction
 
 function! gista#command#post#call(...) abort
   let options = extend({
@@ -67,6 +76,7 @@ function! gista#command#post#call(...) abort
     call s:assign_gista_filenames(gist.id, options.bufnums)
     silent call gista#util#doautocmd('CacheUpdatePost')
     redraw
+    call s:open_browser(gist.id)
     call gista#util#prompt#indicate(options, printf(
           \ 'A content of the current buffer is posted to a gist %s in %s',
           \ gist.id, client.apiname,
@@ -157,6 +167,7 @@ call gista#define_variables('command#post', {
       \ 'default_public': 1,
       \ 'interactive_description': 1,
       \ 'allow_empty_description': 0,
+      \ 'open_browser': 0,
       \})
 
 let &cpo = s:save_cpo
