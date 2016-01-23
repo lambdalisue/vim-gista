@@ -80,7 +80,7 @@ endfunction
 call gista#define_variables('', {
       \ 'test': 0,
       \ 'debug': 0,
-      \ 'develop': 1,
+      \ 'develop': 0,
       \})
 
 let &cpo = s:save_cpo
