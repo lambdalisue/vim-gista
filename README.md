@@ -57,7 +57,7 @@ Or install the repository into your `runtimepath` manually.
 Usage
 -------------------------------------------------------------------------------
 
-First of all, specify your GitHub username into `g:gista#client#default_username`.
+First of all, specify your GitHub username into `g:gista#client#default_username` or use `$ git config github.user {USERNAME}` to record it into your .gitconfig file then vim-gista automatically resolve your github username from your .gitconfig file.
 vim-gista support an anonymous access but authorization is strongly recommended due to the GitHub API rate-limit.
 
 After that, execute `:Gista list`. It will request all your gists and show `gista-list` window which looks like:

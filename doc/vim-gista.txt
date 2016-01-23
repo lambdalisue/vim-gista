@@ -121,8 +121,15 @@ It requires your GitHub password to create a personal access token for the
 first time. Once the personal access token is created, you won't need to
 re-input your GitHub password until you permanently logout from GitHub API
 (See |:Gista-logout|).
-If you would like to specify a default username, use
-|g:gista#client#default_username|.
+It automatically obtain your GitHub username if you defined that in your
+.gitconfig with a command below:
+>
+	$ git config github.user YOUR_GITHUB_USER_NAME
+<
+If you prefer to directly specify your GitHub username, use
+|g:gista#client#default_username| or if you would like to use vim-gista as an
+anonymouse mode in default, disable resolving GitHub username by specifing 0
+to |g:gista#client#use_git_config_github_username|.
 
 If you would like to login your GitHub Enterprise API, use
 |gista#client#register()| function to register your API like:
@@ -257,7 +264,9 @@ All commands provide -h/--help to quickly show an usage of the command.
 
 	Login into API of {APINAME} with {username}. If {APINAME} is omited,
 	a current {APINAME} or |g:gista#client#default_apiname| is used.
-	If {username} is omited, |g:gista#client#default_username| is used.
+	If {username} is omited, |g:gista#client#default_username| is used or
+	the username will be obtained from 'git config github.user' when
+	|g:gista#client#use_git_config_github_username| is 1.
 	All posterior commands use an user account authorized with this
 	command.
 	See |vim-gista-authorization| if you would like to use your GitHub
