@@ -76,18 +76,8 @@ def _vim_vital_web_api_github_main():
                 req.get_method = lambda: method
         else:
             req = Request(url, headers=headers)
-        if hasattr(ssl, '_create_unverified_context'):
-            context = ssl._create_unverified_context()
-        elif hasattr(ssl, '_create_stdlib_context'):
-            context = ssl._create_stdlib_context()
-        elif hasattr(ssl, 'SSLContext'):
-            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-        else:
-            context = None
-        if context:
-            res = urlopen(req, context=context)
-        else:
-            res = urlopen(req)
+        context = ssl._create_unverified_context()
+        res = urlopen(req, context=context)
         if not hasattr(res, 'getheader'):
             # urllib2 does not have getheader
             res.getheader = lambda name, self=res: self.info().getheader(name)
