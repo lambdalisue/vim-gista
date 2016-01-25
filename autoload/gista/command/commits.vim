@@ -2,12 +2,11 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 let s:V = gista#vital()
-let s:C = s:V.import('Vim.Compat')
-let s:S = s:V.import('Data.String')
-let s:D = s:V.import('Data.Dict')
-let s:L = s:V.import('Data.List')
-let s:A = s:V.import('ArgumentParser')
-let s:N = s:V.import('Vim.Buffer.Anchor')
+let s:String = s:V.import('Data.String')
+let s:Dict = s:V.import('Data.Dict')
+let s:List = s:V.import('Data.List')
+let s:ArgumentParser = s:V.import('ArgumentParser')
+let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 
 let s:PRIVATE_GISTID = repeat('*', 20)
 let s:MODES = [
@@ -41,7 +40,7 @@ let s:entry_offset = 0
 
 function! s:truncate(str, width) abort
   let suffix = strdisplaywidth(a:str) > a:width ? '...' : '   '
-  return s:S.truncate(a:str, a:width - 4) . suffix
+  return s:String.truncate(a:str, a:width - 4) . suffix
 endfunction
 function! s:format_entry(entry) abort
   let fetched = a:entry._gista_fetched ? '=' : '-'
@@ -254,7 +253,7 @@ function! gista#command#commits#redraw() abort
           \ 'redraw() requires to be called in a gista-commits buffer'
           \)
   endif
-  let prologue = s:L.flatten([
+  let prologue = s:List.flatten([
         \ g:gista#command#commits#show_status_string_in_prologue
         \   ? [gista#command#commits#get_status_string() . ' | Press ? to toggle a mapping help']
         \   : [],
@@ -322,7 +321,7 @@ function! s:action_edit(startline, endline, ...) abort
       endfor
       call filter(entries, '!empty(v:val)')
       if !empty(entries) && anchor
-        call s:N.focus()
+        call s:Anchor.focus()
       endif
       for entry in entries
         call gista#command#open#open({
@@ -356,7 +355,7 @@ function! s:action_json(startline, endline, ...) abort
       endfor
       call filter(entries, '!empty(v:val)')
       if !empty(entries) && anchor
-        call s:N.focus()
+        call s:Anchor.focus()
       endif
       for entry in entries
         call gista#command#json#open({
@@ -405,7 +404,7 @@ endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
-    let s:parser = s:A.new({
+    let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gista commits',
           \ 'description': [
           \   'List commits of a gist',
@@ -414,7 +413,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'A way to open a new buffer such as "edit", "split", etc.', {
-          \   'type': s:A.types.value,
+          \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
           \ 'gistid',

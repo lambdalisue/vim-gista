@@ -2,8 +2,8 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 let s:V = gista#vital()
-let s:D = s:V.import('Data.Dict')
-let s:A = s:V.import('ArgumentParser')
+let s:Dict = s:V.import('Data.Dict')
+let s:ArgumentParser = s:V.import('ArgumentParser')
 
 let s:registry = {}
 
@@ -42,7 +42,7 @@ endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
-    let s:parser = s:A.new({
+    let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gista',
           \ 'description': [
           \   'A gist manipulation command',
@@ -115,12 +115,12 @@ function! gista#command#command(...) abort
     if name ==# 'login'
       call gista#command#login#command(
             \ bang, range, args,
-            \ s:D.pick(options, ['apiname', 'username']),
+            \ s:Dict.pick(options, ['apiname', 'username']),
             \)
     elseif name ==# 'logout'
       call gista#command#logout#command(
             \ bang, range, args,
-            \ s:D.pick(options, ['apiname']),
+            \ s:Dict.pick(options, ['apiname']),
             \)
     elseif name ==# 'status'
       call gista#command#status#command(
@@ -151,12 +151,12 @@ function! gista#command#complete(arglead, cmdline, cursorpos, ...) abort
     if name ==# 'login'
       return gista#command#login#complete(
             \ a:arglead, cmdline, a:cursorpos,
-            \ s:D.pick(options, ['apiname', 'username']),
+            \ s:Dict.pick(options, ['apiname', 'username']),
             \)
     elseif name ==# 'logout'
       return gista#command#logout#complete(
             \ a:arglead, cmdline, a:cursorpos,
-            \ s:D.pick(options, ['apiname']),
+            \ s:Dict.pick(options, ['apiname']),
             \)
     elseif name ==# 'status'
       return gista#command#status#complete(

@@ -2,8 +2,8 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 let s:V = gista#vital()
-let s:L = s:V.import('Data.List')
-let s:A = s:V.import('ArgumentParser')
+let s:List = s:V.import('Data.List')
+let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:get_content(expr) abort
   let content = join(bufexists(a:expr)
@@ -14,7 +14,7 @@ function! s:get_content(expr) abort
   return { 'content': content }
 endfunction
 function! s:assign_gista_filenames(gistid, bufnums) abort
-  let winnums = s:L.uniq(map(copy(a:bufnums), 'bufwinnr(v:val)'))
+  let winnums = s:List.uniq(map(copy(a:bufnums), 'bufwinnr(v:val)'))
   let previous = winnr()
   for winnum in winnums
     execute printf('keepjump %dwincmd w', winnum)
@@ -60,16 +60,16 @@ endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
-    let s:parser = s:A.new({
+    let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gista patch',
           \ 'description': 'Patch a current buffer content into an existing gist',
-          \ 'complete_unknown': s:A.complete_files,
+          \ 'complete_unknown': s:ArgumentParser.complete_files,
           \ 'unknown_description': '[filename, ...]',
           \})
     call s:parser.add_argument(
           \ '--description', '-d',
           \ 'A description of a gist', {
-          \   'type': s:A.types.value,
+          \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
           \ '--force', '-f',

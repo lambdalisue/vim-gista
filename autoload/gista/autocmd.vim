@@ -1,9 +1,6 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-let s:V = gista#vital()
-let s:C = s:V.import('Vim.Compat')
-
 function! s:is_patchable(gista) abort
   let client = gista#client#get()
   let username = client.get_authorized_username()

@@ -2,12 +2,11 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 let s:V = gista#vital()
-let s:C = s:V.import('Vim.Compat')
-let s:S = s:V.import('Data.String')
-let s:D = s:V.import('Data.Dict')
-let s:L = s:V.import('Data.List')
-let s:A = s:V.import('ArgumentParser')
-let s:N = s:V.import('Vim.Buffer.Anchor')
+let s:String = s:V.import('Data.String')
+let s:Dict = s:V.import('Data.Dict')
+let s:List = s:V.import('Data.List')
+let s:ArgumentParser = s:V.import('ArgumentParser')
+let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 
 let s:PRIVATE_GISTID = repeat('*', 20)
 let s:MODES = [
@@ -54,7 +53,7 @@ let s:entry_offset = 0
 
 function! s:truncate(str, width) abort
   let suffix = strdisplaywidth(a:str) > a:width ? '...' : '   '
-  return s:S.truncate(a:str, a:width - 4) . suffix
+  return s:String.truncate(a:str, a:width - 4) . suffix
 endfunction
 function! s:format_entry(entry) abort
   let gistid = a:entry.public
@@ -290,7 +289,7 @@ function! gista#command#list#open(...) abort
         \ 'username': username,
         \ 'lookup': lookup,
         \ 'entries': s:sort_entries(index.entries),
-        \ 'options': s:D.omit(options, ['cache']),
+        \ 'options': s:Dict.omit(options, ['cache']),
         \ 'content_type': 'list',
         \}
   call s:define_plugin_mappings()
@@ -344,7 +343,7 @@ function! gista#command#list#redraw() abort
           \ 'redraw() requires to be called in a gista-list buffer'
           \)
   endif
-  let prologue = s:L.flatten([
+  let prologue = s:List.flatten([
         \ g:gista#command#list#show_status_string_in_prologue
         \   ? [gista#command#list#get_status_string() . ' | Press ? to toggle a mapping help']
         \   : [],
@@ -412,7 +411,7 @@ function! s:action_edit(startline, endline, ...) abort
       endfor
       call filter(entries, '!empty(v:val)')
       if !empty(entries) && anchor
-        call s:N.focus()
+        call s:Anchor.focus()
       endif
       for entry in entries
         call gista#command#open#open({
@@ -446,7 +445,7 @@ function! s:action_json(startline, endline, ...) abort
       endfor
       call filter(entries, '!empty(v:val)')
       if !empty(entries) && anchor
-        call s:N.focus()
+        call s:Anchor.focus()
       endif
       for entry in entries
         call gista#command#json#open({
@@ -677,7 +676,7 @@ endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
-    let s:parser = s:A.new({
+    let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gista[!] list',
           \ 'description': [
           \   'List gists of a paricular lookup.',
@@ -692,7 +691,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'A way to open a new buffer such as "edit", "split", etc.', {
-          \   'type': s:A.types.value,
+          \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
           \ '--cache',
@@ -705,7 +704,7 @@ function! s:get_parser() abort
           \   'Request gists created/updated later than a paricular timestamp',
           \   'in ISO 8601 format:YYYY-MM-DDTHH:MM:SSZ',
           \ ], {
-          \   'type': s:A.types.any,
+          \   'type': s:ArgumentParser.types.any,
           \   'deniable': 1,
           \   'pattern': '\%(\|\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\%(Z\|\[+-]\d{4}\)\)',
           \ })

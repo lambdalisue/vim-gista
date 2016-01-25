@@ -2,10 +2,10 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 let s:V = gista#vital()
-let s:L = s:V.import('Data.List')
-let s:D = s:V.import('Data.Dict')
-let s:J = s:V.import('Web.JSON')
-let s:G = s:V.import('Web.API.GitHub')
+let s:List = s:V.import('Data.List')
+let s:Dict = s:V.import('Data.Dict')
+let s:JSON = s:V.import('Web.JSON')
+let s:GitHub = s:V.import('Web.API.GitHub')
 
 let s:CACHE_DISABLED = 0
 let s:CACHE_ENABLED  = 1
@@ -22,8 +22,8 @@ function! gista#resource#remote#is_modified(lhs, rhs) abort
         \ '_gista_modified',
         \ '_gista_last_modified',
         \]
-  let lhs = s:D.omit(a:lhs, unnecessary_fields)
-  let rhs = s:D.omit(a:rhs, unnecessary_fields)
+  let lhs = s:Dict.omit(a:lhs, unnecessary_fields)
+  let rhs = s:Dict.omit(a:rhs, unnecessary_fields)
   return lhs != rhs
 endfunction
 
@@ -55,13 +55,13 @@ function! gista#resource#remote#get(gistid, ...) abort
     return extend(copy(local_gist), { '_gista_modified': 0 })
   elseif res.status == 200
     let res.content = get(res, 'content', '')
-    let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+    let res.content = empty(res.content) ? {} : s:JSON.decode(res.content)
     let gist = res.content
     " Note:
     " gistid might contain version info thus overwrite it
     let gist.id = a:gistid
     let gist._gista_fetched = 1
-    let gist._gista_last_modified = s:G.parse_response_last_modified(res)
+    let gist._gista_last_modified = s:GitHub.parse_response_last_modified(res)
     call gista#util#prompt#indicate(options, printf(
           \ 'Updating local caches of a gist %s in %s ...',
           \ a:gistid, client.apiname,
@@ -189,11 +189,11 @@ function! gista#resource#remote#post(filenames, contents, ...) abort
   " Create a gist instance
   let gist = {
         \ 'description': options.description,
-        \ 'public': options.public ? s:J.true : s:J.false,
+        \ 'public': options.public ? s:JSON.true : s:JSON.false,
         \ 'files': {},
         \}
   let counter = 1
-  for [filename, content] in s:L.zip(a:filenames, a:contents)
+  for [filename, content] in s:List.zip(a:filenames, a:contents)
     if empty(filename)
       let filename = printf('gista-file%d', counter)
       let counter += 1
@@ -209,10 +209,10 @@ function! gista#resource#remote#post(filenames, contents, ...) abort
   redraw
   if res.status == 201
     let res.content = get(res, 'content', '')
-    let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+    let res.content = empty(res.content) ? {} : s:JSON.decode(res.content)
     let gist = res.content
     let gist._gista_fetched = 1
-    let gist._gista_last_modified = s:G.parse_response_last_modified(res)
+    let gist._gista_last_modified = s:GitHub.parse_response_last_modified(res)
     call gista#util#prompt#indicate(options, printf(
           \ 'Updating local caches of a gist %s in %s ...',
           \ gist.id, client.apiname,
@@ -261,11 +261,11 @@ function! gista#resource#remote#patch(gistid, ...) abort
   if type(options.description) == type('')
     let partial.description = options.description
   endif
-  for [filename, content] in s:L.zip(options.filenames, options.contents)
+  for [filename, content] in s:List.zip(options.filenames, options.contents)
     if empty(content)
-      let partial.files[filename] = s:J.null
+      let partial.files[filename] = s:JSON.null
     else
-      let partial.files[filename] = s:D.pick(content, [
+      let partial.files[filename] = s:Dict.pick(content, [
             \ 'filename',
             \ 'content',
             \])
@@ -281,10 +281,10 @@ function! gista#resource#remote#patch(gistid, ...) abort
   redraw
   if res.status == 200
     let res.content = get(res, 'content', '')
-    let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+    let res.content = empty(res.content) ? {} : s:JSON.decode(res.content)
     let gist = res.content
     let gist._gista_fetched = 1
-    let gist._gista_last_modified = s:G.parse_response_last_modified(res)
+    let gist._gista_last_modified = s:GitHub.parse_response_last_modified(res)
     call gista#util#prompt#indicate(options, printf(
           \ 'Updating local caches of a gist %s in %s ...',
           \ gist.id, client.apiname,
@@ -416,10 +416,10 @@ function! gista#resource#remote#fork(gistid, ...) abort
   redraw
   if res.status == 201
     let res.content = get(res, 'content', '')
-    let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+    let res.content = empty(res.content) ? {} : s:JSON.decode(res.content)
     let gist = res.content
     let gist._gista_fetched = 1
-    let gist._gista_last_modified = s:G.parse_response_last_modified(res)
+    let gist._gista_last_modified = s:GitHub.parse_response_last_modified(res)
     call gista#util#prompt#indicate(options, printf(
           \ 'Updating local caches of a gist %s in %s ...',
           \ gist.id, client.apiname,
@@ -444,7 +444,7 @@ function! gista#resource#remote#commits(gistid, ...) abort
   redraw
   if res.status == 200
     let res.content = get(res, 'content', '')
-    let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+    let res.content = empty(res.content) ? {} : s:JSON.decode(res.content)
     let commits = res.content
     return commits
   endif

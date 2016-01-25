@@ -2,7 +2,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 let s:V = gista#vital()
-let s:A = s:V.import('ArgumentParser')
+let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! gista#command#unstar#call(...) abort
   let options = extend({
@@ -31,7 +31,7 @@ endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
-    let s:parser = s:A.new({
+    let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gista unstar',
           \ 'description': 'Unstar an existing gist',
           \})

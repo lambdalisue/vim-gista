@@ -2,29 +2,29 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 let s:V = gista#vital()
-let s:C = s:V.import('System.Cache')
-let s:P = s:V.import('System.Filepath')
-let s:G = s:V.import('Web.API.GitHub')
-let s:R = s:V.import('Process')
+let s:Cache = s:V.import('System.Cache')
+let s:Path = s:V.import('System.Filepath')
+let s:GitHub = s:V.import('Web.API.GitHub')
+let s:Process = s:V.import('Process')
 
 let s:registry = {}
 let s:current_client = {}
 
 function! s:get_client_cache() abort
   if !exists('s:client_cache')
-    let s:client_cache = s:C.new('memory')
+    let s:client_cache = s:Cache.new('memory')
   endif
   return s:client_cache
 endfunction 
 function! s:get_token_cache(apiname) abort
   if !exists('s:token_cache')
-    let s:token_cache = s:C.new('memory')
+    let s:token_cache = s:Cache.new('memory')
   endif
   if s:token_cache.has(a:apiname)
     return s:token_cache.get(a:apiname)
   endif
-  let cache_file = expand(s:P.join(g:gista#client#cache_dir, 'token', a:apiname))
-  let token_cache = s:C.new('singlefile', {
+  let cache_file = expand(s:Path.join(g:gista#client#cache_dir, 'token', a:apiname))
+  let token_cache = s:Cache.new('singlefile', {
         \ 'cache_file': cache_file,
         \ 'autodump': 1,
         \})
@@ -33,13 +33,13 @@ function! s:get_token_cache(apiname) abort
 endfunction 
 function! s:get_index_cache(apiname) abort
   if !exists('s:index_cache')
-    let s:index_cache = s:C.new('memory')
+    let s:index_cache = s:Cache.new('memory')
   endif
   if s:index_cache.has(a:apiname)
     return s:index_cache.get(a:apiname)
   endif
-  let cache_dir = expand(s:P.join(g:gista#client#cache_dir, 'index', a:apiname))
-  let index_cache = s:C.new('file', {
+  let cache_dir = expand(s:Path.join(g:gista#client#cache_dir, 'index', a:apiname))
+  let index_cache = s:Cache.new('file', {
         \ 'cache_dir': cache_dir,
         \})
   call s:index_cache.set(a:apiname, index_cache)
@@ -47,13 +47,13 @@ function! s:get_index_cache(apiname) abort
 endfunction
 function! s:get_gist_cache(apiname) abort
   if !exists('s:gist_cache')
-    let s:gist_cache = s:C.new('memory')
+    let s:gist_cache = s:Cache.new('memory')
   endif
   if s:gist_cache.has(a:apiname)
     return s:gist_cache.get(a:apiname)
   endif
-  let cache_dir = expand(s:P.join(g:gista#client#cache_dir, 'gist', a:apiname))
-  let gist_cache = s:C.new('file', {
+  let cache_dir = expand(s:Path.join(g:gista#client#cache_dir, 'gist', a:apiname))
+  let gist_cache = s:Cache.new('file', {
         \ 'cache_dir': cache_dir,
         \})
   call s:gist_cache.set(a:apiname, gist_cache)
@@ -61,13 +61,13 @@ function! s:get_gist_cache(apiname) abort
 endfunction
 function! s:get_starred_cache(apiname) abort
   if !exists('s:starred_cache')
-    let s:starred_cache = s:C.new('memory')
+    let s:starred_cache = s:Cache.new('memory')
   endif
   if s:starred_cache.has(a:apiname)
     return s:starred_cache.get(a:apiname)
   endif
-  let cache_dir = expand(s:P.join(g:gista#client#cache_dir, 'starred', a:apiname))
-  let starred_cache = s:C.new('file', {
+  let cache_dir = expand(s:Path.join(g:gista#client#cache_dir, 'starred', a:apiname))
+  let starred_cache = s:Cache.new('file', {
         \ 'cache_dir': cache_dir,
         \})
   call s:starred_cache.set(a:apiname, starred_cache)
@@ -111,7 +111,7 @@ function! s:get_default_username(apiname) abort
     let username = get(g:gista#client#default_username, a:apiname, default)
   endif
   if g:gista#client#use_git_config_github_user && empty(username)
-    let username = s:R.system('git config github.user')
+    let username = s:Process.system('git config github.user')
     let username = substitute(username, '\([^\r\n]\+\).*', '\1', '')
   endif
   if empty(username)
@@ -157,7 +157,7 @@ function! s:logout(client, options) abort
   endtry
 endfunction
 function! s:new_client(apiname) abort
-  let client = s:G.new({
+  let client = s:GitHub.new({
         \ 'baseurl': s:registry[a:apiname],
         \ 'token_cache': s:get_token_cache(a:apiname),
         \})
@@ -299,7 +299,7 @@ function! gista#client#get_valid_username(apiname, username) abort
 endfunction
 
 function! gista#client#throw(response) abort
-  call gista#throw(s:G.build_exception_message(a:response))
+  call gista#throw(s:GitHub.build_exception_message(a:response))
 endfunction
 
 let s:session = {}
@@ -350,7 +350,7 @@ endfunction
 call gista#client#register('GitHub', 'https://api.github.com')
 
 " Configure Web.API.GitHub
-call s:G.set_config({
+call s:GitHub.set_config({
       \ 'authorize_scopes': ['gist'],
       \ 'authorize_note': printf('vim-gista@%s', hostname()),
       \ 'authorize_note_url': 'https://github.com/lambdalisue/vim-gista',
