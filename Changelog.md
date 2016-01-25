@@ -1,4 +1,27 @@
-### HEAD (Wed Jan 20 23:57:01 2016 +0900)
+### HEAD (Mon Jan 25 22:49:27 2016 +0900)
+
+- Add document about gf mapping (Thu Jan 21 00:22:03 2016 +0900) [b4b6f78](https://github.com/lambdalisue/vim-gista/commit/b4b6f786f2ff96ed0a8c9f2db822212625a222f4)
+- Import default username from 'git config github.user' (Thu Jan 21 23:45:59 2016 +0900) [424eb78](https://github.com/lambdalisue/vim-gista/commit/424eb78919387b6d4d79e339ff1450bdf83365c8)
+- Initialize variables before call (Fri Jan 22 11:51:56 2016 +0900) [c9e79e0](https://github.com/lambdalisue/vim-gista/commit/c9e79e0d0f6168b260697548a7d8d40fa7bec321)
+- Add a switch variable and use s:Process.system() (Fri Jan 22 21:46:04 2016 +0900) [ef76b42](https://github.com/lambdalisue/vim-gista/commit/ef76b4293bdb48abdc0437ed4c3c7a08c5b974ce)
+- Doc: Add g:gista#client#use_git_config_github_user (Sat Jan 23 00:34:45 2016 +0900) [debdb52](https://github.com/lambdalisue/vim-gista/commit/debdb52b6e3586d79e374b7cd86a77a3eb6721df)
+- Merge pull request #64 from tyru/git-config-github-user (Sat Jan 23 00:45:55 2016 +0900) [2021858](https://github.com/lambdalisue/vim-gista/commit/2021858d9cada2289a866387ba728dd025093aa1)
+- Simplify validate method (Sat Jan 23 19:44:56 2016 +0900) [ed6cc66](https://github.com/lambdalisue/vim-gista/commit/ed6cc6639f5f56446f58fef84c3ea8ec2d305702)
+- Add document about g:gista#client#use_git_config_github_username (Sat Jan 23 19:51:14 2016 +0900) [b242aac](https://github.com/lambdalisue/vim-gista/commit/b242aacc301e051973a5f966745383a48db58932)
+- Add short option names (Sat Jan 23 19:58:17 2016 +0900) [d830556](https://github.com/lambdalisue/vim-gista/commit/d830556ac0f9c3056045b569c7c5f2c10c9aef15)
+- Be product mode (Sat Jan 23 20:06:42 2016 +0900) [b3de38d](https://github.com/lambdalisue/vim-gista/commit/b3de38deb1c1593eb9f1d2807369768f7e6c280a)
+- Add g:gista#avars, which is used in GistaXXXXX autocmd (Mon Jan 25 20:14:51 2016 +0900) [82af8cc](https://github.com/lambdalisue/vim-gista/commit/82af8ccf73108fa0f3659ac2a15a2f610548302d)
+- Refactoring: Use longer name for vital modules (Mon Jan 25 20:26:07 2016 +0900) [c9ca601](https://github.com/lambdalisue/vim-gista/commit/c9ca601eb934ca2c9b1551ba78da427be4da779e)
+- Remove save_cpo things (Mon Jan 25 20:31:07 2016 +0900) [027ebe0](https://github.com/lambdalisue/vim-gista/commit/027ebe082a1086e4636cd43a66d3f715d29ae719)
+- Refactoring return values of each #call function (Mon Jan 25 20:54:10 2016 +0900) [c6638c1](https://github.com/lambdalisue/vim-gista/commit/c6638c13e663ec77fe470803da0d3f9c526852db)
+- Add User autocmd to custom behavior (Mon Jan 25 21:04:52 2016 +0900) [2e72ee3](https://github.com/lambdalisue/vim-gista/commit/2e72ee3359a35d58ecdd40f4a41cfaba0de4027a)
+- Fix autocmd (Mon Jan 25 22:04:12 2016 +0900) [0b3819e](https://github.com/lambdalisue/vim-gista/commit/0b3819e01d74458183d2b20b001ae0f19a199254)
+- Update vital (Mon Jan 25 22:16:32 2016 +0900) [3cb73f3](https://github.com/lambdalisue/vim-gista/commit/3cb73f384c49cfe1571979836d3054f375e40a87)
+- Fix test in local (Mon Jan 25 22:23:51 2016 +0900) [aa7e2f3](https://github.com/lambdalisue/vim-gista/commit/aa7e2f3a9426b9376baff0f600cffd720a019fec)
+- Remove unnecessary autocmd (Mon Jan 25 22:32:03 2016 +0900) [d1d63bb](https://github.com/lambdalisue/vim-gista/commit/d1d63bb532533363f6485c2a780e41c3aace60c0)
+- Update Vital (Mon Jan 25 22:49:27 2016 +0900) [07aa6a9](https://github.com/lambdalisue/vim-gista/commit/07aa6a9bf7b2d520671600132f90d07ad5cf50e1)
+
+### v2.2.0 (Thu Jan 21 00:00:59 2016 +0900)
 
 - Fix actions on multiple gists in gista-list/gista-commit window (Tue Jan 19 22:43:25 2016 +0900) [5364959](https://github.com/lambdalisue/vim-gista/commit/5364959242c0671336049fdd9eeacbf685d19aee)
 - Improve error handling in session (Wed Jan 20 10:32:08 2016 +0900) [126185a](https://github.com/lambdalisue/vim-gista/commit/126185ab962434499faa3e50a33e3ec548241983)
@@ -23,6 +46,8 @@
 - Follow vimlint (Wed Jan 20 23:50:34 2016 +0900) [168dd06](https://github.com/lambdalisue/vim-gista/commit/168dd0613fd8e9c67bb87699162fb9ba5f798220)
 - Merge pull request #62 from lambdalisue/feature/vitalize (Wed Jan 20 23:52:56 2016 +0900) [30c7372](https://github.com/lambdalisue/vim-gista/commit/30c7372527921c1de7b997c7be3e9a90a8ad48f9)
 - Add external vital modules to doc (Wed Jan 20 23:57:01 2016 +0900) [b45109e](https://github.com/lambdalisue/vim-gista/commit/b45109e0acf64fb1b7bc2ab38194e32ea997e217)
+- Update changelog (Thu Jan 21 00:00:20 2016 +0900) [88ffd26](https://github.com/lambdalisue/vim-gista/commit/88ffd26721734d774276d9213281c7fb544dc0ab)
+- Bump version (Thu Jan 21 00:00:40 2016 +0900) [1f62c1d](https://github.com/lambdalisue/vim-gista/commit/1f62c1d16e12893a64cad080a98e83f40d86c26b)
 
 ### v2.1.0 (Tue Jan 19 21:47:07 2016 +0900)
 
