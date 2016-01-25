@@ -12,12 +12,14 @@ Describe gista#client
   End
   Before
     let guard = s:G.store(
+          \ 'g:gista#client#use_git_config_github_user',
           \ 'g:gista#client#default_apiname',
           \ 'g:gista#client#default_username',
           \ ['current_client', sv],
           \ ['registry', sv],
-          \ ['G', sv],
+          \ ['GitHub', sv],
           \)
+    let g:gista#client#use_git_config_github_user = 0
     let g:gista#client#default_apiname = 'A'
     let g:gista#client#default_username = ''
     let sv.current_client = {}
