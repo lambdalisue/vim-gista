@@ -171,6 +171,7 @@ function! gista#command#commits#call(...) abort
         \ 'entries': entries,
         \ 'commits': commits,
         \}
+  silent call gista#util#doautocmd('CommitsPost', result)
   return result
 endfunction
 function! gista#command#commits#open(...) abort
@@ -219,6 +220,7 @@ function! gista#command#commits#open(...) abort
   setlocal nomodifiable
   setlocal filetype=gista-commits
   call gista#command#commits#redraw()
+  silent call gista#util#doautocmd('Commits', result)
 endfunction
 function! gista#command#commits#update(...) abort
   if &filetype !=# 'gista-commits'
@@ -247,6 +249,7 @@ function! gista#command#commits#update(...) abort
         \ 'content_type': 'commits',
         \}
   call gista#command#commits#redraw()
+  silent call gista#util#doautocmd('CommitsUpdate', result)
 endfunction
 function! gista#command#commits#redraw() abort
   if &filetype !=# 'gista-commits'
@@ -281,7 +284,7 @@ function! s:on_WinEnter() abort
     call gista#command#commits#redraw()
   endif
 endfunction
-function! s:on_GistaCacheUpdatePost() abort
+function! s:on_GistaUpdate() abort
   let winnum = winnr()
   keepjump windo
         \ if &filetype ==# 'gista-commits' |
@@ -480,7 +483,17 @@ endfunction
 
 augroup vim_gista_update_commits
   autocmd!
-  autocmd User GistaCacheUpdatePost call s:on_GistaCacheUpdatePost()
+  autocmd User GistaJson call s:on_GistaUpdate()
+  autocmd User GistaOpen call s:on_GistaUpdate()
+  autocmd User GistaBrowse call s:on_GistaUpdate()
+  autocmd User GistaPost call s:on_GistaUpdate()
+  autocmd User GistaPatch call s:on_GistaUpdate()
+  autocmd User GistaRename call s:on_GistaUpdate()
+  autocmd User GistaRemove call s:on_GistaUpdate()
+  autocmd User GistaDelete call s:on_GistaUpdate()
+  autocmd User GistaFork call s:on_GistaUpdate()
+  autocmd User GistaStar call s:on_GistaUpdate()
+  autocmd User GistaUnstar call s:on_GistaUpdate()
 augroup END
 
 call gista#define_variables('command#commits', {

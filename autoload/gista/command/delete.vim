@@ -23,7 +23,6 @@ function! gista#command#delete#call(...) abort
       endif
     endif
     call gista#resource#remote#delete(gistid, options)
-    silent call gista#util#doautocmd('CacheUpdatePost')
     call gista#util#prompt#indicate(options, printf(
           \ 'A gist %s is deleted from %s',
           \ gistid, client.apiname,
@@ -31,6 +30,7 @@ function! gista#command#delete#call(...) abort
     let result = {
           \ 'gistid': gistid,
           \}
+    silent call gista#util#doautocmd('Delete', result)
     return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)

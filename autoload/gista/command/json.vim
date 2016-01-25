@@ -33,7 +33,7 @@ function! gista#command#json#read(...) abort
   let content = split(s:JSON.encode(result.gist, { 'indent': 2 }), "\r\\?\n")
   call gista#util#buffer#read_content(content)
   silent doautocmd FileReadPost
-  silent call gista#util#doautocmd('CacheUpdatePost')
+  silent call gista#util#doautocmd('JsonRead', result)
 endfunction
 function! gista#command#json#edit(...) abort
   silent doautocmd BufReadPre
@@ -57,7 +57,7 @@ function! gista#command#json#edit(...) abort
   setlocal nomodifiable
   setlocal filetype=json
   silent doautocmd BufReadPost
-  silent call gista#util#doautocmd('CacheUpdatePost')
+  silent call gista#util#doautocmd('Json', result)
 endfunction
 function! gista#command#json#open(...) abort
   let options = extend({

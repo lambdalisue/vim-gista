@@ -41,7 +41,6 @@ function! gista#command#patch#call(...) abort
     let gist = gista#resource#remote#patch(gistid, options)
     " Assign gista filename to buffer existing in the current tabpage 
     call s:assign_gista_filenames(gist.id, options.bufnums)
-    silent call gista#util#doautocmd('CacheUpdatePost')
     let client = gista#client#get()
     call gista#util#prompt#indicate(options, printf(
           \ 'Changes of %s in gist %s is posted to %s',
@@ -52,6 +51,7 @@ function! gista#command#patch#call(...) abort
           \ 'gistid': gistid,
           \ 'filenames': options.filenames,
           \}
+    silent call gista#util#doautocmd('Patch', result)
     return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)

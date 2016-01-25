@@ -308,6 +308,7 @@ function! gista#command#list#open(...) abort
   setlocal nomodifiable
   setlocal filetype=gista-list
   call gista#command#list#redraw()
+  silent call gista#util#doautocmd('List', result)
 endfunction
 function! gista#command#list#update(...) abort
   if &filetype !=# 'gista-list'
@@ -336,6 +337,7 @@ function! gista#command#list#update(...) abort
         \ 'content_type': 'list',
         \}
   call gista#command#list#redraw()
+  silent call gista#util#doautocmd('ListUpdate', result)
 endfunction
 function! gista#command#list#redraw() abort
   if &filetype !=# 'gista-list'
@@ -370,7 +372,7 @@ function! s:on_WinEnter() abort
     call gista#command#list#redraw()
   endif
 endfunction
-function! s:on_GistaCacheUpdatePost() abort
+function! s:on_GistaUpdate() abort
   let winnum = winnr()
   keepjump windo
         \ if &filetype ==# 'gista-list' |
@@ -785,7 +787,17 @@ endfunction
 
 augroup vim_gista_update_list
   autocmd!
-  autocmd User GistaCacheUpdatePost call s:on_GistaCacheUpdatePost()
+  autocmd User GistaJson call s:on_GistaUpdate()
+  autocmd User GistaOpen call s:on_GistaUpdate()
+  autocmd User GistaBrowse call s:on_GistaUpdate()
+  autocmd User GistaPost call s:on_GistaUpdate()
+  autocmd User GistaPatch call s:on_GistaUpdate()
+  autocmd User GistaRename call s:on_GistaUpdate()
+  autocmd User GistaRemove call s:on_GistaUpdate()
+  autocmd User GistaDelete call s:on_GistaUpdate()
+  autocmd User GistaFork call s:on_GistaUpdate()
+  autocmd User GistaStar call s:on_GistaUpdate()
+  autocmd User GistaUnstar call s:on_GistaUpdate()
 augroup END
 
 call gista#define_variables('command#list', {

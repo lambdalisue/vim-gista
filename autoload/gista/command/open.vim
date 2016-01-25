@@ -37,7 +37,7 @@ function! gista#command#open#read(...) abort
   call gista#util#buffer#read_content(split(result.file.content, '\r\?\n'))
   redraw
   silent doautocmd FileReadPost
-  silent call gista#util#doautocmd('CacheUpdatePost')
+  silent call gista#util#doautocmd('OpenRead', result)
 endfunction
 function! gista#command#open#edit(...) abort
   silent doautocmd BufReadPre
@@ -58,7 +58,7 @@ function! gista#command#open#edit(...) abort
         \}
   call gista#util#buffer#edit_content(split(result.file.content, '\r\?\n'))
   silent doautocmd BufReadPost
-  silent call gista#util#doautocmd('CacheUpdatePost')
+  silent call gista#util#doautocmd('Open', result)
 endfunction
 function! gista#command#open#open(...) abort
   let options = extend({

@@ -13,7 +13,6 @@ function! gista#command#unstar#call(...) abort
           \ : options.gist.id
           \)
     call gista#resource#remote#unstar(gistid, options)
-    silent call gista#util#doautocmd('CacheUpdatePost')
     call gista#util#prompt#indicate(options, printf(
           \ 'A gist %s in %s is unstarred',
           \ gistid, client.apiname,
@@ -21,6 +20,7 @@ function! gista#command#unstar#call(...) abort
     let result = {
           \ 'gistid': gistid,
           \}
+    silent call gista#util#doautocmd('Unstar', result)
     return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)

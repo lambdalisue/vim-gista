@@ -11,7 +11,6 @@ function! gista#command#fork#call(...) abort
           \ : options.gist.id
           \)
     let gist = gista#resource#remote#fork(gistid, options)
-    silent call gista#util#doautocmd('CacheUpdatePost')
     let client = gista#client#get()
     call gista#util#prompt#indicate(options, printf(
           \ 'A gist %s in %s is forked to %s',
@@ -21,6 +20,7 @@ function! gista#command#fork#call(...) abort
           \ 'gist': gist,
           \ 'gistid': gistid,
           \}
+    silent call gista#util#doautocmd('Fork', result)
     return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)

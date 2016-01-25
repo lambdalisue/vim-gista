@@ -16,6 +16,7 @@ function! gista#command#status#call(...) abort
         \ printf('Filename : %s', get(gista, 'filename', '')),
         \]
   echo join(messages, "\n")
+  silent call gista#util#doautocmd('Status')
   return {}
 endfunction
 

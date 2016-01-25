@@ -42,6 +42,7 @@ function! gista#command#browse#open(...) abort
   if !empty(result)
     call s:File.open(result.url)
   endif
+  silent call gista#util#doautocmd('Browse', result)
 endfunction
 function! gista#command#browse#yank(...) abort
   let options = extend({}, get(a:000, 0, {}))
@@ -49,6 +50,7 @@ function! gista#command#browse#yank(...) abort
   if !empty(result)
     call gista#util#clip(result.url)
   endif
+  silent call gista#util#doautocmd('Browse', result)
 endfunction
 function! gista#command#browse#echo(...) abort
   let options = extend({}, get(a:000, 0, {}))
@@ -56,6 +58,7 @@ function! gista#command#browse#echo(...) abort
   if !empty(result)
     echo result.url
   endif
+  silent call gista#util#doautocmd('Browse', result)
 endfunction
 
 function! s:get_parser() abort

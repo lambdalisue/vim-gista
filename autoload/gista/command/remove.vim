@@ -30,7 +30,6 @@ function! gista#command#remove#call(...) abort
           \ 'filenames': [filename],
           \ 'contents': [{}],
           \})
-    silent call gista#util#doautocmd('CacheUpdatePost')
     call gista#util#prompt#indicate(options, printf(
           \ 'A %s is removed from a gist %s in %s',
           \ filename, gistid, client.apiname,
@@ -40,6 +39,7 @@ function! gista#command#remove#call(...) abort
           \ 'gistid': gistid,
           \ 'filename': filename,
           \}
+    silent call gista#util#doautocmd('Remove', result)
     return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)

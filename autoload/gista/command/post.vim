@@ -62,8 +62,6 @@ function! gista#command#post#call(...) abort
     let client = gista#client#get()
     " Assign gista filename to buffer existing in the current tabpage
     call s:assign_gista_filenames(gist.id, options.bufnums)
-    silent call gista#util#doautocmd('CacheUpdatePost')
-    redraw
     call gista#util#prompt#indicate(options, printf(
           \ 'A content of the current buffer is posted to a gist %s in %s',
           \ gist.id, client.apiname,
@@ -73,6 +71,7 @@ function! gista#command#post#call(...) abort
           \ 'gistid': gist.id,
           \ 'filenames': options.filenames,
           \}
+    silent call gista#util#doautocmd('Post', result)
     return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)

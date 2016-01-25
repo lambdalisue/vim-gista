@@ -33,7 +33,6 @@ function! gista#command#rename#call(...) abort
           \   'content': gist.files[filename].content,
           \ }],
           \})
-    silent call gista#util#doautocmd('CacheUpdatePost')
     let client = gista#client#get()
     call gista#util#prompt#indicate(options, printf(
           \ 'A %s in a gist %s in %s is renamed to %s',
@@ -45,6 +44,7 @@ function! gista#command#rename#call(...) abort
           \ 'filename': filename,
           \ 'new_filename': new_filename,
           \}
+    silent call gista#util#doautocmd('Rename', result)
     return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)

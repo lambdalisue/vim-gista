@@ -22,6 +22,7 @@ function! gista#command#login#call(...) abort
           \ 'apiname': apiname,
           \ 'username': username,
           \}
+    silent call gista#util#doautocmd('Login', result)
     return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)

@@ -13,6 +13,7 @@ function! gista#command#logout#call(...) abort
     let result = {
           \ 'apiname': apiname,
           \}
+    silent call gista#util#doautocmd('Logout', result)
     return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
