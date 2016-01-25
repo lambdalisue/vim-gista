@@ -171,7 +171,6 @@ function! gista#command#commits#call(...) abort
         \ 'entries': entries,
         \ 'commits': commits,
         \}
-  silent call gista#util#doautocmd('CommitsPost', result)
   return result
 endfunction
 function! gista#command#commits#open(...) abort
