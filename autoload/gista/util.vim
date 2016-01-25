@@ -1,6 +1,3 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
 let s:Compat = s:V.import('Vim.Compat')
 let s:Guard = s:V.import('Vim.Guard')
@@ -46,7 +43,3 @@ function! gista#util#handle_exception(exception) abort
   " else
   call gista#util#prompt#error(a:exception)
 endfunction
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

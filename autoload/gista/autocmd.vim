@@ -1,6 +1,3 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 function! s:is_patchable(gista) abort
   let client = gista#client#get()
   let username = client.get_authorized_username()
@@ -163,7 +160,3 @@ endfunction
 
 " Configure variables
 call gista#define_variables('autocmd', {})
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

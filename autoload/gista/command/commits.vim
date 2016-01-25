@@ -1,6 +1,3 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
 let s:String = s:V.import('Data.String')
 let s:Dict = s:V.import('Data.Dict')
@@ -500,7 +497,3 @@ call gista#define_variables('command#commits', {
       \ 'enable_default_mappings': 1,
       \ 'show_status_string_in_prologue': 1,
       \})
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

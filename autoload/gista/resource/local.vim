@@ -1,6 +1,3 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
 let s:List = s:V.import('Data.List')
 
@@ -469,7 +466,3 @@ function! gista#resource#local#get_valid_lookup(lookup) abort
   call s:validate_lookup(client, lookup)
   return lookup
 endfunction
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

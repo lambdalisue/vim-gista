@@ -1,6 +1,3 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = vital#of('vim_gista')
 let s:Compat = s:V.import('Vim.Compat')
 
@@ -82,7 +79,3 @@ call gista#define_variables('', {
       \ 'debug': 0,
       \ 'develop': 0,
       \})
-
-let &cpo = s:save_cpo
-unlet s:save_cpo
-"vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker

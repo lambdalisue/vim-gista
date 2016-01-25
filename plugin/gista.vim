@@ -1,6 +1,3 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 command! -nargs=? -range=% -bang
       \ -complete=customlist,gista#command#complete
       \ Gista
@@ -21,7 +18,3 @@ augroup vim_gista_write_file
   autocmd BufWriteCmd  gista://* call gista#autocmd#call('BufWriteCmd')
   autocmd FileWriteCmd gista://* call gista#autocmd#call('FileWriteCmd')
 augroup END
-
-let &cpo = s:save_cpo
-unlet s:save_cpo
-"vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker

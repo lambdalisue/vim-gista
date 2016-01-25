@@ -1,6 +1,3 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
 let s:List = s:V.import('Data.List')
 
@@ -87,7 +84,3 @@ function! gista#option#complete_lookup(arglead, cmdline, cursorpos, ...) abort
     return []
   endtry
 endfunction
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
