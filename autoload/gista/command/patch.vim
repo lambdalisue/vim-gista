@@ -33,7 +33,6 @@ function! gista#command#patch#call(...) abort
         \ 'contents': [],
         \ 'bufnums': [],
         \}, get(a:000, 0, {}))
-  let gistid = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid
@@ -48,10 +47,15 @@ function! gista#command#patch#call(...) abort
           \ 'Changes of %s in gist %s is posted to %s',
           \ join(options.filenames, ', '), gistid, client.apiname,
           \))
-    return [gist, gistid, options.filenames]
+    let result = {
+          \ 'gist': gist,
+          \ 'gistid': gistid,
+          \ 'filenames': options.filenames,
+          \}
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [{}, gistid, options.filenames]
+    return {}
   endtry
 endfunction
 

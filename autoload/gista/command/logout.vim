@@ -5,16 +5,18 @@ function! gista#command#logout#call(...) abort
   let options = extend({
         \ 'apiname': '',
         \}, get(a:000, 0, {}))
-  let apiname = ''
   try
     let apiname = gista#client#get_valid_apiname(options.apiname)
     call gista#client#set(apiname, { 'username': '' })
     let client = gista#client#get()
     echo printf('Logout from %s', client.apiname)
-    return [apiname]
+    let result = {
+          \ 'apiname': apiname,
+          \}
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [apiname]
+    return {}
   endtry
 endfunction
 

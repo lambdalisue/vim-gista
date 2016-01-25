@@ -14,8 +14,6 @@ function! gista#command#browse#call(...) abort
         \ 'gistid': '',
         \ 'filename': '',
         \}, get(a:000, 0, {}))
-  let gistid = ''
-  let filename = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid
@@ -25,31 +23,38 @@ function! gista#command#browse#call(...) abort
     let filename = empty(options.filename)
           \ ? ''
           \ : gista#resource#local#get_valid_filename(gist, options.filename)
-    return [s:create_url(gist.html_url, filename), gistid, filename]
+    let url = s:create_url(gist.html_url, filename)
+    let result = {
+          \ 'url': url,
+          \ 'gist': gist,
+          \ 'gistid': gistid,
+          \ 'filename': filename,
+          \}
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return ['', gistid, filename]
+    return {}
   endtry
 endfunction
 function! gista#command#browse#open(...) abort
   let options = extend({}, get(a:000, 0, {}))
-  let url = gista#command#browse#call(options)[0]
-  if !empty(url)
-    call s:File.open(url)
+  let result = gista#command#browse#call(options)
+  if !empty(result)
+    call s:File.open(result.url)
   endif
 endfunction
 function! gista#command#browse#yank(...) abort
   let options = extend({}, get(a:000, 0, {}))
-  let url = gista#command#browse#call(options)[0]
-  if !empty(url)
-    call gista#util#clip(url)
+  let result = gista#command#browse#call(options)
+  if !empty(result)
+    call gista#util#clip(result.url)
   endif
 endfunction
 function! gista#command#browse#echo(...) abort
   let options = extend({}, get(a:000, 0, {}))
-  let url = gista#command#browse#call(options)[0]
-  if !empty(url)
-    echo url
+  let result = gista#command#browse#call(options)
+  if !empty(result)
+    echo result.url
   endif
 endfunction
 

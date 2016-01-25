@@ -238,13 +238,12 @@ function! gista#command#list#call(...) abort
         \ 'lookup': '',
         \ 'cache': 1,
         \}, get(a:000, 0, {}))
-  let lookup = ''
   try
     let lookup = gista#resource#local#get_valid_lookup(options.lookup)
     let index  = gista#resource#remote#list(lookup, options)
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [{}, lookup]
+    return {}
   endtry
   " apply 'is_starred' field
   let client = gista#client#get()
@@ -256,15 +255,19 @@ function! gista#command#list#call(...) abort
           \ 'extend(v:val, { "is_starred": get(starred, v:val.id) })',
           \)
   endif
-  return [index, lookup]
+  let result = {
+        \ 'index': index,
+        \ 'lookup': lookup,
+        \}
+  return result
 endfunction
 function! gista#command#list#open(...) abort
   let options = extend({
         \ 'opener': '',
         \ 'cache': 1,
         \}, get(a:000, 0, {}))
-  let [index, lookup] = gista#command#list#call(options)
-  if empty(index)
+  let result = gista#command#list#call(options)
+  if empty(result)
     return
   endif
   let client = gista#client#get()
@@ -274,7 +277,7 @@ function! gista#command#list#open(...) abort
         \ ? g:gista#command#list#default_opener
         \ : options.opener
   let bufname = printf('gista-list:%s:%s',
-        \ client.apiname, lookup,
+        \ client.apiname, result.lookup,
         \)
   call gista#util#buffer#open(bufname, {
         \ 'opener': opener . (options.cache ? '' : '!'),
@@ -284,8 +287,8 @@ function! gista#command#list#open(...) abort
         \ 'winwidth': winwidth(0),
         \ 'apiname': apiname,
         \ 'username': username,
-        \ 'lookup': lookup,
-        \ 'entries': s:sort_entries(index.entries),
+        \ 'lookup': result.lookup,
+        \ 'entries': s:sort_entries(result.index.entries),
         \ 'options': s:Dict.omit(options, ['cache']),
         \ 'content_type': 'list',
         \}
@@ -316,8 +319,8 @@ function! gista#command#list#update(...) abort
   let options = extend(options, {
         \ 'lookup': b:gista.lookup,
         \})
-  let [index, lookup] = gista#command#list#call(options)
-  if empty(index)
+  let result = gista#command#list#call(options)
+  if empty(result)
     return
   endif
   let client = gista#client#get()
@@ -327,8 +330,8 @@ function! gista#command#list#update(...) abort
         \ 'winwidth': winwidth(0),
         \ 'apiname': apiname,
         \ 'username': username,
-        \ 'lookup': lookup,
-        \ 'entries': s:sort_entries(index.entries),
+        \ 'lookup': result.lookup,
+        \ 'entries': s:sort_entries(result.index.entries),
         \ 'options': options,
         \ 'content_type': 'list',
         \}

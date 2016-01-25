@@ -9,9 +9,6 @@ function! gista#command#rename#call(...) abort
         \ 'new_filename': '',
         \ 'force': 0,
         \}, get(a:000, 0, {}))
-  let gistid = ''
-  let filename = ''
-  let new_filename = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid
@@ -42,10 +39,16 @@ function! gista#command#rename#call(...) abort
           \ 'A %s in a gist %s in %s is renamed to %s',
           \ filename, gistid, client.apiname, new_filename,
           \))
-    return [gistid, filename, new_filename]
+    let result = {
+          \ 'gist': gist,
+          \ 'gistid': gistid,
+          \ 'filename': filename,
+          \ 'new_filename': new_filename,
+          \}
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [gistid, filename, new_filename]
+    return {}
   endtry
 endfunction
 

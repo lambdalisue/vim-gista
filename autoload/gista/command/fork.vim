@@ -5,7 +5,6 @@ function! gista#command#fork#call(...) abort
   let options = extend({
         \ 'gistid': '',
         \}, get(a:000, 0, {}))
-  let gistid = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid
@@ -18,10 +17,14 @@ function! gista#command#fork#call(...) abort
           \ 'A gist %s in %s is forked to %s',
           \ gistid, client.apiname, gist.id,
           \))
-    return [gist, gistid]
+    let result = {
+          \ 'gist': gist,
+          \ 'gistid': gistid,
+          \}
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [{}, gistid]
+    return {}
   endtry
 endfunction
 

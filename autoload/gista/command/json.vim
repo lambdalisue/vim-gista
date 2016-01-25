@@ -7,27 +7,30 @@ function! gista#command#json#call(...) abort
         \ 'gist': {},
         \ 'gistid': '',
         \}, get(a:000, 0, {}))
-  let gistid = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid
           \ : options.gist.id
           \)
     let gist = gista#resource#remote#get(gistid, options)
-    return [gist, gistid]
+    let result = {
+          \ 'gist': gist,
+          \ 'gistid': gistid,
+          \}
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [{}, gistid]
+    return {}
   endtry
 endfunction
 function! gista#command#json#read(...) abort
   silent doautocmd FileReadPre
   let options = extend({}, get(a:000, 0, {}))
-  let gist = gista#command#json#call(options)[0]
-  if empty(gist)
+  let result = gista#command#json#call(options)
+  if empty(result)
     return
   endif
-  let content = split(s:JSON.encode(gist, { 'indent': 2 }), "\r\\?\n")
+  let content = split(s:JSON.encode(result.gist, { 'indent': 2 }), "\r\\?\n")
   call gista#util#buffer#read_content(content)
   silent doautocmd FileReadPost
   silent call gista#util#doautocmd('CacheUpdatePost')
@@ -35,8 +38,8 @@ endfunction
 function! gista#command#json#edit(...) abort
   silent doautocmd BufReadPre
   let options = extend({}, get(a:000, 0, {}))
-  let [gist, gistid] = gista#command#json#call(options)
-  if empty(gist)
+  let result = gista#command#json#call(options)
+  if empty(result)
     return
   endif
   let client = gista#client#get()
@@ -45,10 +48,10 @@ function! gista#command#json#edit(...) abort
   let b:gista = {
         \ 'apiname': apiname,
         \ 'username': username,
-        \ 'gistid': gistid,
+        \ 'gistid': result.gistid,
         \ 'content_type': 'json',
         \}
-  let content = split(s:JSON.encode(gist, { 'indent': 2 }), "\r\\?\n")
+  let content = split(s:JSON.encode(result.gist, { 'indent': 2 }), "\r\\?\n")
   call gista#util#buffer#edit_content(content)
   setlocal buftype=nowrite
   setlocal nomodifiable

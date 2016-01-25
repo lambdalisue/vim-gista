@@ -145,7 +145,6 @@ function! gista#command#commits#call(...) abort
         \ 'gist': {},
         \ 'gistid': '',
         \}, get(a:000, 0, {}))
-  let gistid = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid
@@ -154,7 +153,7 @@ function! gista#command#commits#call(...) abort
     let commits = gista#resource#remote#commits(gistid, options)
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [{}, gistid]
+    return {}
   endtry
   " Convert commits to entries
   let entries = []
@@ -167,14 +166,19 @@ function! gista#command#commits#call(...) abort
           \})
     call add(entries, entry)
   endfor
-  return [entries, gistid]
+  let result = {
+        \ 'gistid': gistid,
+        \ 'entries': entries,
+        \ 'commits': commits,
+        \}
+  return result
 endfunction
 function! gista#command#commits#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  let [entries, gistid] = gista#command#commits#call(options)
-  if empty(entries)
+  let result = gista#command#commits#call(options)
+  if empty(result)
     return
   endif
   let client = gista#client#get()
@@ -184,7 +188,7 @@ function! gista#command#commits#open(...) abort
         \ ? g:gista#command#commits#default_opener
         \ : options.opener
   let bufname = printf('gista-commits:%s:%s',
-        \ client.apiname, gistid,
+        \ client.apiname, result.gistid,
         \)
   call gista#util#buffer#open(bufname, {
         \ 'opener': opener . '!',
@@ -194,8 +198,8 @@ function! gista#command#commits#open(...) abort
         \ 'winwidth': winwidth(0),
         \ 'apiname': apiname,
         \ 'username': username,
-        \ 'gistid': gistid,
-        \ 'entries': entries,
+        \ 'gistid': result.gistid,
+        \ 'entries': result.entries,
         \ 'options': options,
         \ 'content_type': 'commits',
         \}
@@ -226,8 +230,8 @@ function! gista#command#commits#update(...) abort
   let options = extend(options, {
         \ 'gistid': b:gista.gistid,
         \})
-  let [entries, gistid] = gista#command#commits#call(options)
-  if empty(entries)
+  let result = gista#command#commits#call(options)
+  if empty(result)
     return
   endif
   let client = gista#client#get()
@@ -237,8 +241,8 @@ function! gista#command#commits#update(...) abort
         \ 'winwidth': winwidth(0),
         \ 'apiname': apiname,
         \ 'username': username,
-        \ 'gistid': gistid,
-        \ 'entries': entries,
+        \ 'gistid': result.gistid,
+        \ 'entries': result.entries,
         \ 'options': options,
         \ 'content_type': 'commits',
         \}

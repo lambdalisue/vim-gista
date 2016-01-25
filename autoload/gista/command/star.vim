@@ -6,7 +6,6 @@ function! gista#command#star#call(...) abort
         \ 'gist': {},
         \ 'gistid': '',
         \}, get(a:000, 0, {}))
-  let gistid = ''
   try
     let client = gista#client#get()
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
@@ -19,10 +18,13 @@ function! gista#command#star#call(...) abort
           \ 'A gist %s in %s is starred',
           \ gistid, client.apiname,
           \))
-    return [gistid]
+    let result = {
+          \ 'gistid': gistid,
+          \}
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [gistid]
+    return {}
   endtry
 endfunction
 

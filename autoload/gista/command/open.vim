@@ -7,8 +7,6 @@ function! gista#command#open#call(...) abort
         \ 'gistid': '',
         \ 'filename': '',
         \}, get(a:000, 0, {}))
-  let gistid = ''
-  let filename = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid
@@ -17,20 +15,26 @@ function! gista#command#open#call(...) abort
     let gist = gista#resource#remote#get(gistid, options)
     let filename = gista#resource#local#get_valid_filename(gist, options.filename)
     let file = gista#resource#remote#file(gist, options.filename, options)
-    return [file, gistid, filename]
+    let result = {
+          \ 'gist': gist,
+          \ 'file': file,
+          \ 'gistid': gistid,
+          \ 'filename': filename,
+          \}
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [{}, gistid, filename]
+    return {}
   endtry
 endfunction
 function! gista#command#open#read(...) abort
   silent doautocmd FileReadPre
   let options = extend({}, get(a:000, 0, {}))
-  let file = gista#command#open#call(options)[0]
-  if empty(file)
+  let result = gista#command#open#call(options)
+  if empty(result)
     return
   endif
-  call gista#util#buffer#read_content(split(file.content, '\r\?\n'))
+  call gista#util#buffer#read_content(split(result.file.content, '\r\?\n'))
   redraw
   silent doautocmd FileReadPost
   silent call gista#util#doautocmd('CacheUpdatePost')
@@ -38,8 +42,8 @@ endfunction
 function! gista#command#open#edit(...) abort
   silent doautocmd BufReadPre
   let options = extend({}, get(a:000, 0, {}))
-  let [file, gistid, filename] = gista#command#open#call(options)
-  if empty(file)
+  let result = gista#command#open#call(options)
+  if empty(result)
     return
   endif
   let client = gista#client#get()
@@ -48,11 +52,11 @@ function! gista#command#open#edit(...) abort
   let b:gista = {
         \ 'apiname': apiname,
         \ 'username': username,
-        \ 'gistid': gistid,
-        \ 'filename': filename,
+        \ 'gistid': result.gistid,
+        \ 'filename': result.filename,
         \ 'content_type': 'raw',
         \}
-  call gista#util#buffer#edit_content(split(file.content, '\r\?\n'))
+  call gista#util#buffer#edit_content(split(result.file.content, '\r\?\n'))
   silent doautocmd BufReadPost
   silent call gista#util#doautocmd('CacheUpdatePost')
 endfunction

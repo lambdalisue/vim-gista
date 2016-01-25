@@ -8,7 +8,6 @@ function! gista#command#delete#call(...) abort
         \ 'force': 0,
         \ 'confirm': 1,
         \}, get(a:000, 0, {}))
-  let gistid = ''
   try
     let client = gista#client#get()
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
@@ -29,10 +28,13 @@ function! gista#command#delete#call(...) abort
           \ 'A gist %s is deleted from %s',
           \ gistid, client.apiname,
           \))
-    return [gistid]
+    let result = {
+          \ 'gistid': gistid,
+          \}
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [gistid]
+    return {}
   endtry
 endfunction
 

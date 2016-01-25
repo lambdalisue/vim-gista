@@ -68,10 +68,15 @@ function! gista#command#post#call(...) abort
           \ 'A content of the current buffer is posted to a gist %s in %s',
           \ gist.id, client.apiname,
           \))
-    return [gist, gist.id, options.filenames]
+    let result = {
+          \ 'gist': gist,
+          \ 'gistid': gist.id,
+          \ 'filenames': options.filenames,
+          \}
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [{}, '', options.filenames]
+    return {}
   endtry
 endfunction
 
