@@ -41,6 +41,7 @@ Interface			|vim-gista-interface|
   Command			|vim-gista-command|
   Variable			|vim-gista-variable|
   Mapping			|vim-gista-mapping|
+  Autocmd			|vim-gista-autocmd|
 Harmonic plugins		|vim-gista-harmonic-plugins|
 FAQ				|vim-gista-faq|
 
@@ -311,7 +312,7 @@ All commands provide -h/--help to quickly show an usage of the command.
           [--[no-]python]
           [{lookup}]
 
-	Open a gista-list window to show gists in {lookup}.
+	Open a |gista-list| window to show gists in {lookup}.
 	Use --[no-]cache and/or --[no-]since option to control request like:
 >
 	:Gista list
@@ -335,7 +336,7 @@ All commands provide -h/--help to quickly show an usage of the command.
 	technology to drastically improve the response. If you would like to
 	use a default fetcher, use --no-python option.
 
-	In gista-list window, the following content will be shown:
+	In *gista-list* window, the following content will be shown:
 >
 	  ┌ API name
 	  │       ┌ Lookup
@@ -363,6 +364,31 @@ All commands provide -h/--help to quickly show an usage of the command.
 	" => All of your gists are shown. "Is starred marker" are shown
 <
 	Press ? in gista-list window to see what kind of key mappings are
+	available.
+
+						*vim-gista-Gista-commits*
+:Gista commits [-o/--opener={OPENER}] [{gistid}]	*:Gista-commits*
+
+	Open a |gista-commits| window to list commits of a gist {gistid}.
+
+	In *gista-commits* window, the following content will be shown:
+>
+	  ┌ API name
+	  │          ┌ GistID
+	  │          │
+	  │          │
+	GitHub:8c0e5da60c0b5092c73f | Press ? to toggle a mapping help
+	= 16/01/14(16:01:02) No changes                    147b6ce6bce8bbe011
+	= 16/01/14(10:49:51) 1 additions, 0 deletions      d4120e0ea1c3c3b602
+	= 16/01/14(10:35:03) No changes                    9662f6ca80a3e9899f
+	= 16/01/14(09:16:50) 6 additions, 0 deletions      ae34a2ae640c52c911
+	│       │                    │                      │
+	│       │                    │                      └ Version
+	│       │                    └ Changes status
+	│       └ A committed_at of the gist
+	└ Fetched marker (-: Unfetched, =: fetched)
+<
+	Press ? in gista-commits window to see what kind of key mappings are
 	available.
 
 						*vim-gista-Gista-post*
@@ -437,31 +463,6 @@ All commands provide -h/--help to quickly show an usage of the command.
 
 	Unstar a gist {gistid}
 
-						*vim-gista-Gista-commits*
-:Gista commits [-o/--opener={OPENER}] [{gistid}]	*:Gista-commits*
-
-	List commits of a gist {gistid}.
-	In gista-commits window, the following content will be shown:
->
-	  ┌ API name
-	  │          ┌ GistID
-	  │          │
-	  │          │
-	GitHub:8c0e5da60c0b5092c73f | Press ? to toggle a mapping help
-	= 16/01/14(16:01:02) No changes                    147b6ce6bce8bbe011
-	= 16/01/14(10:49:51) 1 additions, 0 deletions      d4120e0ea1c3c3b602
-	= 16/01/14(10:35:03) No changes                    9662f6ca80a3e9899f
-	= 16/01/14(09:16:50) 6 additions, 0 deletions      ae34a2ae640c52c911
-	│       │                    │                      │
-	│       │                    │                      └ Version
-	│       │                    └ Changes status
-	│       └ A committed_at of the gist
-	└ Fetched marker (-: Unfetched, =: fetched)
-<
-	Press ? in gista-commits window to see what kind of key mappings are
-	available.
-
-
 ------------------------------------------------------------------------------
 VARIABLE					*vim-gista-variable*
 
@@ -469,6 +470,12 @@ g:gista#debug			*g:gista#debug*
 g:gista#develop			*g:gista#develop*
 
 	1 to use vim-gista in debug or develop mode.
+
+g:gista#avars			*g:gista#avars*
+
+	A special global |Dictionary| which become available only in autocmd
+	of vim-gista.
+	See |vim-gista-autocmd| for fields available in this variable.
 
 g:gista#client#cache_dir		*g:gista#client#cache_dir*
 
@@ -697,6 +704,115 @@ Note that users can show the actual key mapping by
 
 *<Plug>(gista-commits)*		Open commits of a selected gist
 				(Only in gista-list)
+
+------------------------------------------------------------------------------
+AUTOCMD					*vim-gista-autocmd*
+
+vim-gista provides the following |User| |autocmd|. Developers can use
+|g:gista#avars| to refer the result of the command execution during |autocmd|.
+
+For example, a remote gist will be opened after |:Gista-post| command with the
+following code:
+>
+	function! s:on_GistaPost() abort
+	  let gistid = g:gista#avars.gistid
+	  execute printf('Gista browse --gistid=%s', gistid)
+	endfunction
+	augroup my-vim-gista
+	  autocmd! *
+	  autocmd User GistaPost call s:on_GistaPost()
+	augroup END
+<
+
+*GistaStatus*		Called after |:Gista-status| command has proceeded.
+			|g:gista#avars| does not contain any fields.
+
+*GistaLogin*		Called after |:Gista-login| command has proceeded.
+			|g:gista#avars| contains the following fields.
+			'apiname'	An apiname used
+			'username'	An username used
+
+*GistaLogout*		Called after |:Gista-logout| command has proceeded.
+			|g:gista#avars| contains the following fields.
+			'apiname'	An apiname used
+
+*GistaOpen*		Called after |:Gista-open| command has proceeded.
+			|g:gista#avars| contains the following fields.
+			'gist'		A gist instance
+			'file'		A file instance
+			'gistid'	A gist ID
+			'filename'	A filename
+
+*GistaJson*		Called after |:Gista-json| command has proceeded.
+			|g:gista#avars| contains the following fields.
+			'gist'		A gist instance
+			'gistid'	A gist ID
+
+*GistaBrowse*		Called after |:Gista-browse| command has proceeded.
+			|g:gista#avars| contains the following fields.
+			'url'		A url retrived
+			'gist'		A gist instance
+			'gistid'	A gist ID
+			'filename'	A filename is provided.
+
+*GistaList*		Called after |:Gista-list| command has proceeded.
+			|g:gista#avars| contains the following fields.
+			'index'		An index instance
+			'lookup'	A lookup string
+
+*GistaListUpdate*	Called after |gista-list| window has updated.
+			|g:gista#avars| contains equal fields to |GistaList|
+
+*GistaCommits*		Called after |:Gista-commits| command has proceeded.
+			|g:gista#avars| contains the following fields.
+			'gistid'	A gist ID
+			'entries'	Instances of gist
+			'commits'	Instances of commit
+
+*GistaCommitsUpdate*	Called after |gista-commits| window has updated.
+			|g:gista#avars| contains equal fields to |GistaCommits|
+
+*GistaPost*		Called after |:Gista-post| command has proceeded.
+			|g:gista#avars| contains the following fields.
+			'gist'		A gist instance
+			'gistid'	A gist ID
+			'filenames'	A |List| of filenames
+
+*GistaPatch*		Called after |:Gista-patch| command has proceeded.
+			|g:gista#avars| contains the following fields.
+			'gist'		A gist instance
+			'gistid'	A gist ID
+			'filenames'	A |List| of filenames
+
+*GistaRename*		Called after |:Gista-rename| command has proceeded.
+			|g:gista#avars| contains the following fields.
+			'gist'		A gist instance
+			'gistid'	A gist ID
+			'filename'	A filename
+			'new_filename'	A new filename
+
+*GistaRemove*		Called after |:Gista-remove| command has proceeded.
+			|g:gista#avars| contains the following fields.
+			'gist'		A gist instance
+			'gistid'	A gist ID
+			'filename'	A filename
+
+*GistaDelete*		Called after |:Gista-delete| command has proceeded.
+			|g:gista#avars| contains the following fields.
+			'gistid'	A gist ID
+
+*GistaFork*		Called after |:Gista-fork| command has proceeded.
+			|g:gista#avars| contains the following fields.
+			'gist'		A gist instance (new)
+			'gistid'	A gist ID (source)
+
+*GistaStar*		Called after |:Gista-star| command has proceeded.
+			|g:gista#avars| contains the following fields.
+			'gistid'	A gist ID
+
+*GistaUnstar*		Called after |:Gista-unstar| command has proceeded.
+			|g:gista#avars| contains the following fields.
+			'gistid'	A gist ID
 
 
 ==============================================================================

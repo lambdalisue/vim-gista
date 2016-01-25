@@ -1,9 +1,6 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
-let s:L = s:V.import('Data.List')
-let s:A = s:V.import('ArgumentParser')
+let s:List = s:V.import('Data.List')
+let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:get_content(expr) abort
   let content = join(bufexists(a:expr)
@@ -14,7 +11,7 @@ function! s:get_content(expr) abort
   return { 'content': content }
 endfunction
 function! s:assign_gista_filenames(gistid, bufnums) abort
-  let winnums = s:L.uniq(map(copy(a:bufnums), 'bufwinnr(v:val)'))
+  let winnums = s:List.uniq(map(copy(a:bufnums), 'bufwinnr(v:val)'))
   let previous = winnr()
   for winnum in winnums
     execute printf('keepjump %dwincmd w', winnum)
@@ -36,7 +33,6 @@ function! gista#command#patch#call(...) abort
         \ 'contents': [],
         \ 'bufnums': [],
         \}, get(a:000, 0, {}))
-  let gistid = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid
@@ -45,31 +41,36 @@ function! gista#command#patch#call(...) abort
     let gist = gista#resource#remote#patch(gistid, options)
     " Assign gista filename to buffer existing in the current tabpage 
     call s:assign_gista_filenames(gist.id, options.bufnums)
-    silent call gista#util#doautocmd('CacheUpdatePost')
     let client = gista#client#get()
     call gista#util#prompt#indicate(options, printf(
           \ 'Changes of %s in gist %s is posted to %s',
           \ join(options.filenames, ', '), gistid, client.apiname,
           \))
-    return [gist, gistid, options.filenames]
+    let result = {
+          \ 'gist': gist,
+          \ 'gistid': gistid,
+          \ 'filenames': options.filenames,
+          \}
+    silent call gista#util#doautocmd('Patch', result)
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [{}, gistid, options.filenames]
+    return {}
   endtry
 endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
-    let s:parser = s:A.new({
+    let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gista patch',
           \ 'description': 'Patch a current buffer content into an existing gist',
-          \ 'complete_unknown': s:A.complete_files,
+          \ 'complete_unknown': s:ArgumentParser.complete_files,
           \ 'unknown_description': '[filename, ...]',
           \})
     call s:parser.add_argument(
           \ '--description', '-d',
           \ 'A description of a gist', {
-          \   'type': s:A.types.value,
+          \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
           \ '--force', '-f',
@@ -131,7 +132,3 @@ endfunction
 call gista#define_variables('command#patch', {
       \ 'default_options': {},
       \})
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

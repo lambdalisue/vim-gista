@@ -1,16 +1,11 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
-let s:A = s:V.import('ArgumentParser')
+let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! gista#command#login#call(...) abort
   let options = extend({
         \ 'apiname': '',
         \ 'username': '',
         \}, get(a:000, 0, {}))
-  let apiname = ''
-  let username = ''
   try
     let apiname = gista#client#get_valid_apiname(options.apiname)
     let username = gista#client#get_valid_username(apiname, options.username)
@@ -23,16 +18,21 @@ function! gista#command#login#call(...) abort
           \ client.apiname,
           \ client.get_authorized_username(),
           \)
-    return [apiname, username]
+    let result = {
+          \ 'apiname': apiname,
+          \ 'username': username,
+          \}
+    silent call gista#util#doautocmd('Login', result)
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [apiname, username]
+    return {}
   endtry
 endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
-    let s:parser = s:A.new({
+    let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gista login',
           \ 'description': 'Login as a specified username to a specified API',
           \})
@@ -70,8 +70,3 @@ endfunction
 call gista#define_variables('command#login', {
       \ 'default_options': {},
       \})
-
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

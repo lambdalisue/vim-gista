@@ -1,9 +1,6 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
-let s:D = s:V.import('Data.Dict')
-let s:A = s:V.import('ArgumentParser')
+let s:Dict = s:V.import('Data.Dict')
+let s:ArgumentParser = s:V.import('ArgumentParser')
 
 let s:registry = {}
 
@@ -42,7 +39,7 @@ endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
-    let s:parser = s:A.new({
+    let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gista',
           \ 'description': [
           \   'A gist manipulation command',
@@ -70,21 +67,22 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'action', [
           \   'An action name of vim-gista. The following actions are available:',
-          \   '- login  : Login to a specified username of a specified API',
-          \   '- logout : Logout from a specified API',
-          \   '- status : Show a current API status',
-          \   '- open   : Get and open a file of a gist',
-          \   '- json   : Get and open a gist as a json file',
-          \   '- list   : List gist entries of a lookup',
-          \   '- post   : Post content(s) to a gist',
-          \   '- patch  : Post content to an existing gist',
-          \   '- rename : Rename a file of an existing gist',
-          \   '- remove : Remove a file of an existing gist',
-          \   '- delete : Delete an existing gist',
-          \   '- browse : Browse an existing gist in a system browser',
-          \   '- fork   : Fork an existing gist',
-          \   '- star   : Star an existing gist',
-          \   '- unstar : Unstar an existing gist',
+          \   '- status  : Show a current API status',
+          \   '- login   : Login to a specified username of a specified API',
+          \   '- logout  : Logout from a specified API',
+          \   '- open    : Get and open a file of a gist',
+          \   '- json    : Get and open a gist as a json file',
+          \   '- browse  : Browse an existing gist in a system browser',
+          \   '- list    : List gist entries of a lookup',
+          \   '- commits : List commits of a gist',
+          \   '- post    : Post content(s) to a gist',
+          \   '- patch   : Post content to an existing gist',
+          \   '- rename  : Rename a file of an existing gist',
+          \   '- remove  : Remove a file of an existing gist',
+          \   '- delete  : Delete an existing gist',
+          \   '- fork    : Fork an existing gist',
+          \   '- star    : Star an existing gist',
+          \   '- unstar  : Unstar an existing gist',
           \ ], {
           \   'required': 1,
           \   'terminal': 1,
@@ -115,12 +113,12 @@ function! gista#command#command(...) abort
     if name ==# 'login'
       call gista#command#login#command(
             \ bang, range, args,
-            \ s:D.pick(options, ['apiname', 'username']),
+            \ s:Dict.pick(options, ['apiname', 'username']),
             \)
     elseif name ==# 'logout'
       call gista#command#logout#command(
             \ bang, range, args,
-            \ s:D.pick(options, ['apiname']),
+            \ s:Dict.pick(options, ['apiname']),
             \)
     elseif name ==# 'status'
       call gista#command#status#command(
@@ -151,12 +149,12 @@ function! gista#command#complete(arglead, cmdline, cursorpos, ...) abort
     if name ==# 'login'
       return gista#command#login#complete(
             \ a:arglead, cmdline, a:cursorpos,
-            \ s:D.pick(options, ['apiname', 'username']),
+            \ s:Dict.pick(options, ['apiname', 'username']),
             \)
     elseif name ==# 'logout'
       return gista#command#logout#complete(
             \ a:arglead, cmdline, a:cursorpos,
-            \ s:D.pick(options, ['apiname']),
+            \ s:Dict.pick(options, ['apiname']),
             \)
     elseif name ==# 'status'
       return gista#command#status#complete(
@@ -185,9 +183,17 @@ call gista#command#register('json',
       \ 'gista#command#json#command',
       \ 'gista#command#json#complete',
       \)
+call gista#command#register('browse',
+      \ 'gista#command#browse#command',
+      \ 'gista#command#browse#complete',
+      \)
 call gista#command#register('list',
       \ 'gista#command#list#command',
       \ 'gista#command#list#complete',
+      \)
+call gista#command#register('commits',
+      \ 'gista#command#commits#command',
+      \ 'gista#command#commits#complete',
       \)
 call gista#command#register('post',
       \ 'gista#command#post#command',
@@ -209,10 +215,6 @@ call gista#command#register('delete',
       \ 'gista#command#delete#command',
       \ 'gista#command#delete#complete',
       \)
-call gista#command#register('browse',
-      \ 'gista#command#browse#command',
-      \ 'gista#command#browse#complete',
-      \)
 call gista#command#register('fork',
       \ 'gista#command#fork#command',
       \ 'gista#command#fork#complete',
@@ -225,11 +227,3 @@ call gista#command#register('unstar',
       \ 'gista#command#unstar#command',
       \ 'gista#command#unstar#complete',
       \)
-call gista#command#register('commits',
-      \ 'gista#command#commits#command',
-      \ 'gista#command#commits#complete',
-      \)
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

@@ -1,9 +1,6 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
-let s:F = s:V.import('System.File')
-let s:A = s:V.import('ArgumentParser')
+let s:File = s:V.import('System.File')
+let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:create_url(html_url, filename) abort
   let suffix = empty(a:filename) ? '' : '#file-' . a:filename
@@ -17,8 +14,6 @@ function! gista#command#browse#call(...) abort
         \ 'gistid': '',
         \ 'filename': '',
         \}, get(a:000, 0, {}))
-  let gistid = ''
-  let filename = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid
@@ -28,37 +23,47 @@ function! gista#command#browse#call(...) abort
     let filename = empty(options.filename)
           \ ? ''
           \ : gista#resource#local#get_valid_filename(gist, options.filename)
-    return [s:create_url(gist.html_url, filename), gistid, filename]
+    let url = s:create_url(gist.html_url, filename)
+    let result = {
+          \ 'url': url,
+          \ 'gist': gist,
+          \ 'gistid': gistid,
+          \ 'filename': filename,
+          \}
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return ['', gistid, filename]
+    return {}
   endtry
 endfunction
 function! gista#command#browse#open(...) abort
   let options = extend({}, get(a:000, 0, {}))
-  let url = gista#command#browse#call(options)[0]
-  if !empty(url)
-    call s:F.open(url)
+  let result = gista#command#browse#call(options)
+  if !empty(result)
+    call s:File.open(result.url)
   endif
+  silent call gista#util#doautocmd('Browse', result)
 endfunction
 function! gista#command#browse#yank(...) abort
   let options = extend({}, get(a:000, 0, {}))
-  let url = gista#command#browse#call(options)[0]
-  if !empty(url)
-    call gista#util#clip(url)
+  let result = gista#command#browse#call(options)
+  if !empty(result)
+    call gista#util#clip(result.url)
   endif
+  silent call gista#util#doautocmd('Browse', result)
 endfunction
 function! gista#command#browse#echo(...) abort
   let options = extend({}, get(a:000, 0, {}))
-  let url = gista#command#browse#call(options)[0]
-  if !empty(url)
-    echo url
+  let result = gista#command#browse#call(options)
+  if !empty(result)
+    echo result.url
   endif
+  silent call gista#util#doautocmd('Browse', result)
 endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
-    let s:parser = s:A.new({
+    let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gista browse',
           \ 'description': 'Open a URL of a gist with a system browser',
           \})
@@ -114,8 +119,3 @@ endfunction
 call gista#define_variables('command#browse', {
       \ 'default_options': {},
       \})
-
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

@@ -1,8 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
-let s:A = s:V.import('ArgumentParser')
+let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! gista#command#status#call(...) abort
   let client = gista#client#get()
@@ -19,11 +16,13 @@ function! gista#command#status#call(...) abort
         \ printf('Filename : %s', get(gista, 'filename', '')),
         \]
   echo join(messages, "\n")
+  silent call gista#util#doautocmd('Status')
+  return {}
 endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
-    let s:parser = s:A.new({
+    let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gista status',
           \ 'description': 'Show current status of gista',
           \})
@@ -51,9 +50,3 @@ endfunction
 call gista#define_variables('command#status', {
       \ 'default_options': {},
       \})
-
-
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

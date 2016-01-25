@@ -1,8 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
-let s:L = s:V.import('Data.List')
+let s:List = s:V.import('Data.List')
 
 " A content size limit for downloading via HTTP
 " https://developer.github.com/v3/gists/#truncation
@@ -261,7 +258,7 @@ function! gista#resource#local#retrieve_index_entry(gistid, ...) abort
     call map(copy(lookups), 's:validate_lookup(client, v:val)')
   endif
 
-  for lookup in s:L.uniq(lookups)
+  for lookup in s:List.uniq(lookups)
     let entry = s:retrieve_index_entry(client, lookup, a:gistid, options)
     if !empty(entry)
       return entry
@@ -286,7 +283,7 @@ function! gista#resource#local#append_index_entry(gist, ...) abort
     call map(copy(lookups), 's:validate_lookup(client, v:val)')
   endif
 
-  for lookup in s:L.uniq(lookups)
+  for lookup in s:List.uniq(lookups)
     call s:append_index_entry(client, lookup, entry, options)
   endfor
 endfunction
@@ -312,7 +309,7 @@ function! gista#resource#local#update_index_entry(gist, ...) abort
     call map(copy(lookups), 's:validate_lookup(client, v:val)')
   endif
 
-  for lookup in s:L.uniq(lookups)
+  for lookup in s:List.uniq(lookups)
     call s:update_index_entry(client, lookup, entry, options)
   endfor
 endfunction
@@ -336,7 +333,7 @@ function! gista#resource#local#remove_index_entry(gistid, ...) abort
     call map(copy(lookups), 's:validate_lookup(client, v:val)')
   endif
 
-  for lookup in s:L.uniq(lookups)
+  for lookup in s:List.uniq(lookups)
     call s:remove_index_entry(client, lookup, a:gistid, options)
   endfor
 endfunction
@@ -469,7 +466,3 @@ function! gista#resource#local#get_valid_lookup(lookup) abort
   call s:validate_lookup(client, lookup)
   return lookup
 endfunction
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

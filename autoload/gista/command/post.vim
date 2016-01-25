@@ -1,9 +1,6 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
-let s:L = s:V.import('Data.List')
-let s:A = s:V.import('ArgumentParser')
+let s:List = s:V.import('Data.List')
+let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:get_content(expr) abort
   let content = join(bufexists(a:expr)
@@ -14,7 +11,7 @@ function! s:get_content(expr) abort
   return { 'content': content }
 endfunction
 function! s:assign_gista_filenames(gistid, bufnums) abort
-  let winnums = s:L.uniq(map(copy(a:bufnums), 'bufwinnr(v:val)'))
+  let winnums = s:List.uniq(map(copy(a:bufnums), 'bufwinnr(v:val)'))
   let previous = winnr()
   for winnum in winnums
     execute printf('keepjump %dwincmd w', winnum)
@@ -65,31 +62,35 @@ function! gista#command#post#call(...) abort
     let client = gista#client#get()
     " Assign gista filename to buffer existing in the current tabpage
     call s:assign_gista_filenames(gist.id, options.bufnums)
-    silent call gista#util#doautocmd('CacheUpdatePost')
-    redraw
     call gista#util#prompt#indicate(options, printf(
           \ 'A content of the current buffer is posted to a gist %s in %s',
           \ gist.id, client.apiname,
           \))
-    return [gist, gist.id, options.filenames]
+    let result = {
+          \ 'gist': gist,
+          \ 'gistid': gist.id,
+          \ 'filenames': options.filenames,
+          \}
+    silent call gista#util#doautocmd('Post', result)
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [{}, '', options.filenames]
+    return {}
   endtry
 endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
-    let s:parser = s:A.new({
+    let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gista post',
           \ 'description': 'Post contents into a new gist',
-          \ 'complete_unknown': s:A.complete_files,
+          \ 'complete_unknown': s:ArgumentParser.complete_files,
           \ 'unknown_description': '[filename, ...]',
           \})
     call s:parser.add_argument(
           \ '--description', '-d',
           \ 'A description of a gist', {
-          \   'type': s:A.types.value,
+          \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
           \ '--public', '-p',
@@ -158,7 +159,3 @@ call gista#define_variables('command#post', {
       \ 'interactive_description': 1,
       \ 'allow_empty_description': 0,
       \})
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

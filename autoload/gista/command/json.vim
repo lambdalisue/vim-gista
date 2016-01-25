@@ -1,45 +1,45 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
-let s:J = s:V.import('Web.JSON')
-let s:A = s:V.import('ArgumentParser')
+let s:JSON = s:V.import('Web.JSON')
+let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! gista#command#json#call(...) abort
   let options = extend({
         \ 'gist': {},
         \ 'gistid': '',
         \}, get(a:000, 0, {}))
-  let gistid = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid
           \ : options.gist.id
           \)
     let gist = gista#resource#remote#get(gistid, options)
-    return [gist, gistid]
+    let result = {
+          \ 'gist': gist,
+          \ 'gistid': gistid,
+          \}
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [{}, gistid]
+    return {}
   endtry
 endfunction
 function! gista#command#json#read(...) abort
   silent doautocmd FileReadPre
   let options = extend({}, get(a:000, 0, {}))
-  let gist = gista#command#json#call(options)[0]
-  if empty(gist)
+  let result = gista#command#json#call(options)
+  if empty(result)
     return
   endif
-  let content = split(s:J.encode(gist, { 'indent': 2 }), "\r\\?\n")
+  let content = split(s:JSON.encode(result.gist, { 'indent': 2 }), "\r\\?\n")
   call gista#util#buffer#read_content(content)
   silent doautocmd FileReadPost
-  silent call gista#util#doautocmd('CacheUpdatePost')
+  silent call gista#util#doautocmd('JsonRead', result)
 endfunction
 function! gista#command#json#edit(...) abort
   silent doautocmd BufReadPre
   let options = extend({}, get(a:000, 0, {}))
-  let [gist, gistid] = gista#command#json#call(options)
-  if empty(gist)
+  let result = gista#command#json#call(options)
+  if empty(result)
     return
   endif
   let client = gista#client#get()
@@ -48,16 +48,16 @@ function! gista#command#json#edit(...) abort
   let b:gista = {
         \ 'apiname': apiname,
         \ 'username': username,
-        \ 'gistid': gistid,
+        \ 'gistid': result.gistid,
         \ 'content_type': 'json',
         \}
-  let content = split(s:J.encode(gist, { 'indent': 2 }), "\r\\?\n")
+  let content = split(s:JSON.encode(result.gist, { 'indent': 2 }), "\r\\?\n")
   call gista#util#buffer#edit_content(content)
   setlocal buftype=nowrite
   setlocal nomodifiable
   setlocal filetype=json
   silent doautocmd BufReadPost
-  silent call gista#util#doautocmd('CacheUpdatePost')
+  silent call gista#util#doautocmd('Json', result)
 endfunction
 function! gista#command#json#open(...) abort
   let options = extend({
@@ -96,14 +96,14 @@ endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
-    let s:parser = s:A.new({
+    let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gista json',
           \ 'description': 'Open a JSON content of a gist',
           \})
     call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'A way to open a new buffer such as "edit", "split", etc.', {
-          \   'type': s:A.types.value,
+          \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
           \ '--cache',
@@ -115,7 +115,7 @@ function! s:get_parser() abort
           \ 'gistid',
           \ 'A gist ID', {
           \   'complete': function('g:gista#option#complete_gistid'),
-          \   'type': s:A.types.value,
+          \   'type': s:ArgumentParser.types.value,
           \})
   endif
   return s:parser
@@ -143,7 +143,3 @@ call gista#define_variables('command#json', {
       \ 'default_options': {},
       \ 'default_opener': 'edit',
       \})
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

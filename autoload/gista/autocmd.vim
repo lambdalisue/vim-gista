@@ -1,20 +1,17 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
-let s:V = gista#vital()
-let s:C = s:V.import('Vim.Compat')
-
 function! s:is_patchable(gista) abort
   let client = gista#client#get()
   let username = client.get_authorized_username()
-  let [gist, gistid] = gista#command#json#call({
+  let result = gista#command#json#call({
         \ 'gistid': a:gista.gistid,
         \})
-  if gistid =~# '^[^/]\+/[^/]\+$'
+  if empty(result)
+    return 0
+  endif
+  if result.gistid =~# '^[^/]\+/[^/]\+$'
     " gistid with version cannot be patchable
     return 'A file content of a gist with a specific version cannot be patched'
   endif
-  return get(get(gist, 'owner', {}), 'login') ==# username
+  return get(get(result.gist, 'owner', {}), 'login') ==# username
         \ ? ''
         \ : 'An owner of a gist and a current authorized username is miss-matched'
 endfunction
@@ -85,13 +82,13 @@ function! s:on_BufWriteCmd(gista) abort
     endif
     let filename = a:gista.filename
     let content = gista#util#ensure_eol(join(getline(1, '$'), "\n"))
-    let gist = gista#command#patch#call({
+    let result = gista#command#patch#call({
           \ 'gistid': a:gista.gistid,
           \ 'filenames': [filename],
           \ 'contents': [{ 'content': content }],
           \ 'force': v:cmdbang,
           \})
-    if empty(gist)
+    if empty(result)
       call gista#util#prompt#warn(printf(join([
             \   'Use ":w!" to post changes to %s forcedly or :Gista post to create a new Gist',
             \ ]),
@@ -120,13 +117,13 @@ function! s:on_FileWriteCmd(gista) abort
     endif
     let filename = a:gista.filename
     let content = gista#util#ensure_eol(join(getline("'[", "']"), "\n"))
-    let gist = gista#command#patch#call({
+    let result = gista#command#patch#call({
           \ 'gistid': a:gista.gistid,
           \ 'filenames': [filename],
           \ 'contents': [{ 'content': content }],
           \ 'force': v:cmdbang,
           \})
-    if empty(gist)
+    if empty(result)
       call gista#util#prompt#warn(printf(join([
             \   'Use ":w!" to post changes to %s forcedly or ":Gista post" to create a new Gist',
             \ ]),
@@ -166,7 +163,3 @@ endfunction
 
 " Configure variables
 call gista#define_variables('autocmd', {})
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

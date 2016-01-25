@@ -1,8 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
-let s:A = s:V.import('ArgumentParser')
+let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! gista#command#rename#call(...) abort
   let options = extend({
@@ -12,9 +9,6 @@ function! gista#command#rename#call(...) abort
         \ 'new_filename': '',
         \ 'force': 0,
         \}, get(a:000, 0, {}))
-  let gistid = ''
-  let filename = ''
-  let new_filename = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid
@@ -39,22 +33,28 @@ function! gista#command#rename#call(...) abort
           \   'content': gist.files[filename].content,
           \ }],
           \})
-    silent call gista#util#doautocmd('CacheUpdatePost')
     let client = gista#client#get()
     call gista#util#prompt#indicate(options, printf(
           \ 'A %s in a gist %s in %s is renamed to %s',
           \ filename, gistid, client.apiname, new_filename,
           \))
-    return [gistid, filename, new_filename]
+    let result = {
+          \ 'gist': gist,
+          \ 'gistid': gistid,
+          \ 'filename': filename,
+          \ 'new_filename': new_filename,
+          \}
+    silent call gista#util#doautocmd('Rename', result)
+    return result
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [gistid, filename, new_filename]
+    return {}
   endtry
 endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
-    let s:parser = s:A.new({
+    let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gista rename',
           \ 'description': 'Rename a filename in a gist',
           \})
@@ -105,8 +105,3 @@ endfunction
 call gista#define_variables('command#rename', {
       \ 'default_options': {},
       \})
-
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

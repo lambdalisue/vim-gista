@@ -1,9 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
-let s:L = s:V.import('Data.List')
-let s:C = s:V.import('Vim.Compat')
+let s:List = s:V.import('Data.List')
 
 function! gista#option#assign_apiname(options, expr) abort
   if has_key(a:options, 'apiname')
@@ -82,13 +78,9 @@ function! gista#option#complete_lookup(arglead, cmdline, cursorpos, ...) abort
           \ 'public',
           \], client.token_cache.keys()
           \)
-    let lookups = s:L.uniq(filter(lookups, '!empty(v:val)'))
+    let lookups = s:List.uniq(filter(lookups, '!empty(v:val)'))
     return filter(lookups, 'v:val =~# "^" . a:arglead')
   catch /^vim-gista: ValidationError:/
     return []
   endtry
 endfunction
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

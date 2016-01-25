@@ -11,4 +11,3 @@ endfunction" }}}
 
 let g:gista#api#cache_dir = tempname()
 let g:gista#test = 1
-

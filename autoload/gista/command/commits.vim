@@ -1,13 +1,9 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
-let s:C = s:V.import('Vim.Compat')
-let s:S = s:V.import('Data.String')
-let s:D = s:V.import('Data.Dict')
-let s:L = s:V.import('Data.List')
-let s:A = s:V.import('ArgumentParser')
-let s:N = s:V.import('Vim.Buffer.Anchor')
+let s:String = s:V.import('Data.String')
+let s:Dict = s:V.import('Data.Dict')
+let s:List = s:V.import('Data.List')
+let s:ArgumentParser = s:V.import('ArgumentParser')
+let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 
 let s:PRIVATE_GISTID = repeat('*', 20)
 let s:MODES = [
@@ -41,7 +37,7 @@ let s:entry_offset = 0
 
 function! s:truncate(str, width) abort
   let suffix = strdisplaywidth(a:str) > a:width ? '...' : '   '
-  return s:S.truncate(a:str, a:width - 4) . suffix
+  return s:String.truncate(a:str, a:width - 4) . suffix
 endfunction
 function! s:format_entry(entry) abort
   let fetched = a:entry._gista_fetched ? '=' : '-'
@@ -149,7 +145,6 @@ function! gista#command#commits#call(...) abort
         \ 'gist': {},
         \ 'gistid': '',
         \}, get(a:000, 0, {}))
-  let gistid = ''
   try
     let gistid = gista#resource#local#get_valid_gistid(empty(options.gist)
           \ ? options.gistid
@@ -158,7 +153,7 @@ function! gista#command#commits#call(...) abort
     let commits = gista#resource#remote#commits(gistid, options)
   catch /^vim-gista:/
     call gista#util#handle_exception(v:exception)
-    return [{}, gistid]
+    return {}
   endtry
   " Convert commits to entries
   let entries = []
@@ -171,14 +166,19 @@ function! gista#command#commits#call(...) abort
           \})
     call add(entries, entry)
   endfor
-  return [entries, gistid]
+  let result = {
+        \ 'gistid': gistid,
+        \ 'entries': entries,
+        \ 'commits': commits,
+        \}
+  return result
 endfunction
 function! gista#command#commits#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  let [entries, gistid] = gista#command#commits#call(options)
-  if empty(entries)
+  let result = gista#command#commits#call(options)
+  if empty(result)
     return
   endif
   let client = gista#client#get()
@@ -188,7 +188,7 @@ function! gista#command#commits#open(...) abort
         \ ? g:gista#command#commits#default_opener
         \ : options.opener
   let bufname = printf('gista-commits:%s:%s',
-        \ client.apiname, gistid,
+        \ client.apiname, result.gistid,
         \)
   call gista#util#buffer#open(bufname, {
         \ 'opener': opener . '!',
@@ -198,8 +198,8 @@ function! gista#command#commits#open(...) abort
         \ 'winwidth': winwidth(0),
         \ 'apiname': apiname,
         \ 'username': username,
-        \ 'gistid': gistid,
-        \ 'entries': entries,
+        \ 'gistid': result.gistid,
+        \ 'entries': result.entries,
         \ 'options': options,
         \ 'content_type': 'commits',
         \}
@@ -219,6 +219,7 @@ function! gista#command#commits#open(...) abort
   setlocal nomodifiable
   setlocal filetype=gista-commits
   call gista#command#commits#redraw()
+  silent call gista#util#doautocmd('Commits', result)
 endfunction
 function! gista#command#commits#update(...) abort
   if &filetype !=# 'gista-commits'
@@ -230,8 +231,8 @@ function! gista#command#commits#update(...) abort
   let options = extend(options, {
         \ 'gistid': b:gista.gistid,
         \})
-  let [entries, gistid] = gista#command#commits#call(options)
-  if empty(entries)
+  let result = gista#command#commits#call(options)
+  if empty(result)
     return
   endif
   let client = gista#client#get()
@@ -241,12 +242,13 @@ function! gista#command#commits#update(...) abort
         \ 'winwidth': winwidth(0),
         \ 'apiname': apiname,
         \ 'username': username,
-        \ 'gistid': gistid,
-        \ 'entries': entries,
+        \ 'gistid': result.gistid,
+        \ 'entries': result.entries,
         \ 'options': options,
         \ 'content_type': 'commits',
         \}
   call gista#command#commits#redraw()
+  silent call gista#util#doautocmd('CommitsUpdate', result)
 endfunction
 function! gista#command#commits#redraw() abort
   if &filetype !=# 'gista-commits'
@@ -254,7 +256,7 @@ function! gista#command#commits#redraw() abort
           \ 'redraw() requires to be called in a gista-commits buffer'
           \)
   endif
-  let prologue = s:L.flatten([
+  let prologue = s:List.flatten([
         \ g:gista#command#commits#show_status_string_in_prologue
         \   ? [gista#command#commits#get_status_string() . ' | Press ? to toggle a mapping help']
         \   : [],
@@ -281,7 +283,7 @@ function! s:on_WinEnter() abort
     call gista#command#commits#redraw()
   endif
 endfunction
-function! s:on_GistaCacheUpdatePost() abort
+function! s:on_GistaUpdate() abort
   let winnum = winnr()
   keepjump windo
         \ if &filetype ==# 'gista-commits' |
@@ -322,7 +324,7 @@ function! s:action_edit(startline, endline, ...) abort
       endfor
       call filter(entries, '!empty(v:val)')
       if !empty(entries) && anchor
-        call s:N.focus()
+        call s:Anchor.focus()
       endif
       for entry in entries
         call gista#command#open#open({
@@ -356,7 +358,7 @@ function! s:action_json(startline, endline, ...) abort
       endfor
       call filter(entries, '!empty(v:val)')
       if !empty(entries) && anchor
-        call s:N.focus()
+        call s:Anchor.focus()
       endif
       for entry in entries
         call gista#command#json#open({
@@ -405,7 +407,7 @@ endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gista#develop
-    let s:parser = s:A.new({
+    let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gista commits',
           \ 'description': [
           \   'List commits of a gist',
@@ -414,7 +416,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'A way to open a new buffer such as "edit", "split", etc.', {
-          \   'type': s:A.types.value,
+          \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
           \ 'gistid',
@@ -480,7 +482,17 @@ endfunction
 
 augroup vim_gista_update_commits
   autocmd!
-  autocmd User GistaCacheUpdatePost call s:on_GistaCacheUpdatePost()
+  autocmd User GistaJson call s:on_GistaUpdate()
+  autocmd User GistaOpen call s:on_GistaUpdate()
+  autocmd User GistaBrowse call s:on_GistaUpdate()
+  autocmd User GistaPost call s:on_GistaUpdate()
+  autocmd User GistaPatch call s:on_GistaUpdate()
+  autocmd User GistaRename call s:on_GistaUpdate()
+  autocmd User GistaRemove call s:on_GistaUpdate()
+  autocmd User GistaDelete call s:on_GistaUpdate()
+  autocmd User GistaFork call s:on_GistaUpdate()
+  autocmd User GistaStar call s:on_GistaUpdate()
+  autocmd User GistaUnstar call s:on_GistaUpdate()
 augroup END
 
 call gista#define_variables('command#commits', {
@@ -501,7 +513,3 @@ call gista#define_variables('command#commits', {
       \ 'enable_default_mappings': 1,
       \ 'show_status_string_in_prologue': 1,
       \})
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

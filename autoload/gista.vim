@@ -1,8 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = vital#of('vim_gista')
-let s:C = s:V.import('Vim.Compat')
+let s:Compat = s:V.import('Vim.Compat')
 
 function! gista#vital() abort
   return s:V
@@ -72,7 +69,7 @@ function! gista#parse_filename(filename) abort
 endfunction
 function! gista#get(expr) abort
   let filename = expand(a:expr)
-  let gista = s:C.getbufvar(a:expr, 'gista', {})
+  let gista = s:Compat.getbufvar(a:expr, 'gista', {})
   let gista = extend(copy(gista), gista#parse_filename(filename))
   return gista
 endfunction
@@ -82,7 +79,3 @@ call gista#define_variables('', {
       \ 'debug': 0,
       \ 'develop': 0,
       \})
-
-let &cpo = s:save_cpo
-unlet s:save_cpo
-"vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker

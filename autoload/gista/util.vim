@@ -1,8 +1,6 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
-let s:C = s:V.import('Vim.Compat')
+let s:Compat = s:V.import('Vim.Compat')
+let s:Guard = s:V.import('Vim.Guard')
 
 function! gista#util#clip(content) abort
   let @" = a:content
@@ -11,9 +9,18 @@ function! gista#util#clip(content) abort
   endif
 endfunction
 
-function! gista#util#doautocmd(name) abort
-  let expr = printf('User Gista%s', a:name)
-  call s:C.doautocmd(expr, 1)
+function! gista#util#doautocmd(name, ...) abort
+  let guard = s:Guard.store('g:gista#avars')
+  let g:gista#avars = extend(
+        \ get(g:, 'gista#avars', {}),
+        \ get(a:000, 0, {})
+        \)
+  try
+    let expr = printf('User Gista%s', a:name)
+    call s:Compat.doautocmd(expr, 1)
+  finally
+    call guard.restore()
+  endtry
 endfunction
 
 function! gista#util#ensure_eol(text) abort
@@ -36,7 +43,3 @@ function! gista#util#handle_exception(exception) abort
   " else
   call gista#util#prompt#error(a:exception)
 endfunction
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
