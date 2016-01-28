@@ -37,10 +37,10 @@ function! s:interactive_description(options) abort
     endif
   endif
   if empty(a:options.description) && !g:gista#command#post#allow_empty_description
-    call gista#throw(
+    call gista#throw(join([
           \ 'An empty description is not allowed',
           \ 'See ":help g:gista#command#post#allow_empty_description" for detail',
-          \)
+          \]))
   endif
 endfunction
 
