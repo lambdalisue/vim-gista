@@ -3,6 +3,7 @@ let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! gista#command#fork#call(...) abort
   let options = extend({
+        \ 'gist': {},
         \ 'gistid': '',
         \}, get(a:000, 0, {}))
   try
