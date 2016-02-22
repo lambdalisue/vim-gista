@@ -855,5 +855,17 @@ curl like:
 <
 Note that you may need to add "C:\msys64\mingw64\bin" to PATH after that.
 
+
+Q.
+I would like to assign a personal access token directly without login
+
+A.
+Create a token vimson in 'token/{APINAME}' at |g:gista#client#cache_dir| (for
+example, '~/.cache/vim-gista/token/GitHub') with the following content:
+>
+	{ 'username': 'your personal access token' }
+<
+Remember that you have to enable 'gist' access to the access token.
+
 ==============================================================================
 vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl:noet
