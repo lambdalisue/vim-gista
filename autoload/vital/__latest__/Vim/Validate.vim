@@ -1,6 +1,3 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 function! s:_vital_loaded(V) abort
   let s:Prelude = a:V.import('Prelude')
   let s:Dict = a:V.import('Data.Dict')
@@ -146,7 +143,3 @@ function! s:call_silently(fn, ...) abort
     endif
   endtry
 endfunction
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

@@ -1,6 +1,3 @@
-let s:save_cpo = &cpoptions
-set cpoptions&vim
-
 let s:root = expand('<sfile>:p:h')
 
 " default config
@@ -18,7 +15,7 @@ let s:config.retrieve_per_page = 100
 let s:config.retrieve_indicator =
       \ 'Requesting entries from %(url)s [%%(page)d/%(page_count)d]'
 
-function! s:_vital_loaded(V) abort " {{{
+function! s:_vital_loaded(V) abort
   let s:C = a:V.import('System.Cache')
   let s:J = a:V.import('Web.JSON')
   let s:H = a:V.import('Web.HTTP')
@@ -26,8 +23,8 @@ function! s:_vital_loaded(V) abort " {{{
   let s:P = a:V.import('System.Filepath')
   let s:Y = a:V.import('Vim.Python')
   let s:B = a:V.import('Data.Base64')
-endfunction " }}}
-function! s:_vital_depends() abort " {{{
+endfunction
+function! s:_vital_depends() abort
   return {
         \ 'modules': [
         \   'System.Cache', 'Web.JSON', 'Web.HTTP',
@@ -35,15 +32,15 @@ function! s:_vital_depends() abort " {{{
         \ ],
         \ 'files': ['./github.py'],
         \}
-endfunction " }}}
+endfunction
 
-function! s:_throw(msgs) abort " {{{
+function! s:_throw(msgs) abort
   let msgs = type(a:msgs) == type([]) ? a:msgs : [a:msgs]
   throw printf('vital: Web.API.GitHub: %s', join(msgs, "\n"))
-endfunction " }}}
-function! s:_get_header(token) abort " {{{
+endfunction
+function! s:_get_header(token) abort
   return empty(a:token) ? {} : { 'Authorization': 'token ' . a:token }
-endfunction " }}}
+endfunction
 function! s:_get_basic_header(username, password, ...) abort
   let otp = get(a:000, 0, '')
   let headers = empty(otp) ? {} : { 'X-GitHub-OTP': otp }
@@ -108,7 +105,7 @@ function! s:_delete_authorization(id, client, username, password, ...) abort
   let res.content = empty(res.content) ? {} : s:J.decode(res.content)
   return res
 endfunction
-function! s:_create_authorization(params, client, username, password, ...) abort " {{{
+function! s:_create_authorization(params, client, username, password, ...) abort
   let options = extend({
         \ 'verbose': 1,
         \ 'otp': '',
@@ -136,7 +133,7 @@ function! s:_create_authorization(params, client, username, password, ...) abort
   return res
 endfunction
 
-function! s:_authorize(client, username, ...) abort " {{{
+function! s:_authorize(client, username, ...) abort
   let options = extend({
         \ 'verbose': 1,
         \}, get(a:000, 0, {}),
@@ -252,8 +249,8 @@ function! s:_authorize(client, username, ...) abort " {{{
           \])
   endif
   return res.content.token
-endfunction " }}}
-function! s:_authenticate(client, username, token, ...) abort " {{{
+endfunction
+function! s:_authenticate(client, username, token, ...) abort
   let options = extend({
         \ 'verbose': 1,
         \}, get(a:000, 0, {}),
@@ -279,9 +276,9 @@ function! s:_authenticate(client, username, token, ...) abort " {{{
           \ get(res.content, 'message', ''),
           \])
   endif
-endfunction " }}}
+endfunction
 
-function! s:_build_error_message(errors) abort " {{{
+function! s:_build_error_message(errors) abort
   let error_message = []
   for error in a:errors
     let code = get(error, 'code', '')
@@ -314,8 +311,8 @@ function! s:_build_error_message(errors) abort " {{{
     endif
   endfor
   return join(error_message, "\n")
-endfunction " }}}
-function! s:_build_rate_limit_message(rate_limit, ...) abort " {{{
+endfunction
+function! s:_build_rate_limit_message(rate_limit, ...) abort
   if get(a:rate_limit, 'remaining', 1)
     return ''
   endif
@@ -326,9 +323,9 @@ function! s:_build_rate_limit_message(rate_limit, ...) abort " {{{
         \ 'Try again %s, or login to use authenticated request',
         \ duration.about(),
         \)
-endfunction " }}}
+endfunction
 
-function! s:_retrieve_vim_partial(client, settings, indicator, page) abort " {{{
+function! s:_retrieve_vim_partial(client, settings, indicator, page) abort
   if a:settings.verbose
     redraw | echo substitute(a:indicator, '%(page)d', a:page, 'g')
   endif
@@ -344,8 +341,8 @@ function! s:_retrieve_vim_partial(client, settings, indicator, page) abort " {{{
   let res.content = get(res, 'content', '')
   let res.content = empty(res.content) ? [] : s:J.decode(res.content)
   return res.content
-endfunction " }}}
-function! s:_retrieve_vim(client, settings) abort " {{{
+endfunction
+function! s:_retrieve_vim(client, settings) abort
   let page_start = a:settings.page_start
   if a:settings.page_end
     let page_end = a:settings.page_end
@@ -378,9 +375,9 @@ function! s:_retrieve_vim(client, settings) abort " {{{
         \ ])
         \)
   return entries
-endfunction " }}}
+endfunction
 " @vimlint(EVL102, 1, l:kwargs)
-function! s:_retrieve_python(client, settings) abort " {{{
+function! s:_retrieve_python(client, settings) abort
   if !(v:version >= 704 || (v:version == 703 && has('patch601')))
     call s:_throw('Vim 7.3.600 or earlier is not supported')
   endif
@@ -402,40 +399,40 @@ function! s:_retrieve_python(client, settings) abort " {{{
     call s:_throw(namespace.exception)
   endif
   return namespace.entries
-endfunction " }}}
+endfunction
 " @vimlint(EVL102, 0, l:kwargs)
 
 " Public functions
-function! s:new(...) abort " {{{
+function! s:new(...) abort
   let options = extend(deepcopy(s:config), get(a:000, 0, {}))
   let options = extend({
         \ 'token_cache': s:C.new('memory'),
         \}, options,
         \)
   return extend(deepcopy(s:client), options)
-endfunction " }}}
-function! s:get_config() abort " {{{
+endfunction
+function! s:get_config() abort
   return deepcopy(s:config)
-endfunction " }}}
-function! s:set_config(config) abort " {{{
+endfunction
+function! s:set_config(config) abort
   call extend(s:config, a:config)
-endfunction " }}}
+endfunction
 
-function! s:parse_response(response) abort " {{{
+function! s:parse_response(response) abort
   return {
         \ 'etag': s:parse_response_etag(a:response),
         \ 'link': s:parse_response_link(a:response),
         \ 'last_modified': s:parse_response_last_modified(a:response),
         \ 'rate_limit': s:parse_response_rate_limit(a:response),
         \}
-endfunction " }}}
-function! s:parse_response_etag(response) abort " {{{
+endfunction
+function! s:parse_response_etag(response) abort
   return matchstr(
         \ matchstr(a:response.header, '^ETag:'),
         \ '^ETag: \zs.*$',
         \)
-endfunction " }}}
-function! s:parse_response_link(response) abort " {{{
+endfunction
+function! s:parse_response_link(response) abort
   " https://developer.github.com/guides/traversing-with-pagination/#navigating-through-the-pages
   let bits = split(matchstr(a:response.header, '^Link:'), ',')
   let links = {}
@@ -447,8 +444,8 @@ function! s:parse_response_link(response) abort " {{{
     let links[m[2]] = m[1]
   endfor
   return links
-endfunction " }}}
-function! s:parse_response_rate_limit(response) abort " {{{
+endfunction
+function! s:parse_response_rate_limit(response) abort
   let limit = matchstr(
         \ matchstr(a:response.header, '^X-RateLimit-Limit:'),
         \ '^X-RateLimit-Limit: \zs\d\+$'
@@ -469,15 +466,15 @@ function! s:parse_response_rate_limit(response) abort " {{{
         \ 'remaining': empty(remaining) ? 0 : str2nr(remaining),
         \ 'reset': empty(reset) ? 0 : str2nr(reset),
         \}
-endfunction " }}}
-function! s:parse_response_last_modified(response) abort " {{{
+endfunction
+function! s:parse_response_last_modified(response) abort
   return matchstr(
         \ matchstr(a:response.header, '^Last-Modified:'),
         \ '^Last-Modified: \zs.*$'
         \)
-endfunction " }}}
+endfunction
 
-function! s:build_exception_message(response, ...) abort " {{{
+function! s:build_exception_message(response, ...) abort
   let a:response.content = get(a:response, 'content', {})
   let content = type(a:response.content) == type('')
         \ ? empty(a:response.content) ? {} : s:J.decode(a:response.content)
@@ -500,55 +497,55 @@ function! s:build_exception_message(response, ...) abort " {{{
         \   : printf('%s might help you resolve the error', documentation_url)
         \]
   return join(filter(messages, '!empty(v:val)'), "\n")
-endfunction " }}}
+endfunction
 
 " Instance
 let s:client = {}
-function! s:client._set_token(username, token) abort " {{{
+function! s:client._set_token(username, token) abort
   if empty(a:token)
     return self.token_cache.remove(a:username)
   else
     return self.token_cache.set(a:username, a:token)
   endif
-endfunction " }}}
-function! s:client._set_authorized_username(username) abort " {{{
+endfunction
+function! s:client._set_authorized_username(username) abort
   let self._authorized_username = a:username
-endfunction " }}}
+endfunction
 
-function! s:client.get_authorize_scopes() abort " {{{
+function! s:client.get_authorize_scopes() abort
   " See available scopes at
   " https://developer.github.com/v3/oauth/#scopes
   return self.authorize_scopes
-endfunction " }}}
-function! s:client.get_authorize_note() abort " {{{
+endfunction
+function! s:client.get_authorize_note() abort
   return self.authorize_note
-endfunction " }}}
-function! s:client.get_authorize_note_url() abort " {{{
+endfunction
+function! s:client.get_authorize_note_url() abort
   return self.authorize_note_url
-endfunction " }}}
-function! s:client.get_absolute_url(relative_url) abort " {{{
+endfunction
+function! s:client.get_absolute_url(relative_url) abort
   let baseurl = substitute(self.baseurl, '/$', '', '')
   let partial = substitute(a:relative_url, '^/', '', '')
   return baseurl . '/' . partial
-endfunction " }}}
+endfunction
 
-function! s:client.is_authorized() abort " {{{
+function! s:client.is_authorized() abort
   return !empty(self.get_authorized_username())
-endfunction " }}}
-function! s:client.get_token(...) abort " {{{
+endfunction
+function! s:client.get_token(...) abort
   let username = get(a:000, 0, '')
   let username = empty(username) ? self.get_authorized_username() : username
   return empty(username) ? '' : self.token_cache.get(username)
-endfunction " }}}
-function! s:client.get_header(...) abort " {{{
+endfunction
+function! s:client.get_header(...) abort
   let username = get(a:000, 0, '')
   let token = self.get_token(username)
   return s:_get_header(token)
-endfunction " }}}
-function! s:client.get_authorized_username() abort " {{{
+endfunction
+function! s:client.get_authorized_username() abort
   return get(self, '_authorized_username', '')
-endfunction " }}}
-function! s:client.login(username, ...) abort " {{{
+endfunction
+function! s:client.login(username, ...) abort
   let options = extend({
         \ 'force': 0,
         \ 'verbose': 1,
@@ -575,8 +572,8 @@ function! s:client.login(username, ...) abort " {{{
   endif
   call self._set_token(a:username, token)
   call self._set_authorized_username(a:username)
-endfunction " }}}
-function! s:client.logout(...) abort " {{{
+endfunction
+function! s:client.logout(...) abort
   let options = extend({
         \ 'permanent': 0,
         \}, get(a:000, 0, {}),
@@ -588,9 +585,9 @@ function! s:client.logout(...) abort " {{{
     endif
   endif
   return self._set_authorized_username('')
-endfunction " }}}
+endfunction
 
-function! s:client.request(...) abort " {{{
+function! s:client.request(...) abort
   if a:0 == 3
     let settings = a:3
     let settings.method = get(settings, 'method', a:1)
@@ -621,8 +618,8 @@ function! s:client.request(...) abort " {{{
         \}, settings.headers
         \)
   return s:H.request(settings)
-endfunction " }}}
-function! s:client.head(url, ...) abort " {{{
+endfunction
+function! s:client.head(url, ...) abort
   let params   = get(a:000, 0, {})
   let headers  = get(a:000, 1, {})
   let settings = {
@@ -632,8 +629,8 @@ function! s:client.head(url, ...) abort " {{{
         \ 'headers': headers,
         \}
   return self.request(settings)
-endfunction " }}}
-function! s:client.get(url, ...) abort " {{{
+endfunction
+function! s:client.get(url, ...) abort
   let params   = get(a:000, 0, {})
   let headers  = get(a:000, 1, {})
   let settings = {
@@ -643,8 +640,8 @@ function! s:client.get(url, ...) abort " {{{
         \ 'headers': headers,
         \}
   return self.request(settings)
-endfunction " }}}
-function! s:client.post(url, ...) abort " {{{
+endfunction
+function! s:client.post(url, ...) abort
   let data     = get(a:000, 0, {})
   let headers  = get(a:000, 1, {})
   let settings = {
@@ -654,8 +651,8 @@ function! s:client.post(url, ...) abort " {{{
         \ 'headers': headers,
         \}
   return self.request(settings)
-endfunction " }}}
-function! s:client.put(url, ...) abort " {{{
+endfunction
+function! s:client.put(url, ...) abort
   let data     = get(a:000, 0, {})
   let headers  = get(a:000, 1, {})
   let settings = {
@@ -665,8 +662,8 @@ function! s:client.put(url, ...) abort " {{{
         \ 'headers': headers,
         \}
   return self.request(settings)
-endfunction " }}}
-function! s:client.patch(url, ...) abort " {{{
+endfunction
+function! s:client.patch(url, ...) abort
   let data     = get(a:000, 0, {})
   let headers  = get(a:000, 1, {})
   let settings = {
@@ -676,8 +673,8 @@ function! s:client.patch(url, ...) abort " {{{
         \ 'headers': headers,
         \}
   return self.request(settings)
-endfunction " }}}
-function! s:client.delete(url, ...) abort " {{{
+endfunction
+function! s:client.delete(url, ...) abort
   let params   = get(a:000, 0, {})
   let headers  = get(a:000, 1, {})
   let settings = {
@@ -687,9 +684,9 @@ function! s:client.delete(url, ...) abort " {{{
         \ 'headers': headers,
         \}
   return self.request(settings)
-endfunction " }}}
+endfunction
 
-function! s:client.retrieve(...) abort " {{{
+function! s:client.retrieve(...) abort
   if a:0 == 3
     let settings = a:3
     let settings.method = get(settings, 'method', a:1)
@@ -725,7 +722,4 @@ function! s:client.retrieve(...) abort " {{{
   return settings.python
         \ ? s:_retrieve_python(self, settings)
         \ : s:_retrieve_vim(self, settings)
-endfunction " }}}
-
-let &cpoptions = s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
+endfunction
