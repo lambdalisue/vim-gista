@@ -1,17 +1,16 @@
 let s:V = vital#of('vital')
-let s:F = s:V.import('System.File')
-let s:P = s:V.import('System.Filepath')
-let s:S = s:V.import('Vim.ScriptLocal')
-let s:G = s:V.import('Vim.Guard')
+let s:Path = s:V.import('System.Filepath')
+let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
+let s:Guard = s:V.import('Vim.Guard')
 
 Describe gista#client
   Before all
-    let sfile = s:P.realpath('autoload/gista/client.vim')
-    let sf = s:S.sfuncs(sfile)
-    let sv = s:S.svars(sfile)
+    let sfile = s:Path.realpath('autoload/gista/client.vim')
+    let sf = s:ScriptLocal.sfuncs(sfile)
+    let sv = s:ScriptLocal.svars(sfile)
   End
   Before
-    let guard = s:G.store(
+    let guard = s:Guard.store(
           \ 'g:gista#client#use_git_config_github_user',
           \ 'g:gista#client#default_apiname',
           \ 'g:gista#client#default_username',
