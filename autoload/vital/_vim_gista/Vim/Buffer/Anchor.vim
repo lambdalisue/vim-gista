@@ -33,18 +33,18 @@ endfunction
 
 function! s:is_suitable(winnum) abort
   let bufnum  = winbufnr(a:winnum)
-  if s:config.buflisted_required && !buflisted(bufnum)
+  if empty(bufname(bufnum))
+    " An initial buffer
+    return 1
+  elseif s:config.buflisted_required && !buflisted(bufnum)
     return 0
-  endif
-  if !empty(s:config.unsuitable_bufname_pattern)
+  elseif !empty(s:config.unsuitable_bufname_pattern)
         \ && bufname(bufnum) =~# s:config.unsuitable_bufname_pattern
     return 0
-  endif
-  if !empty(s:config.unsuitable_buftype_pattern)
+  elseif !empty(s:config.unsuitable_buftype_pattern)
         \ && s:Compat.getbufvar(bufnum, '&buftype') =~# s:config.unsuitable_buftype_pattern
     return 0
-  endif
-  if !empty(s:config.unsuitable_filetype_pattern)
+  elseif !empty(s:config.unsuitable_filetype_pattern)
         \ && s:Compat.getbufvar(bufnum, '&filetype') =~# s:config.unsuitable_filetype_pattern
     return 0
   endif
@@ -60,12 +60,14 @@ function! s:find_suitable(winnum) abort
       return winnum
     endif
   endfor
-  " find a suitable window in leftabove to before a previous window
-  for winnum in range(1, a:winnum - 1)
-    if s:is_suitable(winnum)
-      return winnum
-    endif
-  endfor
+  if a:winnum > 1
+    " find a suitable window in leftabove to before a previous window
+    for winnum in range(1, a:winnum - 1)
+      if s:is_suitable(winnum)
+        return winnum
+      endif
+    endfor
+  endif
   " no suitable window is found.
   return 0
 endfunction
@@ -77,6 +79,42 @@ function! s:focus() abort
         \ ? previous_winnum
         \ : suitable_winnum
   silent execute printf('keepjumps %dwincmd w', suitable_winnum)
+endfunction
+
+function! s:register() abort
+  augroup vital_Vim_Buffer_Anchor
+    autocmd! * <buffer>
+    if exists('##QuitPre')
+      autocmd QuitPre  <buffer> call s:_ac_QuitPre()
+      autocmd WinLeave <buffer> call s:_ac_WinLeave()
+    else
+      " Note:
+      "
+      " QuitPre was introduced since Vim 7.3.544
+      " https://github.com/vim-jp/vim/commit/4e7db56d
+      "
+      " :wq       : QuitPre > BufWriteCmd > WinLeave > BufWinLeave
+      " :q        : QuitPre > WinLeave > BufWinLeave
+      " :e        : BufWinLeave
+      " :wincmd w : WinLeave
+      "
+      autocmd WinLeave <buffer> call s:_ac_WinLeaveVim703()
+    endif
+  augroup END
+endfunction
+function! s:_ac_QuitPre() abort
+  let w:_vital_Vim_Buffer_Anchor_QuitPre = 1
+endfunction
+function! s:_ac_WinLeave() abort
+  if get(w:, '_vital_Vim_Buffer_Anchor_QuitPre')
+    call s:focus()
+  endif
+  silent! unlet w:_vital_Vim_Buffer_Anchor_QuitPre
+endfunction
+function! s:_ac_WinLeaveVim703() abort
+  if histget('cmd') =~# '\v^%(q|quit|wq)$'
+    call s:focus()
+  endif
 endfunction
 
 let &cpo = s:save_cpo
