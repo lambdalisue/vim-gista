@@ -1,28 +1,14 @@
 let s:root = expand('<sfile>:p:h')
 
-" default config
-let s:config = {}
-let s:config.baseurl = 'https://api.github.com/'
-let s:config.authorize_scopes = []
-let s:config.authorize_note = printf('vim@%s', hostname())
-let s:config.authorize_note_url = ''
-let s:config.skip_authentication = 0
-let s:config.retrieve_python =
-      \ (v:version >= 704 || (v:version == 703 && has('patch601')))
-      \ && has('python') || has('python3')
-let s:config.retrieve_python_nprocess = 50
-let s:config.retrieve_per_page = 100
-let s:config.retrieve_indicator =
-      \ 'Requesting entries from %(url)s [%%(page)d/%(page_count)d]'
 
 function! s:_vital_loaded(V) abort
-  let s:C = a:V.import('System.Cache')
-  let s:J = a:V.import('Web.JSON')
-  let s:H = a:V.import('Web.HTTP')
-  let s:T = a:V.import('DateTime')
-  let s:P = a:V.import('System.Filepath')
-  let s:Y = a:V.import('Vim.Python')
-  let s:B = a:V.import('Data.Base64')
+  let s:Cache = a:V.import('System.Cache')
+  let s:JSON = a:V.import('Web.JSON')
+  let s:HTTP = a:V.import('Web.HTTP')
+  let s:DateTime = a:V.import('DateTime')
+  let s:Path = a:V.import('System.Filepath')
+  let s:Python = a:V.import('Vim.Python')
+  let s:Base64 = a:V.import('Data.Base64')
 endfunction
 function! s:_vital_depends() abort
   return {
@@ -32,6 +18,24 @@ function! s:_vital_depends() abort
         \ ],
         \ 'files': ['./github.py'],
         \}
+endfunction
+function! s:_vital_created(module) abort
+  if !exists('s:config')
+    " default config
+    let s:config = {}
+    let s:config.baseurl = 'https://api.github.com/'
+    let s:config.authorize_scopes = []
+    let s:config.authorize_note = printf('vim@%s', hostname())
+    let s:config.authorize_note_url = ''
+    let s:config.skip_authentication = 0
+    let s:config.retrieve_python =
+          \ (v:version >= 704 || (v:version == 703 && has('patch601')))
+          \ && has('python') || has('python3')
+    let s:config.retrieve_python_nprocess = 50
+    let s:config.retrieve_per_page = 100
+    let s:config.retrieve_indicator =
+          \ 'Requesting entries from %(url)s [%%(page)d/%(page_count)d]'
+  endif
 endfunction
 
 function! s:_throw(msgs) abort
@@ -48,7 +52,7 @@ function! s:_get_basic_header(username, password, ...) abort
   " Vital.Wet.HTTP's username/password have some bug in python/wget client
   " thus use raw way to specity BASIC auth.
   let insecure_password = a:username . ':' . a:password
-  let insecure_password = s:B.encode(insecure_password)
+  let insecure_password = s:Base64.encode(insecure_password)
   let headers['Authorization'] = 'basic ' . insecure_password
   return headers
 endfunction
@@ -76,7 +80,7 @@ function! s:_list_authorizations(client, username, password, ...) abort
   endif
   let res = a:client.request(settings)
   let res.content = get(res, 'content', '')
-  let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+  let res.content = empty(res.content) ? {} : s:JSON.decode(res.content)
   return res
 endfunction
 function! s:_delete_authorization(id, client, username, password, ...) abort
@@ -102,7 +106,7 @@ function! s:_delete_authorization(id, client, username, password, ...) abort
   endif
   let res = a:client.request(settings)
   let res.content = get(res, 'content', '')
-  let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+  let res.content = empty(res.content) ? {} : s:JSON.decode(res.content)
   return res
 endfunction
 function! s:_create_authorization(params, client, username, password, ...) abort
@@ -116,7 +120,7 @@ function! s:_create_authorization(params, client, username, password, ...) abort
   let settings ={
         \ 'method': 'POST',
         \ 'url': url,
-        \ 'data': s:J.encode(a:params),
+        \ 'data': s:JSON.encode(a:params),
         \ 'headers': headers,
         \}
   if options.verbose
@@ -129,7 +133,7 @@ function! s:_create_authorization(params, client, username, password, ...) abort
   endif
   let res = a:client.request(settings)
   let res.content = get(res, 'content', '')
-  let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+  let res.content = empty(res.content) ? {} : s:JSON.decode(res.content)
   return res
 endfunction
 
@@ -265,7 +269,7 @@ function! s:_authenticate(client, username, token, ...) abort
   let url = a:client.get_absolute_url('user')
   let res = a:client.get(url, {}, s:_get_header(a:token))
   let res.content = get(res, 'content', '')
-  let res.content = empty(res.content) ? {} : s:J.decode(res.content)
+  let res.content = empty(res.content) ? {} : s:JSON.decode(res.content)
   if res.status != 200
     call s:_throw([
           \ printf(
@@ -317,8 +321,8 @@ function! s:_build_rate_limit_message(rate_limit, ...) abort
     return ''
   endif
   let now_dt   = get(a:000, 0, {})
-  let reset_dt = s:T.from_unix_time(a:rate_limit.reset)
-  let duration = reset_dt.delta(empty(now_dt) ? s:T.now() : now_dt)
+  let reset_dt = s:DateTime.from_unix_time(a:rate_limit.reset)
+  let duration = reset_dt.delta(empty(now_dt) ? s:DateTime.now() : now_dt)
   return printf(
         \ 'Try again %s, or login to use authenticated request',
         \ duration.about(),
@@ -339,7 +343,7 @@ function! s:_retrieve_vim_partial(client, settings, indicator, page) abort
     call s:_throw(s:build_exception_message(res))
   endif
   let res.content = get(res, 'content', '')
-  let res.content = empty(res.content) ? [] : s:J.decode(res.content)
+  let res.content = empty(res.content) ? [] : s:JSON.decode(res.content)
   return res.content
 endfunction
 function! s:_retrieve_vim(client, settings) abort
@@ -391,8 +395,8 @@ function! s:_retrieve_python(client, settings) abort
         \ 'page_end': a:settings.page_end,
         \})
   let namespace = {}
-  execute s:Y.exec_file(
-        \ s:P.join(s:root, 'github.py'),
+  execute s:Python.exec_file(
+        \ s:Path.join(s:root, 'github.py'),
         \ a:settings.python == 1 ? 0 : a:settings.python
         \)
   if has_key(namespace, 'exception')
@@ -406,7 +410,7 @@ endfunction
 function! s:new(...) abort
   let options = extend(deepcopy(s:config), get(a:000, 0, {}))
   let options = extend({
-        \ 'token_cache': s:C.new('memory'),
+        \ 'token_cache': s:Cache.new('memory'),
         \}, options,
         \)
   return extend(deepcopy(s:client), options)
@@ -477,7 +481,7 @@ endfunction
 function! s:build_exception_message(response, ...) abort
   let a:response.content = get(a:response, 'content', {})
   let content = type(a:response.content) == type('')
-        \ ? empty(a:response.content) ? {} : s:J.decode(a:response.content)
+        \ ? empty(a:response.content) ? {} : s:JSON.decode(a:response.content)
         \ : a:response.content
   let message = get(content, 'message', '')
   let error_message = s:_build_error_message(get(content, 'errors', []))
@@ -617,7 +621,7 @@ function! s:client.request(...) abort
         \ 'Content-Type': 'application/json',
         \}, settings.headers
         \)
-  return s:H.request(settings)
+  return s:HTTP.request(settings)
 endfunction
 function! s:client.head(url, ...) abort
   let params   = get(a:000, 0, {})
@@ -647,7 +651,7 @@ function! s:client.post(url, ...) abort
   let settings = {
         \ 'method': 'POST',
         \ 'url': a:url,
-        \ 'data': s:J.encode(data),
+        \ 'data': s:JSON.encode(data),
         \ 'headers': headers,
         \}
   return self.request(settings)
@@ -658,7 +662,7 @@ function! s:client.put(url, ...) abort
   let settings = {
         \ 'method': 'PUT',
         \ 'url': a:url,
-        \ 'data': s:J.encode(data),
+        \ 'data': s:JSON.encode(data),
         \ 'headers': headers,
         \}
   return self.request(settings)
@@ -669,7 +673,7 @@ function! s:client.patch(url, ...) abort
   let settings = {
         \ 'method': 'PATCH',
         \ 'url': a:url,
-        \ 'data': s:J.encode(data),
+        \ 'data': s:JSON.encode(data),
         \ 'headers': headers,
         \}
   return self.request(settings)

@@ -1,9 +1,6 @@
 function! s:_vital_loaded(V) abort
   let s:Prelude = a:V.import('Prelude')
   let s:Dict = a:V.import('Data.Dict')
-  let s:config = {
-        \ 'prefix': 'vital: Vim.Validate: ',
-        \}
 endfunction
 function! s:_vital_depends() abort
   return [
@@ -11,6 +8,14 @@ function! s:_vital_depends() abort
         \ 'Data.Dict',
         \]
 endfunction
+function! s:_vital_created(module) abort
+  if !exists('s:config')
+    let s:config = {
+          \ 'prefix': 'vital: Vim.Validate: ',
+          \}
+  endif
+endfunction
+
 function! s:_translate(text, table) abort
   let text = a:text
   for [key, value] in items(a:table)
