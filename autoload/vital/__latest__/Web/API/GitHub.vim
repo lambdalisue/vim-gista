@@ -621,6 +621,10 @@ function! s:client.request(...) abort
         \ 'Content-Type': 'application/json',
         \}, settings.headers
         \)
+  " neovim currently does not support 'bindeval'
+  if has('nvim')
+    let settings.client = ['curl', 'wget']
+  endif
   return s:HTTP.request(settings)
 endfunction
 function! s:client.head(url, ...) abort
