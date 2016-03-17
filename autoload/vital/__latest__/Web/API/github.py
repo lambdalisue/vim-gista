@@ -104,10 +104,9 @@ def _vim_vital_web_api_github_main():
                 entries_per_pages.append([page, entries])
                 if callback:
                     message = indicator % {'page': len(entries_per_pages)}
-                    if hasattr(vim, 'session'):
-                        # NOTE
-                        # It seems the following won't echo actually...
-                        vim.session.threadsafe_call(callback, message)
+                    if hasattr(vim, 'async_call'):
+                        with lock:
+                            vim.async_call(callback, message)
                     else:
                         with lock:
                             callback(message)
@@ -172,8 +171,7 @@ def _vim_vital_web_api_github_main():
         )))
 
     def echo_status_vim(indicator):
-        vim.command('redraw')
-        print(indicator)
+        vim.command('redraw | echo "%s"' % indicator)
 
     # Execute a main code
     namespace = {}
