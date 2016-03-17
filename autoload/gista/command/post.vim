@@ -85,7 +85,7 @@ function! s:get_parser() abort
           \ 'name': 'Gista post',
           \ 'description': 'Post contents into a new gist',
           \ 'complete_unknown': s:ArgumentParser.complete_files,
-          \ 'unknown_description': '[filename, ...]',
+          \ 'unknown_description': '[filenames...]',
           \})
     call s:parser.add_argument(
           \ '--description', '-d',

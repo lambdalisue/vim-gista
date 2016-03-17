@@ -35,20 +35,19 @@ compiled with `+python3` with cURL or wget.
 
 Install
 -------------------------------------------------------------------------------
-Use [neobundle.vim](https://github.com/Shougo/neobundle.vim) or [vim-plug](https://github.com/junegunn/vim-plug) as:
+Use [dein.vim](https://github.com/Shougo/dein.vim) or [vim-plug](https://github.com/junegunn/vim-plug) as:
 
 ```vim
 " vim-plug
 Plug 'lambdalisue/vim-gista'
 
-" neobundle.vim
-NeoBundle 'lambdalisue/vim-gista'
+" dein.vim
+call dein#add('lambdalisue/vim-gista')
 
-" neobundle.vim (Lazy)
-NeoBundleLazy 'lambdalisue/vim-gista', {
-    \ 'on_cmd': ['Gista']
-    \ 'on_func': 'gista#'
-    \}
+" dein.vim (Lazy)
+call dein#add('lambdalisue/vim-gista', {
+    \ 'on_cmd': 'Gista'
+    \})
 ```
 
 Or install the repository into your `runtimepath` manually.

@@ -85,19 +85,18 @@ compiled with |+python3| with cURL or wget.
 ==============================================================================
 INSTALL						*vim-gista-install*
 
-Use any Vim plugin manager such as neobundle.vim (Shougo/neobundle.vim) or
+Use any Vim plugin manager such as dein.vim (Shougo/dein.vim) or
 vim-plug (junegunn/vim-plug) to install this plugin like:
 >
 	" vim-plug
 	Plug 'lambdalisue/vim-gista'
 
-	" neobundle.vim
-	NeoBundle 'lambdalisue/vim-gista'
-	" neobundle.vim (lazy)
-	NeoBundle 'lambdalisue/vim-gista', {
+	" dein.vim
+	call dein#add('lambdalisue/vim-gista')
+	" dein.vim (lazy)
+	call dein#add('lambdalisue/vim-gista', {
 	  \ 'on_cmd': 'Gista',
-	  \ 'on_func': 'gista#',
-	  \}
+	  \})
 <
 Or install the repository into your |runtimepath| manually.
 
@@ -250,7 +249,8 @@ All commands provide -h/--help to quickly show an usage of the command.
 
 						*vim-gista-Gista*
 						*:Gista*
-:Gista [-n/--apiname={APINAME}]
+:Gista [-h/--help]
+       [-n/--apiname={APINAME}]
        [-u/--username={USERNAME}]
        [-a/--anonymous]
        {command}
@@ -261,7 +261,7 @@ All commands provide -h/--help to quickly show an usage of the command.
 
 						*vim-gista-Gista-login*
 						*:Gista-login*
-:Gista login [-n/--apiname={APINAME}] {username}
+:Gista login [-h/--help] [-n/--apiname={APINAME}] {username}
 
 	Login into API of {APINAME} with {username}. If {APINAME} is omited,
 	a current {APINAME} or |g:gista#client#default_apiname| is used.
@@ -277,7 +277,7 @@ All commands provide -h/--help to quickly show an usage of the command.
 
 						*vim-gista-Gista-logout*
 						*:Gista-logout*
-:Gista logout [-n/--apiname=APINAME]
+:Gista logout [-h/--help] [-n/--apiname=APINAME]
 
 	Logout from API and use an anonymous account of {APINAME} for
 	posterior commands. If {APINAME} is omited, a current {APINAME} or
@@ -289,7 +289,8 @@ All commands provide -h/--help to quickly show an usage of the command.
 	logout from API.
 
 						*vim-gista-Gista-open*
-:Gista open [-o/--opener={OPENER}] [--[no-]cache]	*:Gista-open*
+						*:Gista-open*
+:Gista open [-h/--help] [-o/--opener={OPENER}] [--[no-]cache]
             [{gistid}] [{filename}]
 
 	Open a {filename} of {gistid}. In an opened buffer, users can post
@@ -298,7 +299,8 @@ All commands provide -h/--help to quickly show an usage of the command.
 	un-|modifiable| buffer.
 
 						*vim-gista-Gista-json*
-:Gista json [-o/--opener={OPENER}] [--[no-]cache]	*:Gista-json*
+						*:Gista-json*
+:Gista json [-h/--help] [-o/--opener={OPENER}] [--[no-]cache]
             [{gistid}]
 
 	Open a JSON content of {gistid}. An opened buffer is opened as
@@ -307,7 +309,9 @@ All commands provide -h/--help to quickly show an usage of the command.
 	is 1 to see a debug information.
 
 						*vim-gista-Gista-list*
-:Gista[!] list [-o/--opener={OPENER}] [--[no-]cache]	*:Gista-list*
+						*:Gista-list*
+:Gista[!] list [-h/--help]
+          [-o/--opener={OPENER}] [--[no-]cache]
           [--[no-]since[={SINCE}]]
           [--[no-]python]
           [{lookup}]
@@ -367,7 +371,8 @@ All commands provide -h/--help to quickly show an usage of the command.
 	available.
 
 						*vim-gista-Gista-commits*
-:Gista commits [-o/--opener={OPENER}] [{gistid}]	*:Gista-commits*
+						*:Gista-commits*
+:Gista commits [-h/--help] [-o/--opener={OPENER}] [{gistid}]
 
 	Open a |gista-commits| window to list commits of a gist {gistid}.
 
@@ -393,31 +398,44 @@ All commands provide -h/--help to quickly show an usage of the command.
 
 						*vim-gista-Gista-post*
 						*:Gista-post*
-:Gista post [-d/--description={DESCRIPTION}]
+:Gista post [-h/--help] [-d/--description={DESCRIPTION}]
        [-p/--public|-P/--private]
+       [-- {filenames}...]
 
-	Post a content of the current buffer to a new gist in the current API.
-	Note that this command apply a new filename to the current buffer so
+	Post content(s) to a new gist in the current API.
+	When {filenames} is/are specified, it post contents of
+	1. A buffer if {filenames} is opened (via |getline()| function)
+	2. A file content otherwise (via |readfile()| function)
+	Otherwise it post a content of the current buffer. Note that
+	{filenames} which is not opened and not readable will ignored.
+	Note that this command apply a new filename to the buffer(s) so
 	use |Ctrl-^| to switch to previous filename (See |alternate-file| for
 	detail.)
 	Use |:Gista-patch| instead to add/modify a content of an existing gist.
 
 						*vim-gista-Gista-patch*
 						*:Gista-patch*
-:Gista patch [-d/--description={DESCRIPTION}]
+:Gista patch [-h/--help] [-d/--description={DESCRIPTION}]
        [-f/--[no-]force]
        [{gistid}]
+       [-- {filenames}...]
 
-	Post a content of the current buffer to an existing gist in the
-	current API. It checks if a remote content of the gist is updated or
-	not unless --force option is specified.
-	Note that this command apply a new filename to the current buffer so
+	Post content(s) to an existing gist in the current API.
+	When {filenames} is/are specified, it post contents of
+	1. A buffer if {filenames} is opened (via |getline()| function)
+	2. A file content otherwise (via |readfile()| function)
+	Otherwise it post a content of the current buffer. Note that
+	{filenames} which is not opened and not readable will ignored.
+	It checks if a remote content of the gist is updated or not unless
+	--force option is specified.
+	Note that this command apply a new filename to the buffer(s) so
 	use |Ctrl-^| to switch to previous filename (See |alternate-file| for
 	detail.)
 	Use |:Gista-post| instead to create a new gist with a content.
 
 						*vim-gista-Gista-rename*
-:Gista rename [-f/--[no-]force]			*:Gista-rename*
+						*:Gista-rename*
+:Gista rename [-h/--help] [-f/--[no-]force]
        [{gistid}] [{filename}] [{new_filename}]
 
 	Rename a {filename} of a gist.
@@ -425,41 +443,50 @@ All commands provide -h/--help to quickly show an usage of the command.
 	--force option is specified.
 
 						*vim-gista-Gista-remove*
-:Gista remove [-f/--[no-]force]			*:Gista-remove*
+						*:Gista-remove*
+:Gista remove [-h/--help] [-f/--[no-]force] [--[no-]confirm]
        [{gistid}] [{filename}]
 
 	Remove a {filename} of a gist.
 	It checks if a remote content of the gist is updated unless
 	--force option is specified.
+	It confirm before delete if --confirm option is specified (default).
 
 						*vim-gista-Gista-delete*
-:Gista delete [-f/--[no-]force]			*:Gista-delete*
+						*:Gista-delete*
+:Gista delete [-h/--help] [-f/--[no-]force] [--[no-]confirm]
        [{gistid}]
 
 	Delete a gist.
 	It checks if a remote content of the gist is updated unless
 	--force option is specified.
+	It confirm before delete if --confirm option is specified (default).
 
 						*vim-gista-Gista-browse*
-:Gista browse					*:Gista-browse*
+						*:Gista-browse*
+:Gista browse [-h/--help]
        [-e/--echo|-y/--yank]
        [{gistid}] [{filename}]
 
 	Browse a remote URL of a gist {gistid} in a system default browser
-	unless --echo or --yank option is specified.
+	unless --echo or --yank option is specified. Otherwise it echo or
+	yank the URL.
 
 						*vim-gista-Gista-fork*
-:Gista fork [{gistid}]				*:Gista-fork*
+						*:Gista-fork*
+:Gista fork [-h/--help] [{gistid}]
 
 	Fork a gist {gistid} to the current user in the current API.
 
 						*vim-gista-Gista-star*
-:Gista star [{gistid}]				*:Gista-star*
+						*:Gista-star*
+:Gista star [-h/--help] [{gistid}]
 
 	Star a gist {gistid}
 
 						*vim-gista-Gista-unstar*
-:Gista unstar [{gistid}]			*:Gista-unstar*
+						*:Gista-unstar*
+:Gista unstar [-h/--help] [{gistid}]
 
 	Unstar a gist {gistid}
 

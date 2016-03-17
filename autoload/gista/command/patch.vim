@@ -65,7 +65,7 @@ function! s:get_parser() abort
           \ 'name': 'Gista patch',
           \ 'description': 'Patch a current buffer content into an existing gist',
           \ 'complete_unknown': s:ArgumentParser.complete_files,
-          \ 'unknown_description': '[filename, ...]',
+          \ 'unknown_description': '[filenames...]',
           \})
     call s:parser.add_argument(
           \ '--description', '-d',
