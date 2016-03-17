@@ -298,6 +298,7 @@ function! gista#command#list#open(...) abort
   endif
   augroup vim_gista_list
     autocmd! * <buffer>
+    autocmd BufReadCmd <buffer> call gista#command#list#open(b:gista.options)
     autocmd VimResized <buffer> call s:on_VimResized()
     autocmd WinEnter   <buffer> call s:on_WinEnter()
   augroup END

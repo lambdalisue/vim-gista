@@ -209,6 +209,7 @@ function! gista#command#commits#open(...) abort
   endif
   augroup vim_gista_commits
     autocmd! * <buffer>
+    autocmd BufReadCmd <buffer> call gista#command#commits#open(b:gista.options)
     autocmd VimResized <buffer> call s:on_VimResized()
     autocmd WinEnter   <buffer> call s:on_WinEnter()
   augroup END
