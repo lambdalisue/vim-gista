@@ -1,7 +1,11 @@
 try:
     import vim
 except ImportError:
-    raise ImportError('"vim" is not available. This module require to be loaded from Vim.')
+    raise ImportError(
+        '"vim" is not available. This module require to be loaded from Vim.'
+    )
+
+
 #
 # NOTE
 #   Vim use a global namespace for python/python3 so define a unique name
@@ -21,13 +25,11 @@ def _vim_vital_web_api_github_main():
         import simplejson as json
     try:
         from urllib.request import urlopen, Request
-        from urllib.parse import (urlparse, parse_qs, urlencode,
-                                urlunparse, urljoin)
+        from urllib.parse import (urlparse, parse_qs, urlencode, urlunparse)
     except ImportError:
         from urllib2 import urlopen, Request
         from urllib import urlencode
-        from urlparse import (urlparse, parse_qs,
-                            urlunparse, urljoin)
+        from urlparse import (urlparse, parse_qs, urlunparse)
 
     DEFAULT_INDICATOR = (
         'Requesting entries and converting into '
@@ -56,7 +58,7 @@ def _vim_vital_web_api_github_main():
         return obj
 
     def build_headers(token):
-        return { 'Authorization': 'token %s' % token } if token else {}
+        return {'Authorization': 'token %s' % token} if token else {}
 
     def build_url(url, **kwargs):
         scheme, netloc, path, params, query, fragment = urlparse(url)
@@ -93,16 +95,22 @@ def _vim_vital_web_api_github_main():
         obj = json.loads(res.read().decode('utf-8'))
         return to_vim(obj)
 
-    def _request_entries(lock, queue, entries_per_pages, url, headers, callback=None):
+    def _request_entries(lock, queue, entries_per_pages, url,
+                         headers, callback=None):
         try:
             while True:
                 page, indicator = queue.popleft()
                 entries = request_json(url, headers=headers, page=page)
                 entries_per_pages.append([page, entries])
                 if callback:
-                    callback(lock, indicator % {
-                        'page': len(entries_per_pages)
-                    })
+                    message = indicator % {'page': len(entries_per_pages)}
+                    if hasattr(vim, 'session'):
+                        # NOTE
+                        # It seems the following won't echo actually...
+                        vim.session.threadsafe_call(callback, message)
+                    else:
+                        with lock:
+                            callback(message)
         except IndexError:
             pass
         except Exception as e:
@@ -111,9 +119,9 @@ def _vim_vital_web_api_github_main():
             entries_per_pages.append(e)
 
     def request_entries(url, token,
-                indicator=DEFAULT_INDICATOR,
-                page_start=1, page_end=0,
-                nprocess=20, callback=None, **kwargs):
+                        indicator=DEFAULT_INDICATOR,
+                        page_start=1, page_end=0,
+                        nprocess=20, callback=None, **kwargs):
         # the followings might be str when specified from Vim.
         page_start = int(page_start)
         page_end = int(page_end)
@@ -121,13 +129,13 @@ def _vim_vital_web_api_github_main():
 
         url = build_url(url, **kwargs)
         headers = build_headers(token)
-        lock  = Lock()
+        lock = Lock()
         queue = collections.deque()
         entries_per_pages = collections.deque()
         # figure out the number of pages from HEAD request
         if page_end == 0:
             if callback:
-                callback(lock, 'Requesting the total number of pages ...')
+                callback('Requesting the total number of pages ...')
             response_link = request_head(url, 'link', headers=headers)
             if response_link:
                 m = re.search(
@@ -163,20 +171,18 @@ def _vim_vital_web_api_github_main():
             lambda x: x[1], sorted(entries_per_pages, key=lambda x: x[0])
         )))
 
-    def echo_status_vim(lock, indicator):
-        with lock:
-            vim.command('redraw')
-            print(indicator)
+    def echo_status_vim(indicator):
+        vim.command('redraw')
+        print(indicator)
 
     # Execute a main code
+    namespace = {}
     try:
         # Override 'request' with 'pseudo_requst' if exists
         try:
             request = _vim_vital_web_api_github_test_pseudo_request
         except NameError:
             pass
-
-        namespace = vim.bindeval('namespace')
         kwargs = vim.eval('kwargs')
         if kwargs.pop('verbose', 1):
             kwargs['callback'] = echo_status_vim
@@ -185,5 +191,7 @@ def _vim_vital_web_api_github_main():
     except:
         namespace['exception'] = format_exception()
 
+    return namespace
+
 # Call a namespace function
-_vim_vital_web_api_github_main()
+_vim_vital_web_api_github_response = _vim_vital_web_api_github_main()

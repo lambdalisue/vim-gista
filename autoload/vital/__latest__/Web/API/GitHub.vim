@@ -382,9 +382,7 @@ function! s:_retrieve_vim(client, settings) abort
 endfunction
 " @vimlint(EVL102, 1, l:kwargs)
 function! s:_retrieve_python(client, settings) abort
-  if !(v:version >= 704 || (v:version == 703 && has('patch601')))
-    call s:_throw('Vim 7.3.600 or earlier is not supported')
-  endif
+  let python = a:settings.python == 1 ? 0 : a:settings.python
   let kwargs = extend(copy(a:settings.param), {
         \ 'verbose': a:settings.verbose,
         \ 'url': a:client.get_absolute_url(a:settings.url),
@@ -394,15 +392,21 @@ function! s:_retrieve_python(client, settings) abort
         \ 'page_start': a:settings.page_start,
         \ 'page_end': a:settings.page_end,
         \})
-  let namespace = {}
-  execute s:Python.exec_file(
-        \ s:Path.join(s:root, 'github.py'),
-        \ a:settings.python == 1 ? 0 : a:settings.python
-        \)
-  if has_key(namespace, 'exception')
-    call s:_throw(namespace.exception)
+  execute s:Python.exec_file(s:Path.join(s:root, 'github.py'), python)
+  " NOTE:
+  " To support neovim, bindeval cannot be used for now.
+  " That's why eval_expr is required to call separatly
+  let prefix = '_vim_vital_web_api_github'
+  let response = s:Python.eval_expr(prefix . '_response', python)
+  let code = [
+        \ printf('del %s_main', prefix),
+        \ printf('del %s_response', prefix),
+        \]
+  execute s:Python.exec_code(code, python)
+  if has_key(response, 'exception')
+    call s:_throw(response.exception)
   endif
-  return namespace.entries
+  return response.entries
 endfunction
 " @vimlint(EVL102, 0, l:kwargs)
 
