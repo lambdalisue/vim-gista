@@ -5,10 +5,10 @@ let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
 let s:Python = s:V.import('Vim.Python')
 let s:DateTime = s:V.import('DateTime')
 let s:sv = s:ScriptLocal.svars(s:Path.realpath(s:Path.abspath(
-      \ 'autoload/vital/__latest__/Web/API/GitHub.vim',
+      \ 'autoload/vital/__vim_gista__/Web/API/GitHub.vim',
       \)))
 let s:sf = s:ScriptLocal.sfuncs(s:Path.realpath(s:Path.abspath(
-      \ 'autoload/vital/__latest__/Web/API/GitHub.vim',
+      \ 'autoload/vital/__vim_gista__/Web/API/GitHub.vim',
       \)))
 
 " Use a pseudo response for 'retrieve' tests
@@ -16,7 +16,7 @@ let s:USE_PSEUDO_RESPONSE = 1
 
 Describe Web.API.GitHub
   Before
-    let GitHub = s:V.import('Web.API.GitHub')
+    let GitHub = gista#vital().import('Web.API.GitHub')
   End
 
   Context [PRIVATE] s:_list_authorizations({client}, {username}, {password}[, {options})

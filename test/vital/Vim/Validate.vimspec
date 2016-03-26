@@ -4,9 +4,9 @@ let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
 
 Describe Vim.Validate
   Before
-    let Validate = s:V.import('Vim.Validate')
+    let Validate = gista#vital().import('Vim.Validate')
     let sf = s:ScriptLocal.sfuncs(s:Path.realpath(
-          \ 'autoload/vital/__latest__/Vim/Validate.vim'
+          \ 'autoload/vital/__vim_gista__/Vim/Validate.vim'
           \))
     call Validate.set_config({
           \ 'prefix': 'vital: Vim.Validate: ',
