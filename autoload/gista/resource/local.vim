@@ -51,7 +51,7 @@ function! s:validate_lookup(client, lookup) abort
     return
   endif
   call gista#util#validate#pattern(
-        \ a:lookup, '^\w*$',
+        \ a:lookup, '^[-0-9a-zA-Z_]*$',
         \ 'A lookup "%value" requires to follow "%pattern"'
         \)
 endfunction
