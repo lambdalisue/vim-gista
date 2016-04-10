@@ -5,7 +5,7 @@ let s:List = s:V.import('Data.List')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 
-let s:PRIVATE_GISTID = repeat('*', 32)
+let s:PRIVATE_GISTID = repeat('*', 20)
 let s:MODES = [
       \ 'created_at',
       \ 'updated_at',
@@ -755,10 +755,10 @@ function! gista#command#list#define_highlights() abort
 endfunction
 function! gista#command#list#define_syntax() abort
   syntax match GistaMapping /^|.*$/
-  syntax match GistaLine /^[=\-].*gistid:.\{,32}\%(\/[a-zA-Z0-9]\+\)\?$/
-  syntax match GistaGistIDPublic /gistid:[a-zA-Z0-9_\-]\{,32}\%(\/[a-zA-Z0-9]\+\)\?$/
+  syntax match GistaLine /^[=\-].*gistid:.\{,20}\%(\/[a-zA-Z0-9]\+\)\?$/
+  syntax match GistaGistIDPublic /gistid:[a-zA-Z0-9_\-]\{,20}\%(\/[a-zA-Z0-9]\+\)\?$/
         \ display contained containedin=GistaLine
-  syntax match GistaGistIDPrivate /gistid:\*\{32}$/
+  syntax match GistaGistIDPrivate /gistid:\*\{20}$/
         \ display contained containedin=GistaLine
   syntax match GistaMeta /^[=\-] \d\{2}\/\d\{2}\/\d\{2}(\d\{2}:\d\{2}:\d\{2}) [ \*]/
         \ display contained containedin=GistaLine

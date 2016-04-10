@@ -5,7 +5,7 @@ let s:List = s:V.import('Data.List')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 
-let s:PRIVATE_GISTID = repeat('*', 32)
+let s:PRIVATE_GISTID = repeat('*', 20)
 let s:MODES = [
       \ 'created_at',
       \ 'updated_at',
