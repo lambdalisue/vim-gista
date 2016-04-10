@@ -34,7 +34,7 @@ function! s:validate_gistid(gistid) abort
         \ 'A gist ID cannot be empty',
         \)
   call gista#util#validate#pattern(
-        \ a:gistid, '^\w\{,20}\%(/\w\+\)\?$',
+        \ a:gistid, '^\w\{,32}\%(/\w\+\)\?$',
         \ 'A gist ID "%value" requires to follow "%pattern"'
         \)
 endfunction
