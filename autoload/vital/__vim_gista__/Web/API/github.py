@@ -173,6 +173,20 @@ def _vim_vital_web_api_github_main():
     def echo_status_vim(indicator):
         vim.command('redraw | echo "%s"' % indicator)
 
+    if sys.version_info < (3, 0, 0):
+        def ensure_unicode(s, encoding):
+            if isinstance(s, unicode):
+                return s
+            else:
+                return s.decode(encoding)
+    else:
+        def ensure_unicode(s, encoding):
+            if not isinstance(s, bytes):
+                return s
+            else:
+                return s.decode(encoding)
+
+
     # Execute a main code
     namespace = {}
     try:
@@ -181,7 +195,10 @@ def _vim_vital_web_api_github_main():
             request = _vim_vital_web_api_github_test_pseudo_request
         except NameError:
             pass
+        encoding = vim.eval('&encoding')
         kwargs = vim.eval('kwargs')
+        kwargs = { ensure_unicode(k, encoding): ensure_unicode(v, encoding)
+                   for k, v in kwargs.items()}
         if kwargs.pop('verbose', 1):
             kwargs['callback'] = echo_status_vim
         entries = request_entries(**kwargs)
