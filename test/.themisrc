@@ -2,12 +2,12 @@ let s:assert = themis#helper('assert')
 call themis#option('recursive', 1)
 call themis#helper('command').with(s:assert)
 
-function! Capture(command) abort " {{{
+function! Capture(command) abort
   redir => contents
   silent execute a:command
   redir END
   return split(contents, '\v\r?\n')
-endfunction" }}}
+endfunction
 
 let g:gista#api#cache_dir = tempname()
 let g:gista#test = 1
