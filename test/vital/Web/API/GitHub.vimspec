@@ -442,7 +442,7 @@ Describe Web.API.GitHub
                 \ 'page_start': 1,
                 \ 'page_end': 3,
                 \}
-          Throw /+python and/or +python3 is required/
+          Throw /+python and\/or +python3 is required/
                 \ sf._retrieve_python(client, settings)
         End
       endif
