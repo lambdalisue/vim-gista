@@ -10,7 +10,7 @@ function! gista#util#clip(content) abort
 endfunction
 
 function! gista#util#doautocmd(name, ...) abort
-  let guard = s:Guard.store('g:gista#avars')
+  let guard = s:Guard.store(['g:gista#avars'])
   let g:gista#avars = extend(
         \ get(g:, 'gista#avars', {}),
         \ get(a:000, 0, {})

@@ -10,14 +10,14 @@ Describe gista#client
     let sv = s:ScriptLocal.svars(sfile)
   End
   Before
-    let guard = s:Guard.store(
+    let guard = s:Guard.store([
           \ 'g:gista#client#use_git_config_github_user',
           \ 'g:gista#client#default_apiname',
           \ 'g:gista#client#default_username',
           \ ['current_client', sv],
           \ ['registry', sv],
           \ ['GitHub', sv],
-          \)
+          \])
     let g:gista#client#use_git_config_github_user = 0
     let g:gista#client#default_apiname = 'A'
     let g:gista#client#default_username = ''

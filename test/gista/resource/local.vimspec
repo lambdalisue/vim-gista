@@ -12,12 +12,12 @@ Describe gista#resource#local
   End
   Before
     let client = gista#client#get()
-    let guard = s:Guard.store(
+    let guard = s:Guard.store([
           \ ['gist_cache', client],
           \ ['index_cache', client],
           \ ['request', client],
           \ ['retrieve', client],
-          \)
+          \])
     let client.gist_cache = s:MemoryCache.new()
     let client.index_cache = s:MemoryCache.new()
     function! client.request(...) abort
