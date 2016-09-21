@@ -6,18 +6,19 @@ let s:Guard = s:V.import('Vim.Guard')
 Describe gista#client
   Before all
     let sfile = s:Path.realpath('autoload/gista/client.vim')
+  End
+
+  Before
     let sf = s:ScriptLocal.sfuncs(sfile)
     let sv = s:ScriptLocal.svars(sfile)
-  End
-  Before
-    let guard = s:Guard.store(
+    let guard = s:Guard.store([
           \ 'g:gista#client#use_git_config_github_user',
           \ 'g:gista#client#default_apiname',
           \ 'g:gista#client#default_username',
           \ ['current_client', sv],
           \ ['registry', sv],
           \ ['GitHub', sv],
-          \)
+          \])
     let g:gista#client#use_git_config_github_user = 0
     let g:gista#client#default_apiname = 'A'
     let g:gista#client#default_username = ''
@@ -27,9 +28,11 @@ Describe gista#client
           \ 'B': 'http://B',
           \}
   End
+
   After
     call guard.restore()
   End
+
   Describe s:get_client_cache()
     It returns a cache system
       let ret = sf.get_client_cache()

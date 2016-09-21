@@ -1,25 +1,31 @@
-language: viml
-
-sudo: required
-dist: trusty
-
+language: generic
+sudo: false
+env:
+  - VERSION=HEAD
+  - VERSION=v7.4.2137
+  - VERSION=nvim
 os:
   - linux
   - osx
+osx_image: xcode8
+
+addons:
+  apt:
+    packages:
+      - vim
+      - gettext
+      - libncurses5-dev
+      - libacl1-dev
+      - libgpm-dev
+      - libperl-dev
+      - ruby-dev
+      - python-dev
+      - python3-dev
+      - lua5.2
+      - liblua5.2-dev
 
 install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update && brew install macvim --with-override-system-vim; fi
-
-before_script:
-  - vim --version
-  - git clone --depth 1 https://github.com/Shougo/vimproc.vim /tmp/vimproc
-  - git clone --depth 1 https://github.com/vim-jp/vital.vim /tmp/vital
-  - git clone --depth 1 https://github.com/syngan/vim-vimlint /tmp/vim-vimlint
-  - git clone --depth 1 https://github.com/ynkdir/vim-vimlparser /tmp/vim-vimlparser
-  - git clone --depth 1 --branch v1.5.1 https://github.com/thinca/vim-themis /tmp/vim-themis
-  - (cd /tmp/vimproc && make)
+  - bash .ci/install.sh
 
 script:
-  - vim --cmd "try | helptags doc/ | catch | cquit | endtry" --cmd quit
-  - sh /tmp/vim-vimlint/bin/vimlint.sh -l /tmp/vim-vimlint -p /tmp/vim-vimlparser -e EVL103=1 -e EVL102.l:_=1 -c func_abort=1 autoload
-  - sh /tmp/vim-themis/bin/themis --runtimepath /tmp/vimproc --runtimepath /tmp/vital --reporter dot
+  - bash .ci/script.sh
