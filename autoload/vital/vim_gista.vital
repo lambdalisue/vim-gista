@@ -13,5 +13,5 @@ ArgumentParser
 Vim.Compat
 Data.Base64
 Vim.Buffer.Anchor
-Vim.Prompt
 Vim.Guard
+Vim.Console
