@@ -3,235 +3,182 @@
 " Do not mofidify the code nor insert new lines before '" ___vital___'
 if v:version > 703 || v:version == 703 && has('patch1170')
   function! vital#_vim_gista#Vim#Prompt#import() abort
-    return map({'ask': '', 'clear': '', 'capture': '', 'echomsg': '', 'echo': '', 'confirm': '', 'input': '', 'set_config': '', 'error': '', 'select': '', 'get_config': '', 'is_debug': '', 'warn': '', 'inputlist': '', 'is_batch': '', 'debug': '', '_vital_loaded': ''},  'function("s:" . v:key)')
+    return map({'new': '', 'substr': ''},  'function("s:" . v:key)')
   endfunction
 else
   function! s:_SID() abort
     return matchstr(expand('<sfile>'), '<SNR>\zs\d\+\ze__SID$')
   endfunction
-  execute join(['function! vital#_vim_gista#Vim#Prompt#import() abort', printf("return map({'ask': '', 'clear': '', 'capture': '', 'echomsg': '', 'echo': '', 'confirm': '', 'input': '', 'set_config': '', 'error': '', 'select': '', 'get_config': '', 'is_debug': '', 'warn': '', 'inputlist': '', 'is_batch': '', 'debug': '', '_vital_loaded': ''}, \"function('<SNR>%s_' . v:key)\")", s:_SID()), 'endfunction'], "\n")
+  execute join(['function! vital#_vim_gista#Vim#Prompt#import() abort', printf("return map({'new': '', 'substr': ''}, \"function('<SNR>%s_' . v:key)\")", s:_SID()), 'endfunction'], "\n")
   delfunction s:_SID
 endif
 " ___vital___
-let s:save_cpo = &cpo
-set cpo&vim
-
-function! s:_vital_loaded(V) abort
-  let s:config = {
-        \ 'debug': -1,
-        \ 'batch': 0,
-        \}
+function! s:new(...) abort
+  let prompt = extend(deepcopy(s:prompt), get(a:000, 0, {}))
+  let prompt.cursor = s:_bind(s:cursor, prompt)
+  let prompt.history = s:_bind(s:history, prompt)
+  return prompt
 endfunction
 
-function! s:get_config() abort
-  return deepcopy(s:config)
+function! s:_bind(prototype, prompt) abort
+  return extend(deepcopy(a:prototype), {
+        \ 'prompt': a:prompt,
+        \})
 endfunction
 
-function! s:set_config(config) abort
-  let s:config = extend(s:config, a:config)
+" Cursor ---------------------------------------------------------------------
+let s:cursor = { 'index': 0 }
+
+function! s:cursor.lshift(...) abort
+  let amount = get(a:000, 0, 1)
+  let self.index -= amount
+  let self.index = self.index <= 0 ? 0 : self.index
 endfunction
 
-function! s:is_batch() abort
-  if type(s:config.batch) == 2
-    return s:config.batch()
+function! s:cursor.rshift(...) abort
+  let amount = get(a:000, 0, 1)
+  let threshold = strchars(self.prompt.input)
+  let self.index += amount
+  let self.index = self.index >= threshold ? threshold : self.index
+endfunction
+
+function! s:cursor.home() abort
+  let self.index = 0
+endfunction
+
+function! s:cursor.end() abort
+  let self.index = strchars(self.prompt.input)
+endfunction
+
+function! s:cursor.ltext() abort
+  return self.index == 0
+        \ ? ''
+        \ : s:substr(self.prompt.input, 0, self.index-1)
+endfunction
+
+function! s:cursor.ctext() abort
+  return s:substr(self.prompt.input, self.index, self.index)
+endfunction
+
+function! s:cursor.rtext() abort
+  return s:substr(self.prompt.input, self.index+1, -1)
+endfunction
+
+
+" History --------------------------------------------------------------------
+let s:history = { 'index': 0, 'cached': '' }
+
+function! s:history.previous() abort
+  if self.index == 0
+    let self.cached = self.prompt.input
+  endif
+  let threshold = histnr('input') * -1
+  let self.index = self.index <= threshold ? threshold : self.index - 1
+  let self.prompt.input = histget('input', self.index)
+  let self.prompt.cursor.index = strchars(self.prompt.input)
+endfunction
+
+function! s:history.next() abort
+  let self.index = self.index >= 0 ? 0 : self.index + 1
+  if self.index == 0
+    let self.prompt.input = self.cached
   else
-    return s:config.batch
+    let self.prompt.input = histget('input', self.index)
   endif
+  let self.prompt.cursor.index = strchars(self.prompt.input)
 endfunction
 
-function! s:is_debug() abort
-  if type(s:config.debug) == 2
-    return s:config.debug()
-  else
-    return s:config.debug == -1 ? &verbose : s:config.debug
-  endif
-endfunction
 
-" echo({hl}[, {msg} ...])
-function! s:echo(hl, ...) abort
-  let msg = join(map(copy(a:000), 's:_ensure_string(v:val)'))
-  execute 'echohl' a:hl
-  try
-    echo msg
-  finally
-    echohl None
-  endtry
-endfunction
+" Console ---------------------------------------------------------------------
+let s:prompt = {
+      \ 'prefix': '',
+      \ 'input': '',
+      \}
 
-" echomsg({hl}[, {msg} ...])
-function! s:echomsg(hl, ...) abort
-  let msg = join(map(copy(a:000), 's:_ensure_string(v:val)'))
-  execute 'echohl' a:hl
-  try
-    echomsg msg
-  finally
-    echohl None
-  endtry
-endfunction
-
-" input({hl}, {msg} [, {text} [, {completion}]])
-function! s:input(hl, msg, ...) abort
-  if s:is_batch()
-    return ''
-  endif
-  let msg = s:_ensure_string(a:msg)
-  execute 'echohl' a:hl
+function! s:prompt.start(...) abort
   call inputsave()
-  try
-    if empty(get(a:000, 1, ''))
-      return input(msg, get(a:000, 0, ''))
-    else
-      return input(msg, get(a:000, 0, ''), get(a:000, 1, ''))
+  let self.input = get(a:000, 0, self.input)
+  while !self.callback()
+    redraw
+    echohl Question | echon self.prefix
+    echohl None     | echon self.cursor.ltext()
+    echohl Cursor   | echon self.cursor.ctext()
+    echohl None     | echon self.cursor.rtext()
+    let key = getchar()
+    let char = nr2char(key)
+    if char ==# "\<CR>" || char ==# "\<Esc>"
+      break
+    elseif char ==# "\<C-H>" || key ==# "\<BS>"
+      call self.remove()
+    elseif char ==# "\<C-D>" || key ==# "\<DEL>"
+      call self.delete()
+    elseif char ==# "\<C-R>"
+      echon '"'
+      let reg = getreg(nr2char(getchar()))
+      call self.insert(substitute(reg, '\n', '', 'g'))
+    elseif key ==# "\<Left>" || char ==# "\<C-F>"
+      call self.cursor.lshift()
+    elseif key ==# "\<Right>" || char ==# "\<C-B>"
+      call self.cursor.rshift()
+    elseif key ==# "\<Home>" || char ==# "\<C-A>"
+      call self.cursor.home()
+    elseif key ==# "\<End>" || char ==# "\<C-E>"
+      call self.cursor.end()
+    elseif key ==# "\<Up>"
+      call self.history.previous()
+    elseif key ==# "\<Down>"
+      call self.history.next()
+    elseif !self.keydown(key, char)
+      call self.insert(char)
     endif
-  finally
-    echohl None
-    call inputrestore()
-  endtry
-endfunction
-
-" inputlist({hl}, {textlist})
-function! s:inputlist(hl, textlist) abort
-  if s:is_batch()
-    return 0
+  endwhile
+  redraw | echo
+  if !empty(self.input)
+    call histadd('input', self.input)
   endif
-  let textlist = map(copy(a:textlist), 's:_ensure_string(v:val)')
-  execute 'echohl' a:hl
-  call inputsave()
-  try
-    return inputlist(textlist)
-  finally
-    echohl None
-    call inputrestore()
-  endtry
+  call inputrestore()
+  return char ==# "\<Esc>" ? 0 : self.input
 endfunction
 
-" debug([{msg}...])
-function! s:debug(...) abort
-  if !s:is_debug()
+function! s:prompt.replace(text) abort
+  let self.input = a:text
+  let self.cursor.index = strchars(a:text)
+endfunction
+
+function! s:prompt.insert(text) abort
+  let lhs = self.cursor.ltext()
+  let rhs = self.cursor.ctext() . self.cursor.rtext()
+  let self.input = lhs . a:text . rhs
+  call self.cursor.rshift(strchars(a:text))
+endfunction
+
+function! s:prompt.remove() abort
+  let lhs = self.cursor.ltext()
+  if empty(lhs)
     return
   endif
-  call call('s:echomsg', ['Comment'] + a:000)
+  let lhs = s:substr(lhs, 0, -2)
+  let rhs = self.cursor.ctext() . self.cursor.rtext()
+  let self.input = lhs . rhs
+  call self.cursor.lshift()
 endfunction
 
-" warn([{msg}...])
-function! s:warn(...) abort
-  call call('s:echomsg', ['WarningMsg'] + a:000)
+function! s:prompt.delete() abort
+  let lhs = self.cursor.ltext()
+  let rhs = self.cursor.rtext()
+  let self.input = lhs . rhs
 endfunction
 
-" error([{msg}...])
-function! s:error(...) abort
-  let v:errmsg = join(map(
-        \ copy(a:000),
-        \ 'type(v:val) == 1 ? v:val : string(v:val)',
-        \))
-  call call('s:echomsg', ['ErrorMsg'] + a:000)
+function! s:prompt.keydown(key, char) abort
+  return 0
 endfunction
 
-" ask({msg} [, {default} [, {completion}]])
-function! s:ask(msg, ...) abort
-  if s:is_batch()
-    return ''
-  endif
-  let result = s:input(
-        \ 'Question',
-        \ a:msg,
-        \ get(a:000, 0, ''),
-        \ get(a:000, 1, ''),
-        \)
-  redraw
-  return result
+function! s:prompt.callback() abort
+  return 0
 endfunction
 
-" select({msg}, {candidates} [, {canceled}])
-function! s:select(msg, candidates, ...) abort
-  let canceled = get(a:000, 0, '')
-  if s:is_batch()
-    return canceled
-  endif
-  let candidates = map(
-        \ copy(a:candidates),
-        \ 'v:key+1 . ''. '' . s:_ensure_string(v:val)'
-        \)
-  let result = s:inputlist('Question', extend([a:msg], candidates))
-  redraw
-  return result == 0 ? canceled : a:candidates[result-1]
+" multi-byte character support substr
+function! s:substr(src, s, e) abort
+  let chars = split(a:src, '\zs')
+  return join(chars[a:s : a:e], '')
 endfunction
-
-" confirm({msg} [, {default}])
-function! s:confirm(msg, ...) abort
-  if s:is_batch()
-    return 0
-  endif
-  let completion = printf(
-        \ 'customlist,%s',
-        \ s:_get_function_name(function('s:_confirm_complete'))
-        \)
-  let result = s:input(
-        \ 'Question',
-        \ printf('%s (y[es]/n[o]): ', a:msg),
-        \ get(a:000, 0, ''),
-        \ completion,
-        \)
-  while result !~? '^\%(y\%[es]\|n\%[o]\)$'
-    redraw
-    if result ==# ''
-      call s:echo('WarningMsg', 'Canceled.')
-      break
-    endif
-    call s:echo('WarningMsg', 'Invalid input.')
-    let result = s:input(
-          \ 'Question',
-          \ printf('%s (y[es]/n[o]): ', a:msg),
-          \ get(a:000, 0, ''),
-          \ completion,
-          \)
-  endwhile
-  redraw
-  return result =~? 'y\%[es]'
-endfunction
-
-" capture({command})
-function! s:capture(command) abort
-  try
-    redir => content
-    silent execute a:command
-  finally
-    redir END
-  endtry
-  return split(content, '\r\?\n', 1)
-endfunction
-
-if has('patch-7.4.1738')
-  function! s:clear() abort
-    messages clear
-  endfunction
-else
-  " @vimlint(EVL102, 1, l:i)
-  function! s:clear() abort
-    for i in range(201)
-      echomsg ''
-    endfor
-  endfunction
-  " @vimlint(EVL102, 0, l:i)
-endif
-
-function! s:_confirm_complete(arglead, cmdline, cursorpos) abort
-  return filter(['yes', 'no'], 'v:val =~# ''^'' . a:arglead')
-endfunction
-
-function! s:_ensure_string(x) abort
-  return type(a:x) == 1 ? a:x : string(a:x)
-endfunction
-
-if has('patch-7.4.1842')
-  function! s:_get_function_name(fn) abort
-    return get(a:fn, 'name')
-  endfunction
-else
-  function! s:_get_function_name(fn) abort
-    return matchstr(string(a:fn), 'function(''\zs.*\ze''')
-  endfunction
-endif
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
