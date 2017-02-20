@@ -1,6 +1,6 @@
 *vim-gista.txt* A plugin which helps user to manipulate gists
 
-Version: 2.4.0
+Version: 2.5.0
 Author:  Alisue <lambdalisue@hashnote.net>		*vim-gista-author*
 Support: Vim 7.4 and above
 License: MIT license  {{{
@@ -399,7 +399,7 @@ All commands provide -h/--help to quickly show an usage of the command.
 						*vim-gista-Gista-post*
 						*:Gista-post*
 :Gista post [-h/--help] [-d/--description={DESCRIPTION}]
-       [-p/--public|-P/--private]
+       [-p/--public|-P/--private] [--stay]
        [-- {filenames}...]
 
 	Post content(s) to a new gist in the current API.
@@ -408,15 +408,15 @@ All commands provide -h/--help to quickly show an usage of the command.
 	2. A file content otherwise (via |readfile()| function)
 	Otherwise it post a content of the current buffer. Note that
 	{filenames} which is not opened and not readable will ignored.
-	Note that this command apply a new filename to the buffer(s) so
-	use |Ctrl-^| to switch to previous filename (See |alternate-file| for
-	detail.)
+	Note that this command apply a new filename to the buffer(s) unless
+	--stay option has specified. use |Ctrl-^| to switch to previous
+	filename (See |alternate-file| for detail.)
 	Use |:Gista-patch| instead to add/modify a content of an existing gist.
 
 						*vim-gista-Gista-patch*
 						*:Gista-patch*
 :Gista patch [-h/--help] [-d/--description={DESCRIPTION}]
-       [-f/--[no-]force]
+       [-f/--[no-]force] [--stay]
        [{gistid}]
        [-- {filenames}...]
 
@@ -428,9 +428,9 @@ All commands provide -h/--help to quickly show an usage of the command.
 	{filenames} which is not opened and not readable will ignored.
 	It checks if a remote content of the gist is updated or not unless
 	--force option is specified.
-	Note that this command apply a new filename to the buffer(s) so
-	use |Ctrl-^| to switch to previous filename (See |alternate-file| for
-	detail.)
+	Note that this command apply a new filename to the buffer(s) unless
+	--stay option has specified. use |Ctrl-^| to switch to previous
+	filename (See |alternate-file| for detail.)
 	Use |:Gista-post| instead to create a new gist with a content.
 
 						*vim-gista-Gista-rename*

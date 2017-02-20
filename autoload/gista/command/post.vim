@@ -46,6 +46,7 @@ endfunction
 
 function! gista#command#post#call(...) abort
   let options = extend({
+        \ 'stay': 0,
         \ 'description': g:gista#command#post#interactive_description,
         \ 'public': g:gista#command#post#default_public,
         \ 'filenames': [],
@@ -60,8 +61,10 @@ function! gista#command#post#call(...) abort
           \ options,
           \)
     let client = gista#client#get()
-    " Assign gista filename to buffer existing in the current tabpage
-    call s:assign_gista_filenames(gist.id, options.bufnums)
+    if !options.stay
+      " Assign gista filename to buffer existing in the current tabpage
+      call s:assign_gista_filenames(gist.id, options.bufnums)
+    endif
     call gista#util#prompt#indicate(options, printf(
           \ 'A content of the current buffer is posted to a gist %s in %s',
           \ gist.id, client.apiname,
@@ -101,6 +104,11 @@ function! s:get_parser() abort
           \ '--private', '-P',
           \ 'Post a gist as a private gist', {
           \   'conflicts': ['public'],
+          \})
+    call s:parser.add_argument(
+          \ '--stay',
+          \ 'Do not open a posted gist', {
+          \   'default': 0,
           \})
     function! s:parser.hooks.post_validate(options) abort
       if has_key(a:options, 'private')
