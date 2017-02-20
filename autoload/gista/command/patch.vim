@@ -27,6 +27,7 @@ endfunction
 
 function! gista#command#patch#call(...) abort
   let options = extend({
+        \ 'stay': 0,
         \ 'gist': {},
         \ 'gistid': '',
         \ 'filenames': [],
@@ -39,8 +40,10 @@ function! gista#command#patch#call(...) abort
           \ : options.gist.id
           \)
     let gist = gista#resource#remote#patch(gistid, options)
-    " Assign gista filename to buffer existing in the current tabpage 
-    call s:assign_gista_filenames(gist.id, options.bufnums)
+    if !options.stay
+      " Assign gista filename to buffer existing in the current tabpage
+      call s:assign_gista_filenames(gist.id, options.bufnums)
+    endif
     let client = gista#client#get()
     call gista#util#prompt#indicate(options, printf(
           \ 'Changes of %s in gist %s is posted to %s',
@@ -77,6 +80,11 @@ function! s:get_parser() abort
           \ 'Patch a gist even a remote content of the gist is modified', {
           \   'default': 0,
           \   'deniable': 1,
+          \})
+    call s:parser.add_argument(
+          \ '--stay',
+          \ 'Do not open a posted gist', {
+          \   'default': 0,
           \})
     call s:parser.add_argument(
           \ 'gistid',
