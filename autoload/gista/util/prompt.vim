@@ -1,33 +1,34 @@
 let s:V = gista#vital()
-let s:Prompt = s:V.import('Vim.Prompt')
-
-function! s:is_debug() abort
-  return g:gista#debug
-endfunction
-function! s:is_batch() abort
-  return g:gista#test
-endfunction
+let s:Console = s:V.import('Vim.Console')
+let s:t_string = type('')
 
 function! gista#util#prompt#debug(...) abort
-  call call(s:Prompt.debug, a:000, s:Prompt)
+  call s:apply_config()
+  call s:Console.debug(s:normalize_attrs(a:000))
 endfunction
 function! gista#util#prompt#info(...) abort
-  call call(s:Prompt.info, a:000, s:Prompt)
+  call s:apply_config()
+  call s:Console.info(s:normalize_attrs(a:000))
 endfunction
 function! gista#util#prompt#warn(...) abort
-  call call(s:Prompt.warn, a:000, s:Prompt)
+  call s:apply_config()
+  call s:Console.warn(s:normalize_attrs(a:000))
 endfunction
 function! gista#util#prompt#error(...) abort
-  call call(s:Prompt.error, a:000, s:Prompt)
+  call s:apply_config()
+  call s:Console.error(s:normalize_attrs(a:000))
 endfunction
 function! gista#util#prompt#ask(...) abort
-  return call(s:Prompt.ask, a:000, s:Prompt)
+  call s:apply_config()
+  return call(s:Console.ask, a:000, s:Console)
 endfunction
 function! gista#util#prompt#select(...) abort
-  return call(s:Prompt.select, a:000, s:Prompt)
+  call s:apply_config()
+  return call(s:Console.select, a:000, s:Console)
 endfunction
 function! gista#util#prompt#confirm(...) abort
-  return call(s:Prompt.confirm, a:000, s:Prompt)
+  call s:apply_config()
+  return call(s:Console.confirm, a:000, s:Console)
 endfunction
 
 function! gista#util#prompt#indicate(options, message) abort
@@ -36,7 +37,20 @@ function! gista#util#prompt#indicate(options, message) abort
   endif
 endfunction
 
-call s:Prompt.set_config({
-      \ 'debug': function('s:is_debug'),
-      \ 'batch': function('s:is_batch'),
-      \})
+function! s:ensure_string(x) abort
+  return type(a:x) == s:t_string ? a:x : string(a:x)
+endfunction
+
+function! s:normalize_attrs(attrs) abort
+  return join(map(copy(a:attrs), 's:ensure_string(v:val)'), "\n")
+endfunction
+
+function! s:apply_config() abort
+  if g:gista#test
+    let s:Console.status = s:Console.STATUS_BATCH
+  elseif g:gista#debug
+    let s:Console.status = s:Console.STATUS_DEBUG
+  else
+    let s:Console.status = ''
+  endif
+endfunction
