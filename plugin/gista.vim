@@ -1,3 +1,8 @@
+if exists('g:loaded_gista')
+  finish
+endif
+let g:loaded_gista = 1
+
 command! -nargs=? -range=% -bang
       \ -complete=customlist,gista#command#complete
       \ Gista
