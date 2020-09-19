@@ -23,7 +23,7 @@ It provide the following features:
 - Remove files in a gist
 - Delete a gist
 - Star/Unstar a gist
-- Folk a gist
+- Fork a gist
 
 Requirements
 -------------------------------------------------------------------------------
